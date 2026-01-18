@@ -1,0 +1,34 @@
+v 3
+
+d stata_log2html
+
+d Description: Stata package for converting logs to HTML and related workflow tools
+d Author: Kerry Du
+d Date: 2026-01-12
+d Version: 1.0.0
+d Distribution-Date: 2026-01-12
+d Title: Stata Log to HTML Package
+d Contact: kerrydu@example.com
+d Support: https://github.com/kerrydu/Stata_log2html
+d Note: This package provides tools for Stata workflow automation, including HTML output generation.
+
+f graph2md.ado
+f graph2md.sthlp
+f markdown2.ado
+f markdown2.sthlp
+f outreg3.ado
+f outreg3.sthlp
+f _textcell.ado
+f _textcell.sthlp
+f sopen.ado
+f sopen.sthlp
+f ishere.ado
+f ishere.sthlp
+f logout3.ado
+f logout3.sthlp
+f logout4.ado
+f logout4.sthlp
+
+
+f minido-copy.do
+f minido.do

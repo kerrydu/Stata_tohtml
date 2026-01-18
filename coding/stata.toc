@@ -1,0 +1,19 @@
+v 3
+
+d stata_log2html
+
+d graph2md.ado
+d graph2md.sthlp
+d logout3.ado
+d logout3.sthlp
+d markdown2.ado
+d markdown2.sthlp
+d minido-copy.do
+d minido.do
+d outreg3.ado
+d outreg3.sthlp
+d statacell.ado
+d statacell.sthlp
+d stata_workflow_description.md
+d tabhtml.ado
+d tabhtml.sthlp
