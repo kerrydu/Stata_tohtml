@@ -101,9 +101,10 @@ program define ishere
         // }
     }
     
-    // if ustrpos("`anything'","#")==1{
-    //     display "`anything'"
-    // }
+    if ustrpos(`"`anything'"',"display")==1{
+        gettoken display anything:anything
+         display `"`anything'"'
+    }
 
     // Support using `ishere` alone or `ishere ``` on a line to emit a code-block marker
     // remove whitespace from argument for robust comparison
