@@ -60,6 +60,13 @@ Insert table
 [{cmd:,} {opt height(string)} {opt width(string)}]
 
 
+{pstd}
+Display local or scalar values
+
+{p 8 16 2}
+{cmd:ishere} {cmd:display} {it:expression}
+
+
 {marker description}{...}
 {title:Description}
 
@@ -118,6 +125,9 @@ will be preserved when {help tohtml} processes the log. This mode is used for:
 - Embedding tables: {cmd:ishere tab using "table1.html"} generates an HTML <iframe> tag
 
 {pmore2}
+- Displaying values: {cmd:ishere display} outputs local macros, scalars, or any valid Stata expression to the log
+
+{pmore2}
 This mode supports various image formats (PNG, JPG, JPEG, SVG, GIF, BMP, WEBP) and HTML tables.
 
 
@@ -147,6 +157,23 @@ This mode supports various image formats (PNG, JPG, JPEG, SVG, GIF, BMP, WEBP) a
 
 {phang}
 {opt width(string)} specifies the iframe width for HTML tables, default is "100%".
+
+
+{dlgtab:Display syntax}
+
+{pstd}
+The {cmd:display} subcommand has no options. It accepts any valid Stata expression and outputs it to the log.
+This is primarily used in combination with text blocks ({cmd:ishere /*} ... {cmd:ishere */}) to insert computed 
+values into narrative text. The typical workflow is:
+
+{pmore}
+1. Run {cmd:ishere display} in your code to output the value
+
+{pmore}
+2. Reference it in text blocks using the placeholder syntax {cmd:{c -(}ishere display ...{c )-}}
+
+{pmore}
+3. When {help tohtml} processes the log, it automatically replaces placeholders with actual values
 
 
 {marker examples}{...}
@@ -189,16 +216,76 @@ This mode supports various image formats (PNG, JPG, JPEG, SVG, GIF, BMP, WEBP) a
 {pstd}Insert a table with custom dimensions{p_end}
 {phang2}{cmd:. ishere table using "table1.html", height(500px) width(100%)}{p_end}
 
-{pstd}{bf:Complete workflow example}{p_end}
+{pstd}Basic usage: Insert value in text block{p_end}
+{phang2}{cmd:. sysuse auto, clear}{p_end}
+{phang2}{cmd:. local N = _N}{p_end}
+{phang2}{cmd:. ishere display `N'}{p_end}
+{phang2}{cmd:. ishere /*}{p_end}
+{phang2}{cmd:. * The dataset contains {c -(}ishere display `N'{c )-} observations.}{p_end}
+{phang2}{cmd:. ishere */}{p_end}
+
+{pstd}Insert formatted numeric values{p_end}
+{phang2}{cmd:. summarize price}{p_end}
+{phang2}{cmd:. local mean_price = r(mean)}{p_end}
+{phang2}{cmd:. ishere display %9.2f `mean_price'}{p_end}
+{phang2}{cmd:. ishere /*}{p_end}
+{phang2}{cmd:. * The average price is ${c -(}ishere display %9.2f `mean_price'{c )-}.}{p_end}
+{phang2}{cmd:. ishere */}{p_end}
+
+{pstd}Insert multiple values in text{p_end}
+{phang2}{cmd:. regress price mpg weight}{p_end}
+{phang2}{cmd:. local r2 = e(r2)}{p_end}
+{phang2}{cmd:. local N = e(N)}{p_end}
+{phang2}{cmd:. ishere display %5.3f `r2'}{p_end}
+{phang2}{cmd:. ishere display `N'}{p_end}
+{phang2}{cmd:. ishere /*}{p_end}
+{phang2}{cmd:. * The model R-squared is {c -(}ishere display %5.3f `r2'{c )-} based on {c -(}ishere display `N'{c )-} observations.}{p_end}
+{phang2}{cmd:. ishere */}{p_end}
+
+{pstd}Insert regression coefficients{p_end}
+{phang2}{cmd:. regress price mpg weight}{p_end}
+{phang2}{cmd:. local coef = _b[mpg]}{p_end}
+{phang2}{cmd:. local se = _se[mpg]}{p_end}
+{phang2}{cmd:. ishere display %6.2f `coef'}{p_end}
+{phang2}{cmd:. ishere display %6.2f `se'}{p_end}
+{phang2}{cmd:. ishere /*}{p_end}
+{phang2}{cmd:. * The coefficient on mpg is {c -(}ishere display %6.2f `coef'{c )-} (SE = {c -(}ishere display %6.2f `se'{c )-}).}{p_end}
+{phang2}{cmd:. ishere */}{p_end}
+
+{pstd}{bf:Complete workflow example with display}{p_end}
 {phang2}{cmd:. log using "analysis.smcl", replace}{p_end}
 {phang2}{cmd:. ishere # Data Analysis Report}{p_end}
 {phang2}{cmd:.}{p_end}
-{phang2}{cmd:. ishere ## Load and Describe Data}{p_end}
-{phang2}{cmd:. ishere}{p_end}
+{phang2}{cmd:. ishere ## Data Overview}{p_end}
 {phang2}{cmd:. sysuse auto, clear}{p_end}
-{phang2}{cmd:. describe}{p_end}
-{phang2}{cmd:. summarize price mpg weight}{p_end}
+{phang2}{cmd:. local N = _N}{p_end}
+{phang2}{cmd:. ishere display `N'}{p_end}
+{phang2}{cmd:. ishere /*}{p_end}
+{phang2}{cmd:. * This analysis uses the automobile dataset containing {c -(}ishere display `N'{c )-} observations.}{p_end}
+{phang2}{cmd:. ishere */}{p_end}
+{phang2}{cmd:.}{p_end}
+{phang2}{cmd:. ishere ## Summary Statistics}{p_end}
 {phang2}{cmd:. ishere}{p_end}
+{phang2}{cmd:. summarize price mpg weight}{p_end}
+{phang2}{cmd:. local mean_price = r(mean)}{p_end}
+{phang2}{cmd:. ishere}{p_end}
+{phang2}{cmd:. ishere display %9.2f `mean_price'}{p_end}
+{phang2}{cmd:. ishere /*}{p_end}
+{phang2}{cmd:. * The average price is ${c -(}ishere display %9.2f `mean_price'{c )-}.}{p_end}
+{phang2}{cmd:. ishere */}{p_end}
+{phang2}{cmd:.}{p_end}
+{phang2}{cmd:. ishere ## Regression Analysis}{p_end}
+{phang2}{cmd:. ishere}{p_end}
+{phang2}{cmd:. regress price mpg weight}{p_end}
+{phang2}{cmd:. local r2 = e(r2)}{p_end}
+{phang2}{cmd:. local coef_mpg = _b[mpg]}{p_end}
+{phang2}{cmd:. ishere}{p_end}
+{phang2}{cmd:. ishere display %5.3f `r2'}{p_end}
+{phang2}{cmd:. ishere display %6.2f `coef_mpg'}{p_end}
+{phang2}{cmd:. ishere /*}{p_end}
+{phang2}{cmd:. * The regression model has an R-squared of {c -(}ishere display %5.3f `r2'{c )-}.}{p_end}
+{phang2}{cmd:. * The coefficient on mpg is {c -(}ishere display %6.2f `coef_mpg'{c )-}.}{p_end}
+{phang2}{cmd:. ishere */}{p_end}
 {phang2}{cmd:.}{p_end}
 {phang2}{cmd:. ishere ## Visualization}{p_end}
 {phang2}{cmd:. scatter price mpg}{p_end}
@@ -219,6 +306,37 @@ This mode supports various image formats (PNG, JPG, JPEG, SVG, GIF, BMP, WEBP) a
 Mode 1 (placeholder) produces no visible output during your Stata session - it simply leaves markers in the log file 
 that {help tohtml} interprets later. Mode 2 (markdown insertion) actively prints markdown/HTML code to your log, 
 which becomes part of the final document.
+
+{pstd}
+{bf:Using ishere display for narrative text:}
+
+{pmore}
+The {cmd:ishere display} command is designed to work with text blocks ({cmd:ishere /*} ... {cmd:ishere */}) to create 
+dynamic narrative text with embedded computed values. The workflow has two steps:
+
+{pmore}
+{bf:Step 1}: In your code section, compute values and output them using {cmd:ishere display}:
+
+{pmore2}
+{cmd:local r2 = e(r2)}{break}
+{cmd:ishere display %5.3f `r2'}
+
+{pmore}
+{bf:Step 2}: In your text block, reference the values using placeholder syntax {cmd:{c -(}ishere display ...{c )-}}:
+
+{pmore2}
+{cmd:ishere /*}{break}
+{cmd:* The model R-squared is {c -(}ishere display %5.3f `r2'{c )-}.}{break}
+{cmd:ishere */}
+
+{pmore}
+When {help tohtml} processes the log file, it automatically matches the placeholder references with the computed values 
+and inserts them into the text. This ensures your narrative text always reflects the current analysis results without 
+manual copying or updating.
+
+{pmore}
+The {cmd:display} subcommand accepts the same syntax as Stata's regular {help display} command, including format specifiers
+like {cmd:%5.3f} for controlling number precision. This allows precise control over how numbers appear in your report text.
 
 {pstd}
 {bf:Cross-platform compatibility:}

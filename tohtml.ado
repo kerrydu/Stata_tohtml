@@ -374,6 +374,10 @@ void function rewrite_md(string scalar ofi, string scalar tfi, real scalar repla
     // 2. 合并 HTML 行
     fcon = merge_html_vectorized(fcon)
     fcon = clean_textcell_content(fcon)
+    
+    // 2b. 替换文本块中的 ishere display 占位符
+    fcon = subisheredintxt(fcon)
+    
     // 3. 移除前缀
     prefixes = (">", "{com}", "{res}", "{txt}")
     fcon = remove_prefix_and_trim(fcon, prefixes)
@@ -441,6 +445,10 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
     fcon = merge_html_vectorized(fcon)
 
     fcon = clean_textcell_content(fcon)
+    
+    // 2b. 替换文本块中的 ishere display 占位符
+    fcon = subisheredintxt(fcon)
+    
     // 3. 移除前缀
     prefixes = (">", "{com}", "{res}", "{txt}")
     fcon = remove_prefix_and_trim(fcon, prefixes)
@@ -746,6 +754,7 @@ void function merge_cmdlog_blocks(string scalar clean_md, string scalar cmdlog_m
  
     clean = cat(clean_md)
     clean = merge_html_vectorized(clean)
+    clean = subisheredintxt(clean)
     clean_trim = ustrltrim(clean)
     is_embed = (substr(clean_trim, 1, strlen("<iframe")) :== "<iframe") :| ///
         (substr(clean_trim, 1, strlen("<img")) :== "<img")
@@ -892,6 +901,9 @@ void function merge_cmdlog_blocks(string scalar clean_md, string scalar cmdlog_m
         result = result \ line
         i = i + 1
     }
+
+    // 5b. 替换文本块中的 ishere display 占位符
+    //result = subisheredintxt(result)
 
     // 6. 【核心】动态修复：直到所有 # 行都在代码块外
     result = insert_backtick_before_hash(result)
@@ -1181,7 +1193,7 @@ real colvector get_textcell_index(string colvector lines)
    text_end = selectindex(lines:=="_ishere_*/")
    text_idx = J(rows(lines),1,0)
    for (i=1;i<=length(text_start);i++){ 
-       text_idx[text_start[i]::text_end[i]] = J(length(text_start[i]::text_end[i]),1,1)
+       text_idx[text_start[i]::text_end[i]] = J(length(text_start[i]::text_end[i]),1,i)
    }
     return(text_idx)
 }
@@ -1276,6 +1288,54 @@ string scalar normalize_path(string scalar p)
     }
     return(p)
 }
+
+string colvector function subisheredintxt(string colvector lines)
+{
+    n = rows(lines)
+    if (n == 0) return(lines)
+    
+    lines2 = strltrim(lines)
+    textflag = get_textcell_index(lines2)
+    
+    // Step 1: 找到所有 . ishere display 命令行及其输出值
+    flag = (ustrpos(lines2, ".") :== 1)
+    lines3 = strltrim(substr(lines2, 2, .))
+    flag = flag :& (ustrpos(lines3, "ishere") :== 1)
+    lines4 = strtrim(substr(lines3, strlen("ishere")+1, .))
+    flag = flag :& (ustrpos(lines4, "display") :== 1)
+    
+    if (sum(flag) == 0 | sum(textflag) == 0) {
+        return(lines)
+    }
+    
+    // Step 2: 提取 display 参数（去除多余空格）
+    lines5 = substr(lines4, strlen("display")+1, .)
+    lines5 = strtrim(lines5)
+    dispcmd = select(lines5, flag)
+    
+    // Step 3: 获取显示值（下一行的内容）
+    idx = selectindex(flag)
+    n_displays = rows(idx)
+    
+    // inshere display only act in the following one textcell.
+    
+    for (i = 1; i <= n_displays; i++) {
+        pattern = "\{\s*ishere\s+display\s*" + dispcmd[i] + "\s*\}"
+        if (idx[i] + 1 <= n) {
+            textrow =select(textflag, (1::n:>idx[i]+1):*textflag)
+            if (length(textrow)){
+                text_j =selectindex(textflag:==textrow[1])
+                lines[text_j] =ustrregexra(lines[text_j], pattern, " "+strtrim(lines[idx[i]+1])+" ")
+            }
+        }
+    }
+    
+    
+    
+    return(lines)
+}
+
+
 end
 
 
