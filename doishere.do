@@ -55,7 +55,7 @@ summarize price mpg weight lprice
 
 tabstat price mpg weight, by(foreign) statistics(mean sd min max n) columns(statistics)
 
-outreg3  using "$results/summary.tex", replace html sum(log) is
+outreg2e  using "$results/summary.tex", replace html sum(log) is
 ishere table1
 
 
@@ -145,13 +145,13 @@ ishere 1
 
 ishere #### Table 2
 ishere 
-tabhtml: esttab model1 model2 model3 model4 model5 model6 model7 model8 model9 model10 model11 model12 model13 using "$results/model.html", replace
+esttab model1 model2 model3 model4 model5 model6 model7 model8 model9 model10 model11 model12 model13 using "$results/model.html", replace
 ishere
-ishere table2
+ishere tab using "$results/model.html"
 
 ishere #### Table 3
 ishere 
-outreg3 [model*] using "$results/model2.tex", replace html is
+outreg2e [model*] using "$results/model2.tex", replace html is
 ishere table3
 // ishere 1
 
