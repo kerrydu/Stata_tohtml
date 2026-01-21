@@ -175,6 +175,11 @@ values into narrative text. The typical workflow is:
 {pmore}
 3. When {help tohtml} processes the log, it automatically replaces placeholders with actual values
 
+{pmore}
+{bf:Important}: The {cmd:ishere display} command only affects the {bf:first textcell} ({cmd:ishere /*} ... {cmd:ishere */}) 
+that appears {bf:after} the display command in the log file. If you have multiple text blocks, each {cmd:ishere display} 
+will only replace placeholders in the immediately following text block, not in later ones.
+
 
 {marker examples}{...}
 {title:Examples}
@@ -250,6 +255,20 @@ values into narrative text. The typical workflow is:
 {phang2}{cmd:. ishere display %6.2f `se'}{p_end}
 {phang2}{cmd:. ishere /*}{p_end}
 {phang2}{cmd:. * The coefficient on mpg is {c -(}ishere display %6.2f `coef'{c )-} (SE = {c -(}ishere display %6.2f `se'{c )-}).}{p_end}
+{phang2}{cmd:. ishere */}{p_end}
+
+{pstd}Using display with multiple text blocks (each needs its own display command){p_end}
+{phang2}{cmd:. regress price mpg weight}{p_end}
+{phang2}{cmd:. local r2 = e(r2)}{p_end}
+{phang2}{cmd:. ishere display %5.3f `r2'}{p_end}
+{phang2}{cmd:. ishere /*}{p_end}
+{phang2}{cmd:. * First text block: R-squared is {c -(}ishere display %5.3f `r2'{c )-}.}{p_end}
+{phang2}{cmd:. ishere */}{p_end}
+{phang2}{cmd:.}{p_end}
+{phang2}{cmd:. * To use the same value in a second text block, you need another display command:}{p_end}
+{phang2}{cmd:. ishere display %5.3f `r2'}{p_end}
+{phang2}{cmd:. ishere /*}{p_end}
+{phang2}{cmd:. * Second text block: The model explains {c -(}ishere display %5.3f `r2'{c )-} of the variance.}{p_end}
 {phang2}{cmd:. ishere */}{p_end}
 
 {pstd}{bf:Complete workflow example with display}{p_end}
@@ -337,6 +356,10 @@ manual copying or updating.
 {pmore}
 The {cmd:display} subcommand accepts the same syntax as Stata's regular {help display} command, including format specifiers
 like {cmd:%5.3f} for controlling number precision. This allows precise control over how numbers appear in your report text.
+
+{pmore}
+{bf:Scope limitation}: Each {cmd:ishere display} command only affects the {bf:first textcell} that appears after it in the log file.
+If you need to use the same value in multiple text blocks, you must place an {cmd:ishere display} command before each text block.
 
 {pstd}
 {bf:Cross-platform compatibility:}
