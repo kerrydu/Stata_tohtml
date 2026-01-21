@@ -9,7 +9,7 @@
 {title:Title}
 
 {phang}
-{bf:loghtml} {hline 2} 将 Stata 命令的原始日志输出捕获为 HTML iframe（用于 Markdown 报告）
+{bf:loghtml} {hline 2} Capture Stata command's raw log output as HTML iframe (for Markdown reports)
 
 {marker syntax}{...}
 {title:Syntax}
@@ -21,46 +21,46 @@
 {title:Description}
 
 {pstd}
-{cmd:loghtml} 是一个极简的日志捕获工具。与试图将输出格式化为美观表格（如 {cmd:logoute} 或 {cmd:outreg2e}）不同，{cmd:loghtml} 旨在{bf:原样保留} Stata 的文本输出格式。
+{cmd:loghtml} is a minimal log capture tool. Unlike tools that try to format output into beautiful tables (such as {cmd:logoute} or {cmd:outreg2e}), {cmd:loghtml} aims to {bf:preserve} Stata's text output format as-is.
 
 {pstd}
-它执行指定的 {it:command}，将其结果捕获到一个临时的文本日志中，然后将该文本包裹在一个简单的 HTML 文件（使用 {it:<pre>} 标签）中。最后，它会输出一段 Markdown 代码块（包含 {it:<iframe>}），以便 {cmd:tohtml} 命令可以将其嵌入到最终的网页报告中。
+It executes the specified {it:command}, captures its results in a temporary text log, then wraps that text in a simple HTML file (using {it:<pre>} tags). Finally, it outputs a Markdown code block (containing {it:<iframe>}) so that the {cmd:tohtml} command can embed it into the final web report.
 
 {pstd}
-此命令非常适合展示那些结构复杂、难以转化为标准表格的命令输出，例如 {cmd:summarize, detail}，{cmd:codebook}，{cmd:pwcorr} 或 {cmd:table}。
+This command is particularly suitable for displaying command outputs with complex structures that are difficult to convert into standard tables, such as {cmd:summarize, detail}, {cmd:codebook}, {cmd:pwcorr}, or {cmd:table}.
 
 {marker options}{...}
 {title:Options}
 
 {phang}
-{opt save(filename)} 是必须的。指定要保存的 HTML 文件名（无需扩展名）。程序将生成 {it:filename.html}。
+{opt save(filename)} is required. Specifies the HTML filename to save (without extension). The program will generate {it:filename.html}.
 
 {phang}
-{opt replace} 允许覆盖已存在的文件。
+{opt replace} allows overwriting existing files.
 
 {phang}
-{opt noi:sily} 如果指定，命令的输出也会显示在 Stata 的结果窗口中。默认情况下是静默捕获。
+{opt noi:sily} If specified, the command's output will also be displayed in Stata's Results window. By default, output is captured silently.
 
 {marker global_options}{...}
 {title:Global Options (Shared with outreg2e/logoute)}
 
 {pstd}
-你可以通过设置全局宏来控制 iframe 的样式：
+You can control iframe styles by setting global macros:
 
 {phang}
-{cmd:global tabwidth} : 设置 iframe 的宽度百分比（默认 100）。
+{cmd:global tabwidth} : Set the iframe width percentage (default 100).
 
 {phang}
-{cmd:global tabheight} : 设置 iframe 的高度（像素，默认 400）。
+{cmd:global tabheight} : Set the iframe height in pixels (default 400).
 
 {phang}
-{cmd:global table_center} : 如果设置为 1，内容将尝试居中显示（虽然对于左对齐的文本日志，通常建议保留默认值）。
+{cmd:global table_center} : If set to 1, content will attempt to be centered (though for left-aligned text logs, keeping the default is usually recommended).
 
 {marker examples}{...}
 {title:Examples}
 
 {pstd}
-{bf:1. 基本用法 (描述性统计)}
+{bf:1. Basic Usage (Descriptive Statistics)}
 
 {phang}
 {stata sysuse auto, clear}
@@ -79,7 +79,7 @@
 {p_end}
 
 {pstd}
-{bf:2. 相关系数矩阵}
+{bf:2. Correlation Matrix}
 
 {phang}
 {stata cmdcell #### Correlation Matrix}
