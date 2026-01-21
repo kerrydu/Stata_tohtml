@@ -161,6 +161,18 @@ The `ishere`/`tohtml` approach keeps everything in the do-file using minimal mar
 
 **vs. MarkDoc**: MarkDoc is an excellent, feature-rich package offering multiple output formats (HTML, PDF, LaTeX, Word, EPUB), extensive styling options, Markdown dialect support, and sophisticated document structure control. It can produce publication-ready documents with beautiful typography and complex layouts. These capabilities make it ideal for users seeking comprehensive, end-to-end solutions.
 
+**vs. markstat (Rodríguez, 2017)**: MarkDoc implements the classic "literate programming" approach championed by Knuth (1992) and extended to Stata by Rodríguez (2017). It uses a single `.stmd` file that mixes Markdown narrative and Stata code, with simple indentation rules (one tab or four spaces) to distinguish code blocks. Key characteristics include:
+
+- **Single-file workflow**: Markdown narrative and Stata code coexist in one document, processed in one pass
+- **Code fencing**: Uses ```s/``` ``` for Stata code blocks, with optional suppression via ```s/
+- **Inline code**: Supports `s [fmt] expression` ` for inserting Stata results into narrative
+- **Embedded syntax**: Markdown is written directly in do-file using standard Markdown notation
+- **One-step generation**: Runs entire script and produces final document directly
+
+MarkDoc represents a comprehensive, end-to-end solution that produces publication-ready documents with no external dependencies. It is ideal for users who need professional output immediately and are comfortable adopting Markdown-based literate programming workflows. The approach trades a higher initial learning curve for maximum feature completeness and direct-to-publication capability.
+
+**Key Philosophical Difference**: While markstat follows the literate programming paradigm of mixing code and documentation in a unified file, `ishere`/`tohtml` approach maintains a clear separation of concerns. Users work entirely in familiar Stata do-files, using `ishere` only as non-intrusive markers, with `tohtml` handling document generation as a post-processing step. This preserves Stata's identity as analysis code rather than document source, appealing to users who prefer to continue their existing workflows with minimal disruption.
+
 However, MarkDoc requires writing Markdown syntax directly in do-file comments using special comment delimiters (`/***`, `//`, etc.) and adopting a specific workflow paradigm where the do-file becomes a literate programming document. The `ishere`/`tohtml` approach uses simple marker commands (`ishere # Title`, `ishere fig using...`) that feel more like standard Stata commands, preserving the do-file's primary identity as analysis code rather than document source. We intentionally provide fewer features but dramatically reduce the learning curve.
 
 **vs. Jupyter/RMarkdown**: These external tools are extremely powerful, offering interactive notebooks, multiple language support, extensive visualization libraries, and integration with modern development environments. They represent the gold standard for literate programming and reproducible research in data science.
