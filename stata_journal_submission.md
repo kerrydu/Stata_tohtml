@@ -94,6 +94,28 @@ ishere table using "results.html", height(500px) width(100%)
 
 This mode supports various image formats (PNG, JPG, JPEG, SVG, GIF, BMP, WEBP) and HTML tables embedded via iframes.
 
+**Mode 2b: `ishere display` for dynamic narrative text**
+
+A common reporting need is to insert computed values (sample sizes, means, regression fit statistics, coefficients) directly into narrative text without manual copy-paste. The package supports this through `ishere display`, which works together with text blocks:
+
+```stata
+* compute a value
+regress price mpg weight
+local r2 = e(r2)
+
+* emit the value to the log
+ishere display %5.3f `r2'
+
+* write narrative text with a placeholder
+ishere /*
+* The model R-squared is {ishere display %5.3f `r2'}.
+ishere */
+```
+
+When `tohtml` processes the log, it replaces the placeholder `{ishere display ...}` inside the text block with the corresponding displayed value, producing narrative text that automatically stays in sync with the latest results.
+
+**Scope rule (important)**: each `ishere display` only applies to the **first** text block (`ishere /* ... */`) that appears **after** it in the log. If you want the same value to appear in multiple text blocks, you should place another `ishere display` command before each text block.
+
 ### 2.3 The `tohtml` Command: Log-to-HTML Conversion Engine
 
 The `tohtml` command transforms Stata log files containing `ishere` markers into formatted HTML reports. It is specifically designed to work hand-in-hand with `ishere`, completing the "from do to html" workflow.
@@ -228,7 +250,35 @@ tohtml analysis_report.md, html(analysis_report.html) css(githubstyle) replace
 
 This example shows how `ishere` markers create document structure without interfering with the analysis code. The statistical commands remain unchanged from what you would normally write.
 
-### 3.3 Embedding Figures and Tables
+### 3.3 Dynamic narrative text with `ishere display`
+
+The following example demonstrates how to write narrative text that automatically includes computed values:
+
+```stata
+log using "narrative_report.smcl", replace
+
+ishere # Narrative Example
+
+sysuse auto, clear
+regress price mpg weight
+local r2 = e(r2)
+
+* emit the value
+ishere display %5.3f `r2'
+
+* narrative text (textcell)
+ishere /*
+* The model R-squared is {ishere display %5.3f `r2'}.
+ishere */
+
+log close
+translate narrative_report.smcl narrative_report.md, translator(smcl2log) replace
+tohtml narrative_report.md, html(narrative_report.html) css(githubstyle) replace
+```
+
+This pattern avoids manual copying of results into prose and supports formatted numeric output via Stata’s display formats (e.g., `%5.3f`).
+
+### 3.4 Embedding Figures and Tables
 
 For professional reports, embed figures and HTML tables directly:
 
@@ -263,7 +313,7 @@ tohtml full_report.md, html(full_report.html) css(githubstyle) replace
 
 Note how figures and tables are inserted at their logical positions in the narrative using `ishere fig` and `ishere tab`. The syntax is intuitive and requires no special knowledge of HTML or markdown.
 
-### 3.4 Clean Mode for Presentation Reports
+### 3.5 Clean Mode for Presentation Reports
 
 For reports emphasizing results over console output, use clean mode:
 
@@ -297,7 +347,7 @@ tohtml presentation.md, clean html(presentation.html) css(githubstyle) replace
 
 The `clean` option removes all console output and code blocks, keeping only headings, narrative text (from `ishere /* */` blocks), figures, and tables. This mode is ideal for client reports or presentations where the focus is on results rather than technical details.
 
-### 3.5 Cleancode Mode for Technical Documentation
+### 3.6 Cleancode Mode for Technical Documentation
 
 For documentation that combines clean code with execution results:
 
@@ -316,7 +366,7 @@ tohtml analysis.md, cleancode(analysis.do) html(analysis.html) ///
 
 The `cleancode()` option uses the original do-file's clean code while displaying the execution results from the log. This mode is perfect for teaching materials or technical documentation where code readability matters.
 
-### 3.6 Advanced: Path Management for Portable Reports
+### 3.7 Advanced: Path Management for Portable Reports
 
 When sharing reports across different systems or deploying to web servers, use path management:
 
@@ -339,7 +389,7 @@ tohtml report.md, html(report.html) css(githubstyle) ///
 
 The `rpath()` and `wpath()` options replace absolute paths with relative paths, making the report portable across different systems. This feature is essential for collaborative projects or web deployment.
 
-### 3.7 Processing Entire Directories
+### 3.8 Processing Entire Directories
 
 For batch processing multiple outputs, point `tohtml` at a directory:
 

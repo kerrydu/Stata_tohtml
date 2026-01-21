@@ -4,8 +4,9 @@ program define ishere
    gettoken subcmd rest : 0
    local isfig = inlist(lower("`subcmd'"), "fig", "figure")
    local istab = inlist(lower("`subcmd'"), "tab", "table")
+   local isdisplay = (lower("`subcmd'")=="display")
 
-   if !`isfig' & !`istab' {
+   if !`isfig' & !`istab' & !`isdisplay' {
     // first mode: act as placeholder in log-file for report generation
        exit
    }
@@ -17,7 +18,7 @@ program define ishere
     removequotes, t(`using')
     local using  `r(s)'
     local using = subinstr("`using'", "\", "/", .)
-
+    local anything `anything'
     if lower("`anything'") == "fig" | lower("`anything'") == "figure"{
         // Process figure content from using clause or from log
         if "`using'" != ""{
