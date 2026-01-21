@@ -111,7 +111,7 @@ string colvector replace_ishere_display_blocks(string colvector lines)
         while (regexm(line, pattern)) {
             replacement = regexs(1)
 			replacement
-            line = regexr(line, pattern, "'s "+ replacement + "'")
+            line = regexr(line, pattern, "`s "+ replacement + "`")
         }
         
         lines[i] = line
