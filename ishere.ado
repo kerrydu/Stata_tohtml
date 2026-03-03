@@ -24,6 +24,7 @@ program define ishere
         if "`using'" != ""{
             
             // Extract Extension
+            local filepath `using'
             if strpos("`filepath'", ".") == 0 {
                 display as error "Filepath must have an extension."
                 exit 198
@@ -104,7 +105,7 @@ program define ishere
     
     if ustrpos(`"`anything'"',"display")==1{
         gettoken display anything:anything
-         display `"`anything'"'
+         display `anything'
     }
 
     // Support using `ishere` alone or `ishere ``` on a line to emit a code-block marker
