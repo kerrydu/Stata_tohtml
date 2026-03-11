@@ -13,8 +13,10 @@ program define tohtml
     // 判断anything is a file or a folder
     mata: st_numscalar("flag",direxists("`anything'"))
     if flag==1 { // anything is a path crteate a tempfile
-        alltohtml, width(`width') height(`height') zoom(`zoom') 
-        local anything `anything'/_tempfile_log_.md
+        alltohtml `anything', width(`width') height(`height') zoom(`zoom') 
+        //local anything `anything'/_tempfile_log_.md
+        mclean2 `0'
+        exit
     }
     else {
        confirm file `"`anything'"'
@@ -39,7 +41,7 @@ program define tohtml
     local llp ./
     if "`wpath'" != "" {
         // check if wpath is a url
-        mata: st_numscalar("wflag",isurl("`wpath'"))
+        mata: st_numscalar("wflag",pathisurl("`wpath'"))
         if wflag==0 {
             di as error "`wpath' is not a valid url"
             exit 601
@@ -149,7 +151,7 @@ program define cleancode
     local using `anything'
     local llp ./
     if "`wpath'" != "" {
-        mata: st_numscalar("wflag",isurl("`wpath'"))
+        mata: st_numscalar("wflag",pathisurl("`wpath'"))
         if wflag==0 {
             di as error "`wpath' is not a valid url"
             exit 601
@@ -244,7 +246,7 @@ program define mclean
     local llp ./
     if "`wpath'" != "" {
         // check if wpath is a url
-        mata: st_numscalar("wflag",isurl("`wpath'"))
+        mata: st_numscalar("wflag",pathisurl("`wpath'"))
         if wflag==0 {
             di as error "`wpath' is not a valid url"
             exit 601
@@ -315,6 +317,99 @@ program define mclean
         exit 198
     }
 end
+
+
+
+program define mclean2
+    syntax anything , [cleanmd(string)  REPlace HTML(string) CSS(string) ///
+                       RPath(string) WPath(string) CLEAN cleancode(string) ///
+                       width(string) height(string) zoom(string)]
+    // only keep lines that start with #, <iframe, <img
+
+    removequotes , t(`anything')
+    local anything  `r(s)'
+    local anything `anything'/_tempfile_log_.md
+   local saving `cleanmd'
+    if `"`saving'"' == "" {
+        //在anything扩展名之前加clean，思路找到最后一个.的位置，然后把扩展名之前的部分替换成clean.md
+        local saving = usubstr("`anything'", 1, ustrpos("`anything'", ".")-1) + ".clean.md"
+    }
+    local using `anything'
+    local llp ./
+    if "`wpath'" != "" {
+        // check if wpath is a url
+        mata: st_numscalar("wflag",pathisurl("`wpath'"))
+        if wflag==0 {
+            di as error "`wpath' is not a valid url"
+            exit 601
+        }
+        local llp `wpath'
+    }
+
+    if "`rpath'"!=""{
+        // check if the directory path exist
+        mata: st_numscalar("rflag",direxists("`rpath'")) 
+        if rflag==0 {
+            di as error "directory `rpath' does not exist"
+            exit 601
+        }
+        // convert \ in rpath to /
+        local rpath = usubinstr(`"`rpath'"', "\", "/", .)
+        // if the last character is not /, add it
+        if ustrpos(`"`rpath'"', "/") != ustrlen(`"`rpath'"') {
+            local rpath = `"`rpath'/"' 
+        }
+    }
+
+    local infile `using'
+    local outfile `saving'
+
+    // If outfile exists and no replace, stop
+    capture confirm file `"`outfile'"'
+    if _rc == 0 & "`replace'" == "" {
+        di as error "output file exists; use replace"
+        exit 602
+    }
+
+    local repl = ("`replace'" != "")
+    mata: rewrite_md2(`"`infile'"', `"`outfile'"', `repl', `"`rpath'"', `"`llp'"')
+    di as text "% cleaned markdown written to " `"`outfile'"'
+
+        // Optional: regenerate HTML from cleaned markdown
+    if "`html'" != "" {
+        markdown `outfile', saving(`"`html'"') replace
+        if "`css'" == "githubstyle" {
+            mata: st_local("html_dir", path_dir(`"`html'"'))
+            if "`html_dir'" == "" local html_dir "."
+            cap mkdir "`html_dir'/css"
+            local css_dest "`html_dir'/css/github.css"
+            mata: write_github_css(`"`css_dest'"')
+            mata: inject_css(`"`html'"', "./css/github.css")
+            mata: inject_mathjax(`"`html'"')
+            copy "`html_dir'/css/github.css" "`html_dir'/css/table-override.css", replace
+        }
+        else if "`css'" != "" {
+            mata: st_local("css_base", pathbasename(`"`css'"'))
+            mata: st_local("html_dir", path_dir(`"`html'"'))
+            if "`html_dir'" == "" local html_dir "."
+            cap mkdir "`html_dir'/css"
+            local css_dest "`html_dir'/css/`css_base'"
+            mata: st_local("css_norm", normalize_path(`"`css'"'))
+            mata: st_local("css_dest_norm", normalize_path(`"`css_dest'"'))
+            if `"`css_norm'"' != `"`css_dest_norm'"' {
+                copy `"`css_norm'"' `"`css_dest'"', replace
+                copy `"`css_norm'"' "`html_dir'/css/override.css", replace
+            }
+            mata: inject_css(`"`html'"', "./css/`css_base'")
+        }
+        // di as text "% html regenerated to `html'"
+    }
+    else if "`css'" != "" {
+        di as error "css() requires html()"
+        exit 198
+    }
+end
+
 
 
 mata:
@@ -1382,8 +1477,8 @@ program define alltohtml,rclass
        mata: tables = tables \ usubinstr(itab,"_filepath_",`"`file'"',1)
     }
 
-    local zoomstyle `" style="zoom:`zoom';""'
-    mata: itab = `"<img src="_filepath_" "`zoomstyle' />"'
+    local zoomstyle  style="zoom:`zoom';"
+    mata: itab = `"<img src="_filepath_" `zoomstyle' />"'
     // common image extensions for files starting with 'figure'
     foreach ext in png jpg jpeg svg gif bmp webp {
         quietly fs "`folder'/figure*.`ext'"
