@@ -57,7 +57,7 @@ summarize price mpg weight lprice
 
 tabstat price mpg weight, by(foreign) statistics(mean sd min max n) columns(statistics)
 
-outreg3  using "$results/summary.tex", replace html sum(log)
+outreg2e  using "$results/summary.tex", replace html sum(log)
 
 
 
@@ -183,7 +183,7 @@ ishere ### Report Generation
 ishere 
 tohtml  "$logs/auto-mini.md",  replace ///
     html("$results/auto-mini.html") rpath("$results") ///
-    css(githubstyle) clean
+    css(githubstyle) 
 
 // markdown2  "$logs/auto-mini.md",  replace ///
 //     html("$results/auto-mini.html") rpath("$results") ///

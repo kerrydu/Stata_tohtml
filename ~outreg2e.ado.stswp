@@ -477,7 +477,7 @@ syntax [, DEC(numlist int >=0 <=11 max=1) FMT(str) 				/*
 */ ADec(numlist int >=0 <=11 max=1)	AFmt(str asis)					/*
 */ RDec(numlist int >=0 <=11 max=1) RFmt(str asis)					/*
 */ AUTO(integer 3) LESS(integer 0) NOAUTO	DECMark(str asis)			/*
-*/ POLicy0(str asis) skip NOOMITted	NOBAse noDEPVARshow IShere ISHEREtext(string)]
+*/ POLicy0(str asis) skip NOOMITted	NOBAse noDEPVARshow IShere ISHEREtext(str)]
 
 local using `"`usingTemp'"'
 local using `"`usingTemp'"'
