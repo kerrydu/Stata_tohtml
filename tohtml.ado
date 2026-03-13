@@ -652,7 +652,7 @@ string colvector merge_html_vectorized(string colvector f)
     // 5. 标记哪些行应保留：所有行都保留，除了那些是"被合并的下一行"
     is_next_of_merge = J(n, 1, 0)
     if (rows(to_merge_idx) > 0) {
-        is_next_of_merge[to_merge_idx :+ 1] = 1
+        is_next_of_merge[to_merge_idx :+ 1] = J(length(to_merge_idx), 1, 1)
     }
     keep = (is_next_of_merge :== 0)
     
