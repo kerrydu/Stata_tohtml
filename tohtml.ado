@@ -1411,13 +1411,15 @@ string colvector function subisheredintxt(string colvector lines)
     // Step 3: 获取显示值（下一行的内容）
     idx = selectindex(flag)
     n_displays = rows(idx)
+    //n_displays
     
     // inshere display only act in the following one textcell.
     
     for (i = 1; i <= n_displays; i++) {
+        //dispcmd[i]
         pattern = "\{\s*ishere\s+display\s*" + dispcmd[i] + "\s*\}"
         if (idx[i] + 1 <= n) {
-            textrow =select(textflag, (1::n:>idx[i]+1):*textflag)
+            textrow =select(textflag, ((1::n):>idx[i]+1):*textflag)
             if (length(textrow)){
                 text_j =selectindex(textflag:==textrow[1])
                 lines[text_j] =ustrregexra(lines[text_j], pattern, " "+strtrim(lines[idx[i]+1])+" ")
