@@ -108,4 +108,18 @@ Using {cmd:logoute} as part of a Markdown report generation:
 {title:Author}
 
 {pstd}
-Updated for modern workflows. Original concept by local and Roy Wada.
+Kerry Du{break}
+School of Management{break}
+Xiamen University{break}
+kerrydu@xmu.edu.cn{break}
+{break}
+
+{pstd}
+Huanyu Jia{break}
+School of Business{break}
+Zhengzhou University{break}
+jiahuanyu@zzu.edu.cn
+
+{pstd}
+Based on logout by Roy Wada (roywada@hotmail.com){break}. 
+Enhanced for markdown workflows, and supports HTML file export.
