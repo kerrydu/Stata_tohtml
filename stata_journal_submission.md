@@ -30,7 +30,7 @@ This paper introduces a different approach embodied in two commands: `ishere` an
 
 **The Strategic Trade-off**: We consciously sacrifice feature comprehensiveness for ease of adoption. The package does not attempt to match the polished output or extensive formatting options of MarkDoc or dyndoc. Instead, it focuses on generating clean Markdown as a **semi-finished product** that contains all essential elements extracted from Stata. 
 
-**The Two-Stage Workflow**: Users can then leverage powerful, user-friendly Markdown editors—such as Typora, VS Code, Obsidian, or Notion—to refine the Markdown into their final document. These editors offer intuitive interfaces, real-time preview, extensive formatting options, and often require no coding knowledge. This division of labor plays to the strengths of each tool: Stata extracts analytical content, specialized editors handle document polishing.
+**The Two-Stage Workflow**: Users can then leverage powerful, user-friendly Markdown editors, such as Typora, VS Code, or Obsidian, to refine the Markdown into their final document. These editors offer intuitive interfaces, real-time preview, extensive formatting options, and often require no coding knowledge. This division of labor plays to the strengths of each tool: Stata extracts analytical content, specialized editors handle document polishing.
 
 The key innovation lies in maintaining extreme simplicity in the Stata component. Users continue writing standard Stata do-files, adding only occasional `ishere` markers to indicate report structure. There are no new file types to learn, no external dependencies to install, and no fundamental changes to existing workflows. The learning curve is minimal: if you can write a Stata do-file, you can generate clean Markdown in minutes.
 
@@ -46,11 +46,11 @@ The `ishere`/`tohtml` package is built on three core principles:
 
 **2. Minimal Learning Investment**: The entire command set can be learned in minutes. Basic usage requires understanding only two commands (`ishere` and `tohtml`) with intuitive syntax. Advanced features remain optional and can be adopted incrementally as needs arise.
 
-**3. Single-Source Workflow**: All components of the report—code, results, figures, tables, and structural markers—reside in a single do-file. There are no separate template files to maintain, no external configuration files to manage, and no risk of documentation becoming desynchronized from analysis.
+**3. Single-Source Workflow**: All components of the report—code, results, figures, tables, and structural markers—reside in a single do-file. There are no separate template files to maintain and no external configuration files to manage.
 
 ### 2.2 The `ishere` Command: Dynamic Placeholders
 
-The name `ishere` draws inspiration from a long-standing convention in academic and technical writing: the humble placeholder note like "Table 1 goes here" or "Figure inserted here." For decades, researchers have used such phrases to mark where results should appear in a manuscript—especially when figures and tables are generated separately from the main text.
+The name `ishere` draws inspiration from a long-standing convention in academic and technical writing: the humble placeholder note like "Table 1 goes here" or "Figure inserted here." For decades, researchers have used such phrases to mark where results should appear in a manuscript especially when figures and tables are generated separately from the main text.
 
 In reproducible research with Stata, `ishere` transforms this passive convention into an active, executable placeholder. It literally means "insert something here, on this line, in this do-file."
 
@@ -112,9 +112,7 @@ ishere /*
 ishere */
 ```
 
-When `tohtml` processes the log, it replaces the placeholder `{ishere display ...}` inside the text block with the corresponding displayed value, producing narrative text that automatically stays in sync with the latest results.
-
-**Scope rule (important)**: each `ishere display` only applies to the **first** text block (`ishere /* ... */`) that appears **after** it in the log. If you want the same value to appear in multiple text blocks, you should place another `ishere display` command before each text block.
+When `tohtml` processes the log, it replaces the placeholder `{ishere display ...}` inside the text block with the corresponding displayed value, producing narrative text that automatically stays in sync with the latest results.  Each `ishere display` only applies to the **first** text block (`ishere /* ... */`) that appears **after** it in the log. If you want the same value to appear in multiple text blocks, you should place another `ishere display` command before each text block.
 
 ### 2.3 The `tohtml` Command: Log-to-HTML Conversion Engine
 
@@ -145,9 +143,8 @@ tohtml filename_or_directory [, options]
 The typical workflow follows these steps:
 
 1. Write a standard Stata do-file with `ishere` markers
-2. Run the do-file with logging enabled (`log using`)
-3. Convert the SMCL log to text format (`translate`)
-4. Process with `tohtml` to generate HTML
+2. Run the do-file with logging enabled (`log using`) 
+3. Process with `tohtml` to generate HTML
 
 This workflow requires no specialized editors, no external compilation tools, and no changes to the underlying statistical analysis. The report generation happens as a post-processing step, completely separate from the analysis itself.
 
@@ -161,23 +158,13 @@ The `ishere`/`tohtml` approach keeps everything in the do-file using minimal mar
 
 **vs. MarkDoc**: MarkDoc is an excellent, feature-rich package offering multiple output formats (HTML, PDF, LaTeX, Word, EPUB), extensive styling options, Markdown dialect support, and sophisticated document structure control. It can produce publication-ready documents with beautiful typography and complex layouts. These capabilities make it ideal for users seeking comprehensive, end-to-end solutions.
 
-**vs. markstat (Rodríguez, 2017)**: MarkDoc implements the classic "literate programming" approach championed by Knuth (1992) and extended to Stata by Rodríguez (2017). It uses a single `.stmd` file that mixes Markdown narrative and Stata code, with simple indentation rules (one tab or four spaces) to distinguish code blocks. Key characteristics include:
-
-- **Single-file workflow**: Markdown narrative and Stata code coexist in one document, processed in one pass
-- **Code fencing**: Uses ```s/``` ``` for Stata code blocks, with optional suppression via ```s/
-- **Inline code**: Supports `s [fmt] expression` ` for inserting Stata results into narrative
-- **Embedded syntax**: Markdown is written directly in do-file using standard Markdown notation
-- **One-step generation**: Runs entire script and produces final document directly
-
-MarkDoc represents a comprehensive, end-to-end solution that produces publication-ready documents with no external dependencies. It is ideal for users who need professional output immediately and are comfortable adopting Markdown-based literate programming workflows. The approach trades a higher initial learning curve for maximum feature completeness and direct-to-publication capability.
-
-**Key Philosophical Difference**: While markstat follows the literate programming paradigm of mixing code and documentation in a unified file, `ishere`/`tohtml` approach maintains a clear separation of concerns. Users work entirely in familiar Stata do-files, using `ishere` only as non-intrusive markers, with `tohtml` handling document generation as a post-processing step. This preserves Stata's identity as analysis code rather than document source, appealing to users who prefer to continue their existing workflows with minimal disruption.
-
 However, MarkDoc requires writing Markdown syntax directly in do-file comments using special comment delimiters (`/***`, `//`, etc.) and adopting a specific workflow paradigm where the do-file becomes a literate programming document. The `ishere`/`tohtml` approach uses simple marker commands (`ishere # Title`, `ishere fig using...`) that feel more like standard Stata commands, preserving the do-file's primary identity as analysis code rather than document source. We intentionally provide fewer features but dramatically reduce the learning curve.
 
-**vs. Jupyter/RMarkdown**: These external tools are extremely powerful, offering interactive notebooks, multiple language support, extensive visualization libraries, and integration with modern development environments. They represent the gold standard for literate programming and reproducible research in data science.
+**vs. markstat (Rodríguez, 2017)**: MarkDoc implements the classic "literate programming" approach championed by Knuth (1992) and extended to Stata by Rodríguez (2017). It uses a single `.stmd` file that mixes Markdown narrative and Stata code, with simple indentation rules (one tab or four spaces) to distinguish code blocks.MarkDoc represents a comprehensive, end-to-end solution that produces publication-ready documents with no external dependencies. It is ideal for users who need professional output immediately and are comfortable adopting Markdown-based literate programming workflows. The approach trades a higher initial learning curve for maximum feature completeness and direct-to-publication capability.
 
-However, they require abandoning the Stata environment entirely, installing additional software (Python/R, Jupyter/RStudio), learning new interfaces, and managing kernel connections. The `ishere`/`tohtml` approach operates entirely within Stata with no external dependencies, no new software to install, and no context switching between environments.
+ While markstat follows the literate programming paradigm of mixing code and documentation in a unified file, `ishere`/`tohtml` approach maintains a clear separation of concerns. Users work entirely in familiar Stata do-files, using `ishere` only as non-intrusive markers, with `tohtml` handling document generation as a post-processing step. This preserves Stata's identity as analysis code rather than document source, appealing to users who prefer to continue their existing workflows with minimal disruption.
+
+
 
 **Positioning and Philosophy**
 
@@ -514,17 +501,7 @@ The `ishere` and `tohtml` commands represent a deliberate exercise in minimalist
 
 ### 6.1 Design Philosophy and Trade-offs
 
-We acknowledge that existing solutions (MarkDoc, dyndoc, dyntext) are more feature-complete and can produce more polished output directly. These are excellent tools for users who need their advanced capabilities and have time to master them. Our package makes a conscious trade-off: we sacrifice feature comprehensiveness for radical simplicity.
-
-The design philosophy—"everything is here: from do to html"—emphasizes three principles:
-
-1. **Extraction over production**: Extract all Stata-derivable elements (code, results, figures, tables) rather than attempting to produce final documents
-
-2. **Delegation to specialists**: Generate clean Markdown as a semi-finished product, delegating final polishing to tools designed for document editing (Typora, VS Code, Obsidian, etc.)
-
-3. **Minimal intrusion**: Maintain standard Stata workflows with the smallest possible syntax addition
-
-This approach respects a fundamental reality: many users find comprehensive tools overwhelming and never adopt them, while simple tools that solve 80% of needs see widespread use. We target the "quick start, iterate later" segment of users.
+We acknowledge that existing solutions (MarkDoc, dyndoc, dyntext) are more feature-complete and can produce more polished output directly. These are excellent tools for users who need their advanced capabilities and have time to master them. Our package makes a conscious trade-off: we sacrifice feature comprehensiveness for radical simplicity. This approach respects a fundamental reality: many users find comprehensive tools overwhelming and never adopt them, while simple tools that solve 80% of needs see widespread use. We target the "quick start, iterate later" segment of users.
 
 ### 6.2 The Two-Stage Workflow Advantage
 
