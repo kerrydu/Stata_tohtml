@@ -134,8 +134,9 @@ kerrydu@xmu.edu.cn{break}
 Huanyu Jia{break}
 School of Business{break}
 Zhengzhou University{break}
-jiahuanyu@zzu.edu.cn
+jiahuanyu@zzu.edu.cn{break}
+{break}
 
 {pstd}
-Based on outreg2 by Roy Wada (roywada@hotmail.com){break}. 
-Enhanced for markdown workflows, and supports HTML file export.
+Based on outreg2 by Roy Wada (roywada@hotmail.com).{break}
+Enhanced for markdown workflows, and supports HTML file export.{break}
