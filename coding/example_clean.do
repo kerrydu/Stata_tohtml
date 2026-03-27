@@ -1,4 +1,3 @@
-
 version 19.5
 clear 
 set more off
