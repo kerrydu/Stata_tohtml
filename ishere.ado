@@ -14,7 +14,7 @@ program define ishere
    // second mode emitting markdown code for tables and figures
     syntax [anything] [using/] [, text(string) Height(string) Width(string) Zoom(string)]
 
-    if "`zoom'"=="" local zoom "100%"
+    if "`zoom'"=="" & （"`height'"=="" & "`width'"==""） local zoom "100%"
     removequotes, t(`using')
     local using  `r(s)'
     local using = subinstr("`using'", "\", "/", .)
