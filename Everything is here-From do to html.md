@@ -615,11 +615,10 @@ School of Management
 Xiamen University  
 kerrydu@xmu.edu.cn
 
-Huanyu Jia
-School of Business
-Zhengzhou University
+Huanyu Jia  
+School of Business  
+Zhengzhou University  
 jiahuanyu@zzu.edu.cn
-
 
 
 **Manuscript Information**
