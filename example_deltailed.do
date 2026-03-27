@@ -1,21 +1,12 @@
-/* Mini Example: auto.dta
-   - Loads auto.dta
-   - Cleans minimal
-   - Descriptive stats
-   - Simple regression
-   - Figures export
-   - Markdown report
-*/
 
-
-version 17.0
+version 19.5
 clear 
 set more off
 set linesize 120
 
 
 // Project paths
-global project "C:/Users/kerry/Desktop/auto-mini"
+global project "D:\auto-mini"
 global results "$project/results"
 global figures "$results/figures"
 global logs    "$results/logs"
@@ -24,15 +15,13 @@ global logs    "$results/logs"
 foreach dir in "$results" "$figures" "$logs" {
     capture mkdir `dir'
 }
-capture log close
-log using "$logs/auto-mini.md", replace text 
 
-ishere ### Data Preparation
-ishere 
-/*---------------------------------
-Data: sysuse auto
------------------------------------*/
-* "=== Load and Clean ==="
+capture log close
+log using "$logs/example_detail.log", replace text 
+
+
+ishere # Data Preparation
+ishere
 sysuse auto, clear
 disp "Loaded auto.dta. Observations: `c(N)', Variables: `c(k)'"
 
@@ -46,52 +35,38 @@ gen weightkg = weight*0.453592
 label var lprice   "Log of price"
 label var weightkg "Weight (kg)"
 disp "Variables created: lprice, weightkg"
-ishere 
 
+// Table 1
+ishere # Descriptive Statistics
+ishere ## Table 1
+ishere
+table (var) (result), ///
+    statistic(mean price mpg weight rep78 lprice) ///
+    statistic(sd   price mpg weight rep78 lprice) ///
+    statistic(min  price mpg weight rep78 lprice) ///
+    statistic(max  price mpg weight rep78 lprice) ///
+    nototals ///
+    export($results/summary.html, replace)
+ishere tab using "$results/summary.html"
 
-ishere ### Descriptive Statistics
-ishere #### Table 1
-
-ishere 
-summarize price mpg weight lprice
-
-tabstat price mpg weight, by(foreign) statistics(mean sd min max n) columns(statistics)
-
-outreg3  using "$results/summary.tex", replace html sum(log)
-
-
-
-
-
-
-ishere ### Figures
-ishere #### Figure 1
-ishere 
-/*--------------------------------
-Figures
-----------------------------------*/
+ishere
+ishere # Figures
+ishere ## Figure 1
+ishere
 histogram price, normal title("Price distribution")
-graph2md,  replace save( "$figures/price_hist.png")   zoom(30)
+graph export "$figures/price_hist.png", replace
+ishere fig using "$figures/price_hist.png"
 
 
-ishere #### Figure 2
+ishere ## Figure 2
 ishere 
 twoway (scatter price mpg) (lfit price mpg), ///
     title("Price vs MPG with linear fit") legend(order(1 "Actual" 2 "Fitted"))
-graph2md,  replace save( "$figures/price_mpg.png")   zoom(30)
+graph export "$figures/price_mpg.png", replace  
 
-ishere 
-
-  qui regress price mpg weight
-  local r2 = e(r2)
-  local N = e(N)
-  ishere display %5.3f `r2'
-  ishere display `N'
 ishere
+ishere fig using "$figures/price_mpg.png"
 
-ishere /*
-The model R-squared is {ishere display %5.3f `r2'} based on {ishere display `N'} observations.
-ishere */
 
 ishere /*
 this is a paragraph of text
@@ -110,14 +85,23 @@ the picture is pretty
 
 ishere */
 
-ishere ### Regression
-ishere 
-/*--------------------------------
-Regression
-----------------------------------*/
+
+
+
+
+ishere # Regression
+ishere ## Narrative Example
+ishere
+regress price mpg weight
+local r2 = e(r2)
+display %5.3f `r2'
+* emit the value
+ishere display %5.3f `r2'
+
 
 qui regress price mpg weight i.foreign, vce(robust)
 estimates store model1
+
 qui regress price mpg , vce(robust)
 estimates store model2
 
@@ -153,42 +137,21 @@ estimates store model12
 
 qui regress price mpg weight i.foreign, vce(robust)
 estimates store model13
+
+
+ishere ## Table 2
+ishere
+outreg2e [model1 model2 model3 model4 model5]  using "$results/model.html", replace html
+ishere tab using "$results/model.html"
+
+
+ishere ## Table 3
 ishere 
-
-ishere #### Table 2
-ishere 
-tabhtml: esttab model1 model2 model3 model4 model5 model6 model7 model8 model9 model10 model11 model12 model13 using "$results/model.html", replace
-ishere tab using  "$results/model.html" 
-
-ishere #### Table 3
-ishere 
-outreg3 [model*] using "$results/model2.tex", replace html
+outreg2e [model*] using "$results/model2.html", replace html
+ishere tab using "$results/model2.html"
 
 
-ishere #### Figure 3
-ishere 
-predict price_hat, xb
-twoway (scatter price price_hat), ///
-    title("Actual vs Predicted (xb)") ///
-    xtitle("Actual") ytitle("Predicted")
-graph2md,  replace save( "$figures/actual_vs_pred.png") zoom(30)
-
-//再插入一次图
-ishere fig using "$figures/actual_vs_pred.png"
-
-capture log close
+tohtml "$logs/example_detail.log",  html("$logs/example_detail.html") css(githubstyle) replace
 
 
-ishere ### Report Generation
-ishere 
-tohtml  "$logs/auto-mini.md",  replace ///
-    html("$results/auto-mini.html") rpath("$results") ///
-    css(githubstyle) clean
 
-// markdown2  "$logs/auto-mini.md",  replace ///
-//     html("$results/auto-mini.html") rpath("$results") ///
-//     cleancode(C:\Users\kerry\Desktop\auto-mini\Stata_log2html\minido.do) ///
-//     css(githubstyle) sav("$results/auto-mini-clean.md")
-// disp "HTML report generated: $results/auto-mini.html"
-// Open HTML in default browser (Windows)
-sopen  "$results/auto-mini.html"
