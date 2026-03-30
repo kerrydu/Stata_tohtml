@@ -11,18 +11,23 @@ program define tohtml
 
 
     // 判断anything is a file or a folder
-    mata: st_numscalar("flag",direxists("`anything'"))
-    if flag==1 { // anything is a path crteate a tempfile
+    local nf : word count `anything'
+    if `nf' > 1 { // multiple file path specified
         alltohtml `anything', width(`width') height(`height') zoom(`zoom') 
-        //local anything `anything'/_tempfile_log_.md
         mclean2 `0'
         exit
     }
-    else {
-       confirm file `"`anything'"'
+    else if `nf' == 1 { //single file path specified
+        mata: st_numscalar("flag",direxists("`anything'"))
+        if flag==1 { // anything is a path crteate a tempfile
+            alltohtml `anything', width(`width') height(`height') zoom(`zoom') 
+            mclean2 `0'
+            exit
+        }
     }
 
-
+   // log file specified
+    confirm file `"`anything'"'
 	local saving `cleanmd'
     local saving = subinstr(`"`saving'"', "\", "/", .)
     if "`clean'" != "" {
@@ -321,15 +326,15 @@ end
 
 
 program define mclean2
-    syntax anything , [cleanmd(string)  REPlace HTML(string) CSS(string) ///
+    syntax [anything] , [cleanmd(string)  REPlace HTML(string) CSS(string) ///
                        RPath(string) WPath(string) CLEAN cleancode(string) ///
                        width(string) height(string) zoom(string)]
     // only keep lines that start with #, <iframe, <img
 
-    removequotes , t(`anything')
-    local anything  `r(s)'
-    local anything `anything'/_tempfile_log_.md
-   local saving `cleanmd'
+    // removequotes , t(`anything')
+    // local anything  `r(s)'
+    local anything `c(pwd)'/_tempfile_log_.md
+    local saving `cleanmd'
     if `"`saving'"' == "" {
         //在anything扩展名之前加clean，思路找到最后一个.的位置，然后把扩展名之前的部分替换成clean.md
         local saving = usubstr("`anything'", 1, ustrpos("`anything'", ".")-1) + ".clean.md"
@@ -1442,11 +1447,7 @@ program define alltohtml,rclass
     version 16
     syntax anything, [width(string) height(string) zoom(string)]
     
-    // normalize path
-    local folder `anything'
-    local folder = subinstr(`"`folder'"', "\", "/", .)
-    // if ends with / remove
-    if substr(`"`folder'"', -1, 1) == "/" local folder = substr(`"`folder'"', 1, strlen(`"`folder'"')-1)
+    // check directory exists
     if "`zoom'"=="" local zoom "100%"
     else{
         if strpos("`zoom'", "%") == 0 local zoom "`zoom'%"
@@ -1454,54 +1455,72 @@ program define alltohtml,rclass
     
     if "`height'" == "" local height "400px"
     if "`width'" == "" local width "100%"    
+    local zoomstyle  style="zoom:`zoom';"
+    mata: itab = `"<img src="_filepath_" `zoomstyle' />"'
 
-    // check directory exists
-    mata: st_numscalar("pathexists",direxists(st_local("folder")))
-    if pathexists == 0 {
-        display as error "Directory `folder' does not exist."
-        exit 198
-    }
+    mata: tables = J(0,1,"")
+    mata: tabletitles = J(0,1,"")
+    mata: itab = "<iframe src='_filepath_' width='`width'' height='`height'' frameBorder='0'></iframe>"
+
+
+    // normalize path
+    foreach folder in `anything' {
+
+        local folder = subinstr(`"`folder'"', "\", "/", .)
+        // if ends with / remove
+        if substr(`"`folder'"', -1, 1) == "/" local folder = substr(`"`folder'"', 1, strlen(`"`folder'"')-1)
+    
+        // check directory exists
+        mata: st_numscalar("pathexists",direxists(st_local("folder")))
+        if pathexists == 0 {
+            display as error "Directory `folder' does not exist."
+            exit 198
+        }
+
+        quietly fs "`folder'/table*.html"
+
+        foreach file in `r(files)' {
+           local file `file'
+           mata: tabletitles = tabletitles \ `"`file'"'
+           local file `folder'/`file'
+           mata: tables = tables \ usubinstr(itab,"_filepath_",`"`file'"',1)
+        }
+    
+    
+        // common image extensions for files starting with 'figure'
+        foreach ext in png jpg jpeg svg gif bmp webp {
+            quietly fs "`folder'/figure*.`ext'"
+            foreach file in `r(files)' {
+              local file `file'
+              mata: tabletitles = tabletitles \ `"`file'"'
+              local file `folder'/`file'
+              mata: tables = tables \ usubinstr(itab,"_filepath_",`"`file'"',1)
+            }
+        }
+
+
+
+    }     
+
 
     // use fs (assumed present) to list files in the folder
     // Collect HTML tables and figure-prefixed images
  
-    mata: tables = J(0,1,"")
-    mata: tabletitles = J(0,1,"")
-    mata: itab = "<iframe src='_filepath_' width='`width'' height='`height'' frameBorder='0'></iframe>"
+
     // html files
-
-    quietly fs "`folder'/table*.html"
-
-    foreach file in `r(files)' {
-       local file `file'
-       mata: tabletitles = tabletitles \ `"`file'"'
-       local file `folder'/`file'
-       mata: tables = tables \ usubinstr(itab,"_filepath_",`"`file'"',1)
-    }
-
-    local zoomstyle  style="zoom:`zoom';"
-    mata: itab = `"<img src="_filepath_" `zoomstyle' />"'
-    // common image extensions for files starting with 'figure'
-    foreach ext in png jpg jpeg svg gif bmp webp {
-        quietly fs "`folder'/figure*.`ext'"
-        foreach file in `r(files)' {
-          local file `file'
-          mata: tabletitles = tabletitles \ `"`file'"'
-          local file `folder'/`file'
-          mata: tables = tables \ usubinstr(itab,"_filepath_",`"`file'"',1)
-        }
-    }
 
     mata: st_numscalar("ntables", length(tables))
 
     if ntables == 0 {
         display  `"No tables or figures found in `folder'"'
-        exit 
+        //exit 
     }
+    
+
     mata: tables = tables, ("### " :+ tabletitles)
-    local templog `"`folder'/_tempfile_log_.md"'
+    local templog `"`c(pwd)'/_tempfile_log_.md"'
     mata: write_log(tables)
-    cap confirm file `"`folder'/_tempfile_log_.md"'
+    cap confirm file `"`templog'"'
     if _rc == 0 {
         display `"`templog' created"'
         return local templog `templog'
