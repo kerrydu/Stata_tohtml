@@ -1,7 +1,6 @@
 {smcl}
 {* *! version 1.0.1  16jan2026}{...}
 {vieweralsosee "logout" "help logout"}{...}
-{vieweralsosee "outreg3" "help outreg3"}{...}
 {vieweralsosee "tohtml" "help tohtml"}{...}
 {vieweralsosee "ishere" "help ishere"}{...}
 {viewerjumpto "Syntax" "logoute##syntax"}{...}
@@ -37,6 +36,8 @@
 {synopt :{opt dec(#)}}force distinct decimal places{p_end}
 {synopt :{opt fix(#)}}adjust parsing sensitivity (default 5){p_end}
 {synopt :{opt clear}}replace data in memory with captured table{p_end}
+{synopt :{opt ishere}}display an iframe snippet for direct {cmd:ishere} embedding{p_end}
+{synopt :{opt isheretext(text)}}display custom text after the iframe snippet{p_end}
 {synoptline}
 {p2colreset}{...}
 
@@ -45,10 +46,10 @@
 {title:Description}
 
 {pstd}
-{cmd:logoute} is an enhanced version of {cmd:logout}, designed to capture output from Stata commands (like {cmd:tabstat}, {cmd:tabulate}, {cmd:summarize}) and convert it directly into formatting-rich HTML or LaTeX code.
+{cmd:logoute} is built on top of {cmd:logout} ({cmd:logout.ado}). It keeps the original table-capture workflow from {cmd:logout} and adds direct HTML table export, so users can generate publish-ready HTML tables from the same syntax.
 
 {pstd}
-It is particularly useful for generating descriptive statistics tables or simple frequency lists that need to be embedded in web reports or LaTeX documents. Unlike the original {cmd:logout}, {cmd:logoute} is optimized for the {help tohtml} workflow, producing cleaner HTML tables with proper class attributes for styling.
+It is particularly useful for generating descriptive statistics tables or simple frequency lists that need to be embedded in web reports or LaTeX documents. Compared with the original {cmd:logout}, {cmd:logoute} extends functionality by exporting HTML tables directly and is optimized for the {help tohtml} workflow, producing cleaner HTML with proper class attributes for styling.
 
 {pstd}
 The HTML output from {cmd:logoute} is compatible with {help ishere} for embedding in markdown documents. After generating a table with {cmd:logoute}, use {cmd:ishere tab using "filename.html"} to embed the table in your markdown report.
@@ -71,6 +72,12 @@ The HTML output from {cmd:logoute} is compatible with {help ishere} for embeddin
 
 {phang}
 {opt fix(#)} specifies the sensitivity for the parser when converting plain text output to columns. Lower numbers (e.g., 1) are stricter, while higher numbers are looser. The default usually works well for standard Stata output.
+
+{phang}
+{opt ishere} prints an iframe HTML snippet to the Results window after exporting the table. This is convenient when you want to paste/embed the table immediately with the {help ishere} workflow.
+
+{phang}
+{opt isheretext(text)} prints custom text after the iframe snippet. It is typically used together with {opt ishere} to add notes or markdown-friendly guidance in the log.
 
 
 {marker examples}{...}

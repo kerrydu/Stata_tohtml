@@ -1,8 +1,8 @@
 {smcl}
 {* *! version 1.0.0  12jan2026}{...}
 {vieweralsosee "outreg2" "help outreg2"}{...}
-{vieweralsosee "logout3" "help logout3"}{...}
 {vieweralsosee "tohtml" "help tohtml"}{...}
+{vieweralsosee "ishere" "help ishere"}{...}
 {viewerjumpto "Syntax" "outreg2e##syntax"}{...}
 {viewerjumpto "Description" "outreg2e##description"}{...}
 {viewerjumpto "Options" "outreg2e##options"}{...}
@@ -10,7 +10,7 @@
 {title:Title}
 
 {p2colset 5 16 18 2}{...}
-{p2col :{bf:outreg2e} {hline 2}}Enhanced regression tables for global reporting{p_end}
+{p2col :{bf:outreg2e} {hline 2}}outreg2 with direct HTML table export{p_end}
 {p2colreset}{...}
 
 
@@ -35,13 +35,15 @@
 {synopt :{opt tex}}output in LaTeX format{p_end}
 {synopt :{opt word}}output in Word format{p_end}
 {synopt :{opt excel}}output in Excel format{p_end}
-{synopt :{opt title(text)}}add a title above the table (enhanced for partial HTML/LaTeX){p_end}
+{synopt :{opt title(text)}}add a title above the table{p_end}
 {synopt :{opt ctitle(text)}}add column title{p_end}
 {synopt :{opt dec(#)}}decimal places for coefficients{p_end}
 {synopt :{opt bdec(#)}}decimal places for coefficients (specific){p_end}
 {synopt :{opt tdec(#)}}decimal places for t-stats/SE{p_end}
 {synopt :{opt rdec(#)}}decimal places for R-squared{p_end}
 {synopt :{opt alpha(...)}}significance levels and asterisks{p_end}
+{synopt :{opt ishere}}display an iframe snippet for quick embedding after HTML export{p_end}
+{synopt :{opt isheretext(text)}}display custom text after the iframe snippet{p_end}
 {synoptline}
 {p2colreset}{...}
 
@@ -50,10 +52,10 @@
 {title:Description}
 
 {pstd}
-{cmd:outreg2e} is a modernized version of the popular {cmd:outreg2}, specifically optimized for integration with the {help tohtml} reproducible research workflow.
+{cmd:outreg2e} is based on {cmd:outreg2} ({cmd:outreg2.ado}) and keeps the original table-building behavior.
 
 {pstd}
-While retaining the core functionality of arranging regression outputs into illustrative tables, {cmd:outreg2e} introduces improved handling of HTML and LaTeX outputs. A key enhancement is the {opt title()} option implementation: for HTML and LaTeX, the title is now placed visibly *above* the table structure (as a distinct header or paragraph) rather than embedded within the first row of the table. This ensures better semantic structure and easier post-processing.
+Its main extension is direct HTML table output for web/markdown workflows. In other words, {cmd:outreg2e} is intended as a lightweight extension of {cmd:outreg2}, adding HTML export while preserving familiar syntax and most behaviors of the original command.
 
 
 {marker options_details}{...}
@@ -69,10 +71,16 @@ While retaining the core functionality of arranging regression outputs into illu
 {opt html}, {opt tex}, {opt word}, {opt excel} specify the output format. {cmd:outreg2e} defaults to text if unspecified.
 
 {phang}
-{opt title(text)} specifies a title for the table. In HTML output, this is rendered as a centered bold {cmd:<div>} above the {cmd:<table>}. In LaTeX, it is centered text before the {cmd:tabular} environment.
+{opt title(text)} specifies a title for the table.
 
 {phang}
 {opt dec(#)} and other formatting options behave identically to {cmd:outreg2}.
+
+{phang}
+{opt ishere} prints an iframe HTML snippet to the Results window after file export. This helps embed the generated HTML table quickly in an {help ishere}/{help tohtml} workflow.
+
+{phang}
+{opt isheretext(text)} prints custom text after the iframe snippet. It is usually used with {opt ishere}.
 
 
 {marker remarks}{...}
