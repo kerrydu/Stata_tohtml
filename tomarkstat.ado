@@ -68,7 +68,7 @@ void function rewrite_md3(string scalar ofi, string scalar tfi, real scalar repl
             }
     }
     ftemp = subinstr(fcon2," ","",.)
-    idx = select((1::n),substr(ftemp,1,length("isheredisplay"))):!="isheredisplay")
+    idx = select((1::n),substr(ftemp,1,length("isheredisplay")):!="isheredisplay")
     if (length(idx)>0){
         fcon = fcon[idx]
     }
