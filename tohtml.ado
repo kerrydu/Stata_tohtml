@@ -1,5 +1,8 @@
 capture program drop tohtml
 program define tohtml
+cap which pathutil
+if _rc ssc install pathutil, replace
+version 16
     syntax anything ,  [ cleanmd(string) REPlace HTML(string) ///
                          CSS(string) RPath(string) WPath(string) ///
                          CLEAN CLEANCODE(string) ///
@@ -74,16 +77,35 @@ program define tohtml
     local outfile `saving'
 
     // If outfile exists and no replace, stop
-    capture confirm file `"`outfile'"'
-    if _rc == 0 & "`replace'" == "" {
+    capture confirm new file `"`outfile'"'
+    if _rc  & "`replace'" == "" {
         di as error "output file exists; use replace"
         exit 602
     }
 
+    if `"`html'"' != "" {
+        qui pathutil split "`html'"
+        if "`s(extension)'"!="" & "`s(extension)'"!=".html" {
+            di as error `"`html' is not a valid html file"'
+            exit 601
+        }
+
+        if "`s(extension)'"==""  {
+            local html `html'.html
+        }
+        capture confirm new file "`html'"
+        if _rc  & "`replace'" == "" {
+            di as error "output file exists; use replace"
+            exit 602
+        }
+   }
+
     // If replace is specified, erase existing outfile
     if "`replace'" != "" {
         capture erase `"`outfile'"'
+        capture erase `"`html'"'
     }
+
 
 
     local repl = ("`replace'" != "")
@@ -93,6 +115,7 @@ program define tohtml
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
+
         markdown `outfile', saving(`"`html'"') replace
         if "`css'" == "githubstyle" {
             mata: st_local("html_dir", path_dir(`"`html'"'))
@@ -152,6 +175,36 @@ program define cleancode
         local saving = usubstr(`"`anything'"', 1, ustrpos(`"`anything'"', ".")-1) + "_code.md"
 
     }
+
+    capture confirm new file `"`saving'"'
+    if _rc  & "`replace'" == "" {
+        di as error "output file exists; use replace"
+        exit 602
+    }
+
+    if `"`html'"' != "" {
+        qui pathutil split "`html'"
+        if "`s(extension)'"!="" & "`s(extension)'"!=".html" {
+            di as error `"`html' is not a valid html file"'
+            exit 601
+        }
+
+        if "`s(extension)'"==""  {
+            local html `html'.html
+        }
+        capture confirm new file "`html'"
+        if _rc  & "`replace'" == "" {
+            di as error "output file exists; use replace"
+            exit 602
+        }
+   }
+
+    // If replace is specified, erase existing outfile
+    if "`replace'" != "" {
+        capture erase `"`saving'"'
+        capture erase `"`html'"'
+    }
+
 
     local using `anything'
     local llp ./
@@ -284,6 +337,30 @@ program define mclean
         exit 602
     }
 
+    if `"`html'"' != "" {
+        qui pathutil split "`html'"
+        if "`s(extension)'"!="" & "`s(extension)'"!=".html" {
+            di as error `"`html' is not a valid html file"'
+            exit 601
+        }
+
+        if "`s(extension)'"==""  {
+            local html `html'.html
+        }
+        capture confirm new file "`html'"
+        if _rc  & "`replace'" == "" {
+            di as error "output file exists; use replace"
+            exit 602
+        }
+   }
+
+    // If replace is specified, erase existing outfile
+    if "`replace'" != "" {
+        capture erase `"`outfile'"'
+        capture erase `"`html'"'
+    }
+
+
     local repl = ("`replace'" != "")
     mata: rewrite_md2(`"`infile'"', `"`outfile'"', `repl', `"`rpath'"', `"`llp'"')
     di as text "% cleaned markdown written to " `"`outfile'"'
@@ -370,11 +447,37 @@ program define mclean2
     local outfile `saving'
 
     // If outfile exists and no replace, stop
-    capture confirm file `"`outfile'"'
-    if _rc == 0 & "`replace'" == "" {
+
+    capture confirm new file `"`saving'"'
+    if _rc  & "`replace'" == "" {
         di as error "output file exists; use replace"
         exit 602
     }
+
+    if `"`html'"' != "" {
+        qui pathutil split "`html'"
+        if "`s(extension)'"!="" & "`s(extension)'"!=".html" {
+            di as error `"`html' is not a valid html file"'
+            exit 601
+        }
+
+        if "`s(extension)'"==""  {
+            local html `html'.html
+        }
+        capture confirm new file "`html'"
+        if _rc  & "`replace'" == "" {
+            di as error "output file exists; use replace"
+            exit 602
+        }
+   }
+
+    // If replace is specified, erase existing outfile
+    if "`replace'" != "" {
+        capture erase `"`saving'"'
+        capture erase `"`html'"'
+    }
+  
+
 
     local repl = ("`replace'" != "")
     mata: rewrite_md2(`"`infile'"', `"`outfile'"', `repl', `"`rpath'"', `"`llp'"')

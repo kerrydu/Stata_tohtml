@@ -1,11 +1,11 @@
-<h1><a href="#tables-and-figures" id="tables-and-figures">Tables and Figures</a></h1>
-<h3><a href="#table1html" id="table1html">table1.html</a></h3>
+# Tables and Figures
+### table1.html
 <iframe src='C:/Users/kerry/Desktop/auto-mini/results/logs/table1.html' width='100%' height='400px' frameBorder='0'></iframe>
-<h3><a href="#table1html" id="table1html">table1.html</a></h3>
+### table1.html
 <iframe src='C:/Users/kerry/Desktop/auto-mini/results/figures/table1.html' width='100%' height='400px' frameBorder='0'></iframe>
-<h3><a href="#figure1png" id="figure1png">figure1.png</a></h3>
+### figure1.png
 <iframe src='C:/Users/kerry/Desktop/auto-mini/results/figures/figure1.png' width='100%' height='400px' frameBorder='0'></iframe>
-<h3><a href="#figure2png" id="figure2png">figure2.png</a></h3>
+### figure2.png
 <iframe src='C:/Users/kerry/Desktop/auto-mini/results/figures/figure2.png' width='100%' height='400px' frameBorder='0'></iframe>
-<h3><a href="#figure3png" id="figure3png">figure3.png</a></h3>
+### figure3.png
 <iframe src='C:/Users/kerry/Desktop/auto-mini/results/figures/figure3.png' width='100%' height='400px' frameBorder='0'></iframe>
