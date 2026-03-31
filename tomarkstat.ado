@@ -44,7 +44,7 @@ if _rc == 0 & "`replace'" == "" {
  else local replace 1
 
 
-mata: rewrite_md3("`anything'","`save'","`replace'","`path'","`fname'")
+mata: rewrite_md3("`anything'","`save'",`replace',"`path'","`fname'")
 
 
 end
@@ -60,17 +60,18 @@ void function rewrite_md3(string scalar ofi, string scalar tfi, real scalar repl
     fcon2 = strtrim(fcon)
     n = rows(fcon2)
     idx = select((1::n),substr(fcon2,1,3):=="```")
-    
+    fcon = fcon2[1::n] 
     if(length(idx)>0){
-        f1 = select(fcon, mod(idx,2):==1)
-        if (length(f1)>0){
-             fcon[f1] = usubinstr(fcon[f1],"```","```s",1)
+        blockflag = 1::length(idx)
+        i0 = select(idx,mod(blockflag,2):==1)
+        if (length(i0)>0){
+             fcon[i0] = usubinstr(fcon[i0],"```","```s",1)
             }
     }
     ftemp = subinstr(fcon2," ","",.)
     idx = select((1::n),substr(ftemp,1,length("isheredisplay")):!="isheredisplay")
     if (length(idx)>0){
-        fcon = fcon[idx]
+        fcon= fcon[idx]
     }
     fcon =  "--------------" \ fcon
     fcon =  " Stata Markdown" \ fcon
