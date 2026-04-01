@@ -99,7 +99,7 @@ dropped.
 • Two fixed header lines are inserted at the top so the file is treated as a Stata Markdown document.
 
 
-{marker examples}{...}
+
 {title:Examples}
 
 {pstd}
@@ -107,6 +107,7 @@ dropped.
 
 {phang2}
 {cmd:. tohtml mylog.smcl, cleanmd(myreport_clean.md) replace}
+
 {phang2}
 {cmd:. tomarkstat myreport_clean.md, replace}
 
@@ -129,8 +130,8 @@ Then, with {cmd:markstat} installed:
 {cmd:. tomarkstat out_clean.md, save(../report/main) replace}
 
 
-{title:Author}
+{title:Authors}
 
 {pstd}
-Stata_tohtml; tools for the ishere–tohtml workflow.
+Stata_tohtml team; tools for the ishere–tohtml workflow.
 {p_end}
