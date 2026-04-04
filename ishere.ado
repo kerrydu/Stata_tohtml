@@ -81,6 +81,11 @@ program define ishere
                 di 
                 display `"<iframe src='`filepath'' width='`width'' height='`height'' frameBorder='0'></iframe>"'
             }
+            // Markdown files: emit placeholder for tohtml to inline the md source
+            else if "`extension'" == ".md" {
+                di
+                display `"<iframe `filepath' ></iframe>"'
+            }
             // CSV or other delimited files could be handled differently if needed
             else if inlist("`extension'", ".csv", ".txt") {
                 display as error "CSV/Text files need special handling - not implemented yet"

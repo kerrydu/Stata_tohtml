@@ -627,6 +627,30 @@ void function rewrite_md(string scalar ofi, string scalar tfi, real scalar repla
     fconlen = char_lengths_including_backticks(fcon)
     fcon = select(fcon, !(fconlen :< 2*(strlen("```")+2)))
     
+    // 将md源代码插入到<iframe ></iframe>位置
+    // 首先使用正则表达式找到 任意空格<iframe任意空格*.md任意空格></iframe>任意空格 的行
+    regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
+    flag = selectindex(regexm(fcon, regex))
+    if (sum(flag) > 0) {
+        if (flag[i]<length(fcon)){
+            fconnew = fcon[1::(flag[1]-1)]
+        }
+        else{
+            fconnew = J(0,1,"")
+        }
+        for(i=1; i<=length(flag); i++) {
+            mdtext = extractmdtable(fcon[flag[i]])
+            fconnew = fconnew \ mdtext 
+            if((flag[i]<length(fcon)) & (i<length(flag))) {
+              fconnew = fconnew \ fcon[(flag[i]+1)::(flag[i+1]-1)]
+             }
+             else if(((flag[i]<length(fcon)) & (i==length(flag)))) {
+                fconnew = fconnew \ fcon[(flag[i]+1)::length(fcon)]
+             }
+        }
+    }
+    fcon = fconnew
+
     // 8. 输出
     //printf(strofreal(replace))
     if (replace == 0) {
@@ -674,7 +698,29 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
         fcon[idx] = J(length(idx),1,"") 
     }
 
- 
+    // 将md源代码插入到<iframe ></iframe>位置
+    // 首先使用正则表达式找到 任意空格<iframe任意空格*.md任意空格></iframe>任意空格 的行
+    regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
+    flag = selectindex(regexm(fcon, regex))
+    if (sum(flag) > 0) {
+        if (flag[i]<length(fcon)){
+            fconnew = fcon[1::(flag[1]-1)]
+        }
+        else{
+            fconnew = J(0,1,"")
+        }
+        for(i=1; i<=length(flag); i++) {
+            mdtext = extractmdtable(fcon[flag[i]])
+            fconnew = fconnew \ mdtext 
+            if((flag[i]<length(fcon)) & (i<length(flag))) {
+              fconnew = fconnew \ fcon[(flag[i]+1)::(flag[i+1]-1)]
+             }
+             else if(((flag[i]<length(fcon)) & (i==length(flag)))) {
+                fconnew = fconnew \ fcon[(flag[i]+1)::length(fcon)]
+             }
+        }
+    }
+    fcon = fconnew
     
     
     // 4b. 路径替换（仅对 <iframe / <img 行）
@@ -695,6 +741,41 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
         mm_outsheet(tfi, fcon, "replace")
     }
 }
+
+string colvector extractmdtable(string scalar line){
+    line2 = usubinstr(line, "<iframe", "", 1)
+    line2 = usubinstr(line2, "</iframe>", "", 1)
+    line2 = strtrim(line2)
+    // 去掉 iframe 开标签的关闭符 ">"，格式为 <iframe filepath >
+    if (substr(line2, strlen(line2), 1) == ">") {
+        line2 = strtrim(substr(line2, 1, strlen(line2)-1))
+    }
+    if (!fileexists(line2)) {
+        printf("{err}extractmdtable: 文件不存在: %s\n", line2)
+        return(J(0, 1, ""))
+    }
+    mdtext = cat(line2)
+    flag = 1
+    pos = 1
+    maxn = length(mdtext)
+    while(flag & pos < maxn ){
+        line3 = ustrtrim(mdtext[1])
+        if(strlen(line3) == 0){
+            if(length(mdtext) > 1){
+                mdtext = mdtext[2::length(mdtext)]
+            }
+            else{
+                mdtext = J(0,1,"")
+            }
+        }
+        else{
+            flag = 0
+        }
+        pos = pos + 1
+    }
+    return(mdtext)
+}
+
 
 real colvector char_lengths_including_backticks(string colvector lines)
 {
@@ -1113,7 +1194,33 @@ void function merge_cmdlog_blocks(string scalar clean_md, string scalar cmdlog_m
     
     // 7. （可选）过滤短代码块
     fconlen = char_lengths_including_backticks(result)
-    result = select(result, !(fconlen :< 2*(strlen("```")+2)))    
+    result = select(result, !(fconlen :< 2*(strlen("```")+2)))   
+    
+    fcon = result
+    // 将md源代码插入到<iframe ></iframe>位置
+    // 首先使用正则表达式找到 任意空格<iframe任意空格*.md任意空格></iframe>任意空格 的行
+    regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
+    flag = selectindex(regexm(fcon, regex))
+    if (sum(flag) > 0) {
+        if (flag[i]<length(fcon)){
+            fconnew = fcon[1::(flag[1]-1)]
+        }
+        else{
+            fconnew = J(0,1,"")
+        }
+        for(i=1; i<=length(flag); i++) {
+            mdtext = extractmdtable(fcon[flag[i]])
+            fconnew = fconnew \ mdtext 
+            if((flag[i]<length(fcon)) & (i<length(flag))) {
+              fconnew = fconnew \ fcon[(flag[i]+1)::(flag[i+1]-1)]
+             }
+             else if(((flag[i]<length(fcon)) & (i==length(flag)))) {
+                fconnew = fconnew \ fcon[(flag[i]+1)::length(fcon)]
+             }
+        }
+    }
+    result = fconnew
+    
 
     // 8. 路径替换（仅对 <iframe / <img 行）
     if (strlen(rpath) > 0) {
@@ -1563,8 +1670,6 @@ program define alltohtml,rclass
 
     mata: tables = J(0,1,"")
     mata: tabletitles = J(0,1,"")
-    mata: itab = "<iframe src='_filepath_' width='`width'' height='`height'' frameBorder='0'></iframe>"
-
 
     // normalize path
     foreach folder in `anything' {
@@ -1579,7 +1684,7 @@ program define alltohtml,rclass
             display as error "Directory `folder' does not exist."
             exit 198
         }
-
+        mata: itab = "<iframe src='_filepath_' width='`width'' height='`height'' frameBorder='0'></iframe>"
         quietly fs "`folder'/table*.html"
 
         foreach file in `r(files)' {
@@ -1588,7 +1693,15 @@ program define alltohtml,rclass
            local file `folder'/`file'
            mata: tables = tables \ usubinstr(itab,"_filepath_",`"`file'"',1)
         }
-    
+
+        mata: itab = "<iframe _filepath_ ></iframe>"
+        quietly fs "`folder'/table*.md"
+        foreach file in `r(files)' {
+            local file `file'
+            mata: tabletitles = tabletitles \ `"`file'"'
+            local file `folder'/`file'
+            mata: tables = tables \ usubinstr(itab,"_filepath_",`"`file'"',1)
+        }
     
         // common image extensions for files starting with 'figure'
         foreach ext in png jpg jpeg svg gif bmp webp {
