@@ -202,7 +202,7 @@ cap file write `myfile' `"`options'"'
 cap file close `myfile'
 
 *** display clickables
-foreach var in dta tex html word excel xmlsave {
+foreach var in dta tex html md word excel xmlsave {
 	if `"`cl_`var''"'~="" {
 		noi di as txt `"`cl_`var''"' 
 	}
@@ -412,7 +412,7 @@ else {
 
 
 *** pass it forward
-foreach var in dta tex html word excel xmlsave see {
+foreach var in dta tex html md word excel xmlsave see {
 	c_local cl_`var' `"`cl_`var''"' 
 }
 
@@ -455,7 +455,7 @@ local drop
 local 0 `", `options'"'
 syntax [, noASter	2aster ALPHA(passthru) SYMbol(passthru) 10pct 			/*
 */ LABel LABelA(str asis) TItle(passthru) CTitle(str) CTBOT(str)		/*
-*/ EXCEL EXCEL1(str) xmlsave TEX TEX1(passthru) HTML WORD DTA DTAa(str asis) TEXT XPosea(str)		/*
+*/ EXCEL EXCEL1(str) xmlsave TEX TEX1(passthru) HTML MD WORD DTA DTAa(str asis) TEXT XPosea(str)		/*
 */ ASTERisk(passthru)										/*
 */ noCONs noNI noR2 ADJr2 E(str)								/*
 */ ADDStat(passthru) ADDText(str) 							/*
@@ -1371,7 +1371,8 @@ if `check'==0 {
 
 local hastex = `tex'
 local html = ("`html'"!="")
-if `html' & !`tex' {
+local md = ("`md'"!="")
+if (`html'| `md') & !`tex' {
 	local tex 1
 }
 
@@ -2855,7 +2856,7 @@ quietly {
 			outsheet2 v* `usingLong', nonames `quote' `comma' replace slow(`slow')
 		}
 		
-		*** LaTeX / HTML thing
+		*** LaTeX / HTML /MD thing
 		if `tex' {
 		// di "hhh:`texFile' `titleWide' `headBorder' `bottomBorder'"
 			if `hastex' {
@@ -2903,6 +2904,14 @@ quietly {
 				c_local cl_iframe_line `"`iframe'"'
 				c_local cl_iframe_close "                  "
 			}
+			if "`md'"!="" {   
+				use `"`outing'"', clear
+				_texout2md v* using `"`strippedname'"', titleWide(`titleWide') headBorder(`headBorder') bottomBorder(`bottomBorder') `texopts' replace
+				local mdEndName "md"
+				local usingTermMd `"`strippedname'.`mdEndName'"'
+				c_local cl_md `"{stata `"shellout using `"`usingTermMd'"'"':`usingTermMd'}"'
+			}
+
 		}
 		
 		*** Word rtf file thing
@@ -10262,7 +10271,175 @@ end
 
 program def _thisthat 
 
-end 
+end
+
+
+prog define _texout2md, sortpreserve
+	* Markdown exporter with _texout-compatible syntax
+	version 8
+
+	* ensure at least two columns exist, matching _texout behavior
+	unab list: v*
+	local count: word count `list'
+	if `count'==1 {
+		gen str v2=""
+		order v*
+	}
+	if `count'==0 {
+		exit
+	}
+
+	syntax varlist using/, titleWide(int) headBorder(int) bottomBorder(int) ///
+		[mdFile(str) TOtrows(int 0) Landscape Fragment NOPRetty PRetty ///
+		Fontsize(numlist integer max=1 >=10 <=12) noBorder Cellborder ///
+		Appendpage noPAgenum a4 a5 b5 LETter LEGa ///
+		EXecutive replace IShere ISHEREtext(str)]
+
+	if `totrows'==0 {
+		local totrows = _N
+	}
+	local totrows = min(`totrows', _N)
+	local numcols : word count `varlist'
+	gettoken varname statvars : varlist
+
+	* align with _texout: move EQUATION labels into stub column
+	count if v1=="EQUATION"
+	if `r(N)'~=0 {
+		replace v1 = v2 in `=`bottomBorder'+1'/`totrows'
+		replace v2 = "" in `=`bottomBorder'+1'/`totrows'
+	}
+
+	if `"`mdFile'"'=="" {
+		local endName "md"
+	}
+	else {
+		local endName "`mdFile'"
+	}
+
+	local outfile `"`using'.`endName'"'
+	local repflag = ("`replace'"=="replace")
+	cap confirm file `"`outfile'"'
+	if !_rc & !`repflag' {
+		di as err "_texout2md: file `outfile' exists; use replace"
+		exit 602
+	}
+	local repopt = cond(`repflag',"replace","")
+
+	local pretty = ("`pretty'"=="pretty")
+
+	preserve
+	quietly {
+		tempname order
+		gen long `order' = _n
+		sort `order'
+
+		file open mdout using `"`outfile'"', write text `repopt'
+
+		* title here, before table
+		if `titleWide' > 0 {
+			forvalues r = 1/`titleWide' {
+				local text = `varname'[`r']
+				local text = subinstr("`text'", "&", "\&", .)
+				local text = subinstr("`text'", "*", "\*", .)
+				local text = subinstr("`text'", "_", "\_", .)
+				local text = subinstr("`text'", "`", "\`", .)
+				local text = subinstr("`text'", ">", "+", .)
+				local text = trim("`text'")
+				file write mdout "`text'" _n
+			}
+		}
+
+		* write header row (between titleWide+1 and headBorder)
+		if `headBorder' > `titleWide' {
+			forvalues r = `=`titleWide'+1'/`headBorder' {
+				file write mdout "|"
+				if `r' <= `titleWide' {
+					local text = `varname'[`r']
+					local text = subinstr("`text'", "&", "\&", .)
+					local text = subinstr("`text'", "*", "\*", .)
+					local text = subinstr("`text'", "_", "\_", .)
+					local text = subinstr("`text'", "`", "\`", .)
+					local text = subinstr("`text'", ">", "+", .)
+					local text = trim("`text'")
+					file write mdout "**`text'**|"
+				}
+				else {
+					foreach col of local varlist {
+						local cell = `col'[`r']
+						local cell = subinstr("`cell'", "&", "\&", .)
+						local cell = subinstr("`cell'", "*", "\*", .)
+						local cell = subinstr("`cell'", "_", "\_", .)
+						local cell = subinstr("`cell'", "`", "\`", .)
+						local cell = subinstr("`cell'", "|", "\|", .)
+						local cell = trim("`cell'")
+						file write mdout " `cell' |"
+					}
+				}
+				file write mdout _n
+			}
+
+			* write separator row
+			file write mdout "|"
+			foreach col of local varlist {
+				file write mdout " --- |"
+			}
+			file write mdout _n
+		}
+
+		local bodyStart = `headBorder' + 1
+		if `bodyStart' <= `totrows' {
+			forvalues r = `bodyStart'/`totrows' {
+				if `r' > _N continue
+
+				* check if notes row
+				local noteRow = (`r' > `bottomBorder')
+				if `noteRow' {
+					local hasStat 0
+					foreach col of local statvars {
+						local cellcheck = `col'[`r']
+						if trim("`cellcheck'")!="" {
+							local hasStat 1
+							continue, break
+						}
+					}
+					if `hasStat' local noteRow 0
+				}
+
+				if `noteRow' {
+					local text = `varname'[`r']
+					local text = subinstr("`text'", "&", "\&", .)
+					local text = subinstr("`text'", "*", "\*", .)
+					local text = subinstr("`text'", "_", "\_", .)
+					local text = subinstr("`text'", "`", "\`", .)
+					local text = trim("`text'")
+					if "`text'" != "" {
+						file write mdout "`text'" _n
+					}
+				}
+				else {
+					file write mdout "|"
+					foreach col of local varlist {
+						local cell = `col'[`r']
+						local cell = subinstr("`cell'", "&", "\&", .)
+						local cell = subinstr("`cell'", "*", "\*", .)
+						local cell = subinstr("`cell'", "_", "\_", .)
+						local cell = subinstr("`cell'", "`", "\`", .)
+						local cell = subinstr("`cell'", "|", "\|", .)
+						local cell = trim("`cell'")
+						if "`cell'"=="" local cell = " "
+						file write mdout " `cell' |"
+					}
+					file write mdout _n
+				}
+			}
+		}
+
+		file close mdout
+	}
+	restore
+
+
+end
 
 
 

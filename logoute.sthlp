@@ -10,7 +10,7 @@
 {title:Title}
 
 {p2colset 5 16 18 2}{...}
-{p2col :{bf:logoute} {hline 2}}Automated table conversion to HTML and LaTeX{p_end}
+{p2col :{bf:logoute} {hline 2}}Automated table conversion to HTML, Markdown, and LaTeX{p_end}
 {p2colreset}{...}
 
 
@@ -30,6 +30,7 @@
 {synopt :{opt save(filename)}}name of output file (without extension){p_end}
 {synopt :{opt replace}}overwrite existing file{p_end}
 {synopt :{opt html}}output in HTML format{p_end}
+{synopt :{opt md}}output in Markdown format{p_end}
 {synopt :{opt tex}}output in LaTeX format{p_end}
 {synopt :{opt excel}}output in Excel (XML) format{p_end}
 {synopt :{opt word}}output in Word (RTF) format{p_end}
@@ -68,6 +69,9 @@ The HTML output from {cmd:logoute} is compatible with {help ishere} for embeddin
 {opt html} generates a standard HTML table. This is ideal for inclusion in Markdown reports or websites.
 
 {phang}
+{opt md} generates a Markdown table. This is suitable for direct use in markdown editors, GitHub, or further conversion using tools like pandoc.
+
+{phang}
 {opt tex} generates a LaTeX tabular environment.
 
 {phang}
@@ -84,7 +88,16 @@ The HTML output from {cmd:logoute} is compatible with {help ishere} for embeddin
 {title:Examples}
 
 {pstd}
-{bf:1. Basic Descriptive Statistics to HTML}
+{bf:1. Basic Descriptive Statistics to Markdown}
+
+{pstd}
+Calculate summary statistics for auto data and save as Markdown table:
+
+{phang2}{cmd:. sysuse auto, clear}{p_end}
+{phang2}{cmd:. logoute, save("mytable") replace md : tabstat price mpg weight, s(mean sd min max)}{p_end}
+
+{pstd}
+{bf:2. Basic Descriptive Statistics to HTML}
 
 {pstd}
 Calculate summary statistics for auto data and save as HTML table:
@@ -93,7 +106,7 @@ Calculate summary statistics for auto data and save as HTML table:
 {phang2}{cmd:. logoute, save("mytable") replace html : tabstat price mpg weight, s(mean sd min max)}{p_end}
 
 {pstd}
-{bf:2. Frequency Table to LaTeX}
+{bf:3. Frequency Table to LaTeX}
 
 {pstd}
 Export a frequency tabulation of foreign cars to LaTeX:
@@ -101,7 +114,7 @@ Export a frequency tabulation of foreign cars to LaTeX:
 {phang2}{cmd:. logoute, save("freq_table") replace tex : tabulate foreign}{p_end}
 
 {pstd}
-{bf:3. Workflow Integration}
+{bf:4. Workflow Integration}
 
 {pstd}
 Using {cmd:logoute} as part of a Markdown report generation:
@@ -130,4 +143,4 @@ jiahuanyu@zzu.edu.cn{break}
 
 {pstd}
 Based on logout by Roy Wada (roywada@hotmail.com).{break}
-Enhanced for markdown workflows, and supports HTML file export.{break}
+Enhanced for markdown workflows, and supports HTML/Markdown file export.{break}

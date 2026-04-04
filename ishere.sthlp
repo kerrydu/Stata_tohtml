@@ -122,13 +122,16 @@ will be preserved when {help tohtml} processes the log. This mode is used for:
 - Embedding figures: {cmd:ishere fig using "figure1.png"} generates an HTML <img> tag or markdown image syntax
 
 {pmore2}
-- Embedding tables: {cmd:ishere tab using "table1.html"} generates an HTML <iframe> tag
+- Embedding HTML tables: {cmd:ishere tab using "table1.html"} generates an HTML <iframe> tag
+
+{pmore2}
+- Embedding Markdown tables: {cmd:ishere tab using "table1.md"} generates markdown table syntax directly
 
 {pmore2}
 - Displaying values: {cmd:ishere display} outputs local macros, scalars, or any valid Stata expression to the log
 
 {pmore2}
-This mode supports various image formats (PNG, JPG, JPEG, SVG, GIF, BMP, WEBP) and HTML tables.
+This mode supports various image formats (PNG, JPG, JPEG, SVG, GIF, BMP, WEBP), HTML tables, and Markdown tables.
 
 
 {marker options}{...}
@@ -153,10 +156,10 @@ This mode supports various image formats (PNG, JPG, JPEG, SVG, GIF, BMP, WEBP) a
 {dlgtab:Table options}
 
 {phang}
-{opt height(string)} specifies the iframe height for HTML tables, default is "400px".
+{opt height(string)} specifies the iframe height for HTML tables, default is "400px". For Markdown tables, this option is ignored.
 
 {phang}
-{opt width(string)} specifies the iframe width for HTML tables, default is "100%".
+{opt width(string)} specifies the iframe width for HTML tables, default is "100%". For Markdown tables (.md files), this option is ignored.
 
 
 {dlgtab:Display syntax}
@@ -220,6 +223,9 @@ will only replace placeholders in the immediately following text block, not in l
 
 {pstd}Insert a table with custom dimensions{p_end}
 {phang2}{cmd:. ishere table using "table1.html", height(500px) width(100%)}{p_end}
+
+{pstd}Insert a Markdown table{p_end}
+{phang2}{cmd:. ishere tab using "table1.md"}{p_end}
 
 {pstd}Basic usage: Insert value in text block{p_end}
 {phang2}{cmd:. sysuse auto, clear}{p_end}

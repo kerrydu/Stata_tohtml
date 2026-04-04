@@ -1,4 +1,4 @@
-*! logoute: extended logout command for creating HTML tables 
+*! logoute: extended logout command for creating HTML/Markdown tables 
 * most code from logout.ado 
 program define logoute
     version 16.0
@@ -27,15 +27,15 @@ program define logoute
 
     // Parse options using syntax, adding 'html' and 'dta' and 'replace'
     // Copied base options from logout.ado line 58
-    syntax [, html IShere ISHEREtext(string) replace dta use(string) save(string) FIX1(numlist) clear FIX fixcut(numlist) text smcl* range(string asis)]
+    syntax [, html md IShere ISHEREtext(string) replace dta use(string) save(string) FIX1(numlist) clear FIX fixcut(numlist) text smcl* range(string asis)]
 
-    // --- Shortcut: If not HTML, just pass through everything ---
-    if "`html'" == "" {
+    // --- Shortcut: If neither HTML nor MD, just pass through everything ---
+    if "`html'" == "" & "`md'" == "" {
         logout2 `original'
         exit
     }
 
-    // --- HTML Mode Implementation ---
+    // --- HTML / MD Mode Implementation ---
     local keepdta = ("`dta'" != "")
 
     // 1. Ensure save() is handled
@@ -80,19 +80,20 @@ program define logoute
         exit _rc
     }
 
-    // 6. Convert the resulting .dta to .html
+    // 6. Convert the resulting .dta to output format(s)
     local dtaFile `"`save'.dta"'
     local htmlFile `"`save'.html"'
+    local mdFile   `"`save'.md"'
 
     // Verify dta file existence
     capture confirm file `"`dtaFile'"'
     if _rc {
-        di as err "logout3 error: Intermediate file `dtaFile' not found."
+        di as err "logoute error: Intermediate file `dtaFile' not found."
         exit 601
     }
 
     // Check overwrite for html file
-    if "`replace'" == "" {
+    if "`html'" != "" & "`replace'" == "" {
         capture confirm file `"`htmlFile'"'
         if _rc == 0 {
             di as err "file `htmlFile' already exists"
@@ -100,11 +101,20 @@ program define logoute
         }
     }
 
-    // Perform conversion
+    // Check overwrite for md file
+    if "`md'" != "" & "`replace'" == "" {
+        capture confirm file `"`mdFile'"'
+        if _rc == 0 {
+            di as err "file `mdFile' already exists"
+            exit 602
+        }
+    }
+
+    // Perform conversion (load dta once, write to all requested formats)
     preserve
     quietly use `"`dtaFile'"', clear
-    
-    // Ensure all variables are string for the HTML table
+
+    // Ensure all variables are string
     qui capture ds
     local allvars `r(varlist)'
     foreach var of local allvars {
@@ -118,42 +128,56 @@ program define logoute
     if "`replace'" != "" local repopt "replace"
 
     local nrows = _N
-    _logout3_write_html using `"`htmlFile'"', `repopt'
+
+    if "`html'" != "" {
+        _logout3_write_html using `"`htmlFile'"', `repopt'
+    }
+    if "`md'" != "" {
+        _logout3_write_md using `"`mdFile'"', `repopt'
+    }
     restore
 
     if `keepdta' == 0 {
         capture erase `"`dtaFile'"'
     }
 
-    di as txt `"Output saved to `htmlFile'"'
+    // --- HTML output post-processing ---
+    if "`html'" != "" {
+        di as txt `"Output saved to `htmlFile'"'
 
-    capture confirm global tabwidth
-    if !_rc {
-        local width = $tabwidth
+        capture confirm global tabwidth
+        if !_rc {
+            local width = $tabwidth
+        }
+        else {
+            local width = 100
+        }
+        capture confirm global tabheight
+        if !_rc {
+            local height = $tabheight
+        }
+        else {
+            local height = 80 + `nrows' * 38
+        }
+        local percent "%"
+        local widthstr  = string(`width',  "%9.0g")
+        local heightstr = string(`height', "%9.0g")
+        local iframe "<iframe src='`htmlFile'' width='`widthstr'`percent'' height='`heightstr'px' frameBorder='0'></iframe>"
+        if "`isheretext'"!="" local ishere ishere
+        if "ishere" !="" {
+            noisily display "                       "
+            noisily display `"`iframe'"'
+            noisily display
+            if "`isheretext'"!="" {
+                noisily display `"`isheretext'"'
+            }
+        }
     }
-    else {
-        local width = 100
+
+    // --- MD output post-processing ---
+    if "`md'" != "" {
+        di as txt `"Output saved to `mdFile'"'
     }
-    capture confirm global tabheight
-    if !_rc {
-        local height = $tabheight
-    }
-    else {
-        local height = 80 + `nrows' * 38
-    }
-    local percent "%"
-    local widthstr = string(`width', "%9.0g")
-    local heightstr = string(`height', "%9.0g")
-    local iframe "<iframe src='`htmlFile'' width='`widthstr'`percent'' height='`heightstr'px' frameBorder='0'></iframe>"
-	if "`isheretext'"!="" local ishere ishere 
-    if "ishere" !=""{
-		noisily display "                       "
-		noisily display `"`iframe'"'
-		noisily display 
-		if "`isheretext'"!="" {
-			noisily display `"`isheretext'"'
-		}
-	}
                       
 end
 
@@ -227,6 +251,64 @@ program define _logout3_write_html
 
     file write `fh' "</table>" _n
     file write `fh' "</body></html>" _n
+    file close `fh'
+end
+
+
+program define _logout3_write_md
+    version 17.0
+    syntax using/, [REPLACE]
+
+    tempname fh
+    local repopt = cond("`replace'" != "", "replace", "")
+    file open `fh' using `"`using'"', write text `repopt'
+
+    local rows = _N
+    qui ds v*
+    local vars `r(varlist)'
+    if "`vars'" == "" {
+        qui ds
+        local vars `r(varlist)'
+    }
+
+    // Count number of columns
+    local ncols : word count `vars'
+
+    if `rows' {
+        // Write header row
+        file write `fh' "|"
+        foreach var of local vars {
+            local cell = `var'[1]
+            local cell = subinstr("`cell'", "|", "\|", .)
+            local cell = subinstr("`cell'", "\", "\\", .)
+            local cell = trim("`cell'")
+            file write `fh' " `cell' |"
+        }
+        file write `fh' _n
+
+        // Write separator row
+        file write `fh' "|"
+        forvalues c = 1/`ncols' {
+            file write `fh' " --- |"
+        }
+        file write `fh' _n
+
+        // Write data rows
+        if `rows' > 1 {
+            forvalues r = 2/`rows' {
+                file write `fh' "|"
+                foreach var of local vars {
+                    local cell = `var'[`r']
+                    local cell = subinstr("`cell'", "|", "\|", .)
+                    local cell = subinstr("`cell'", "\", "\\", .)
+                    local cell = trim("`cell'")
+                    file write `fh' " `cell' |"
+                }
+                file write `fh' _n
+            }
+        }
+    }
+
     file close `fh'
 end
 
