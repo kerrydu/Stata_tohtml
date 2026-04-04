@@ -1750,7 +1750,8 @@ void write_log(string matrix tables)
 {
    n = rows(tables)
    if (n==0) exit
-   fh ="# Tables and Figures"
+   tables = sort(tables, 2)   // 按第二列排序后再写出
+   fh ="# Figures and Tables"
    for(i=1; i<=n; i++) {
     fh = fh \ "" \ ""
     fh = fh \ tables[i,2] \ tables[i,1]
