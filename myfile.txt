@@ -1,0 +1,25 @@
+	(1)	(2)	(3)
+	Full	Restricted1	Restricted2
+VARIABLES	mpg	mpg	mpg
+			
+foreign	-1.967	-1.655	-1.650
+	(1.181)	(1.082)	(1.076)
+weight	-0.00420**	-0.00647***	-0.00659***
+	(0.00202)	(0.000700)	(0.000637)
+headroom	-0.0592	-0.219	
+	(0.645)	(0.542)	
+trunk	-0.0122		
+	(0.159)		
+length	-0.0631		
+	(0.0644)		
+turn	-0.165		
+	(0.198)		
+displacement	0.000792		
+	(0.0103)		
+Constant	53.14***	41.99***	41.68***
+	(7.584)	(2.312)	(2.166)
+			
+Observations	74	74	74
+R-squared	0.677	0.663	0.663
+Standard errors in parentheses			
+*** p<0.01, ** p<0.05, * p<0.1			

@@ -164,7 +164,7 @@ program define logoute
         local heightstr = string(`height', "%9.0g")
         local iframe "<iframe src='`htmlFile'' width='`widthstr'`percent'' height='`heightstr'px' frameBorder='0'></iframe>"
         if "`isheretext'"!="" local ishere ishere
-        if "ishere" !="" {
+        if "`ishere'" !="" {
             noisily display "                       "
             noisily display `"`iframe'"'
             noisily display

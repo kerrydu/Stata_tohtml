@@ -7554,18 +7554,26 @@ prog define _texout2html, sortpreserve
 		file write htmlout "</script>" _n
 		if !`fragment' file write htmlout "</head><body>" _n
 		
-		* title here, before table
+		* title here, before table (skip empty rows — avoids leading blank lines)
 		if `titleWide' > 0 {
-			file write htmlout "<div style='text-align:center; width:100%;'>" _n
+			local htmlTitleOpened 0
 			forvalues r = 1/`titleWide' {
 				local text = `varname'[`r']
 				local text = subinstr("`text'","&","&amp;",.)
 				local text = subinstr("`text'","<","&lt;",.)
 				local text = subinstr("`text'",">","&gt;",.)
 				local text = subinstr("`text'",char(34),"&quot;",.)
+				local text = trim("`text'")
+				if "`text'"=="" continue
+				if `htmlTitleOpened'==0 {
+					file write htmlout "<div style='text-align:center; width:100%;'>" _n
+					local htmlTitleOpened 1
+				}
 				file write htmlout "<b>`text'</b><br>" _n
 			}
-			file write htmlout "</div>" _n
+			if `htmlTitleOpened' {
+				file write htmlout "</div>" _n
+			}
 		}
 		
 		file write htmlout "<div class='texout-table-wrap'>" _n
@@ -7587,6 +7595,13 @@ prog define _texout2html, sortpreserve
 					file write htmlout "<tr`headClass'><th colspan='`numcols''>`text'</th></tr>" _n
 				}
 				else {
+					* skip all-empty header rows (no blank | | | row in output)
+					local rowempty 1
+					foreach col of local varlist {
+						local c0 = `col'[`r']
+						if trim("`c0'")!="" local rowempty 0
+					}
+					if `rowempty' continue
 					file write htmlout "<tr`headClass'>" _n
 					foreach col of local varlist {
 						local cell = `col'[`r']
@@ -7630,10 +7645,17 @@ prog define _texout2html, sortpreserve
 					local text = subinstr("`text'","<","&lt;",.)
 					local text = subinstr("`text'",">","&gt;",.)
 					local text = subinstr("`text'",char(34),"&quot;",.)
-					if trim("`text'")=="" local text = "&nbsp;"
+					if trim("`text'")=="" continue
 					file write htmlout "<tr class='texout-notes'><td colspan='`numcols''>`text'</td></tr>" _n
 				}
 				else {
+					* skip all-empty body rows
+					local rowempty 1
+					foreach col of local varlist {
+						local c0 = `col'[`r']
+						if trim("`c0'")!="" local rowempty 0
+					}
+					if `rowempty' continue
 					file write htmlout "<tr`rowClass'>" _n
 					foreach col of local varlist {
 						local cell = `col'[`r']
@@ -10335,7 +10357,7 @@ prog define _texout2md, sortpreserve
 
 		file open mdout using `"`outfile'"', write text `repopt'
 
-		* title here, before table
+		* title here, before table (skip empty rows — avoids leading blank lines)
 		if `titleWide' > 0 {
 			forvalues r = 1/`titleWide' {
 				local text = `varname'[`r']
@@ -10345,13 +10367,23 @@ prog define _texout2md, sortpreserve
 				local text = subinstr("`text'", "`", "\`", .)
 				local text = subinstr("`text'", ">", "+", .)
 				local text = trim("`text'")
+				if "`text'"=="" continue
 				file write mdout "`text'" _n
 			}
 		}
 
 		* write header row (between titleWide+1 and headBorder)
+		* GFM: separator |---| must follow the first non-empty pipe row immediately
+		* skip all-empty rows (|  |  |) so they do not appear as blank lines
 		if `headBorder' > `titleWide' {
+			local mdSepDone 0
 			forvalues r = `=`titleWide'+1'/`headBorder' {
+				local rowempty 1
+				foreach col of local varlist {
+					local cell0 = `col'[`r']
+					if trim("`cell0'")!="" local rowempty 0
+				}
+				if `rowempty' continue
 				file write mdout "|"
 				if `r' <= `titleWide' {
 					local text = `varname'[`r']
@@ -10376,14 +10408,15 @@ prog define _texout2md, sortpreserve
 					}
 				}
 				file write mdout _n
+				if `mdSepDone'==0 {
+					file write mdout "|"
+					foreach col of local varlist {
+						file write mdout " --- |"
+					}
+					file write mdout _n
+					local mdSepDone 1
+				}
 			}
-
-			* write separator row
-			file write mdout "|"
-			foreach col of local varlist {
-				file write mdout " --- |"
-			}
-			file write mdout _n
 		}
 
 		local bodyStart = `headBorder' + 1
@@ -10417,6 +10450,12 @@ prog define _texout2md, sortpreserve
 					}
 				}
 				else {
+					local rowempty 1
+					foreach col of local varlist {
+						local cell0 = `col'[`r']
+						if trim("`cell0'")!="" local rowempty 0
+					}
+					if `rowempty' continue
 					file write mdout "|"
 					foreach col of local varlist {
 						local cell = `col'[`r']

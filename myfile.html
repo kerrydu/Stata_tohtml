@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'>
+<style>
+.texout-table{width:auto;min-width:720px;max-width:100%;margin:0;border-collapse:collapse;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;color:#222;table-layout:auto;}
+.texout-table-wrap{width:100%;overflow-x:auto;padding:6px 4px;}
+.texout-table{border-top:2px solid #111;}
+.texout-table th{text-align:left;padding:10px 14px;font-weight:600;}
+.texout-table td{padding:8px 14px;text-align:left;}
+.texout-table td:first-child,.texout-table th:first-child{text-align:left;}
+.texout-headline td,.texout-headline th{border-bottom:1px solid #111;}
+.texout-bottomline td,.texout-bottomline th{border-bottom:2px solid #111;}
+.texout-mono{font-family:'Courier New',Consolas,monospace;}
+</style>
+<script>
+// inject override css when embedded in iframe
+if (window.self !== window.top) {
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = '/css/table-override.css';
+  link.onerror = function () { if (link && link.parentNode) { link.parentNode.removeChild(link); } };
+  document.head.appendChild(link);
+}
+</script>
+</head><body>
+<div class='texout-table-wrap'>
+<table class='texout-table'>
+<thead>
+<tr>
+<th>&nbsp;</th>
+<th>(1)</th>
+<th>(2)</th>
+<th>(3)</th>
+</tr>
+<tr>
+<th>&nbsp;</th>
+<th>Full</th>
+<th>Restricted1</th>
+<th>Restricted2</th>
+</tr>
+<tr class='texout-headline'>
+<th>VARIABLES</th>
+<th>mpg</th>
+<th>mpg</th>
+<th>mpg</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>foreign</td>
+<td class='texout-mono'>-1.967</td>
+<td class='texout-mono'>-1.655</td>
+<td class='texout-mono'>-1.650</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(1.181)</td>
+<td class='texout-mono'>(1.082)</td>
+<td class='texout-mono'>(1.076)</td>
+</tr>
+<tr>
+<td>weight</td>
+<td class='texout-mono'>-0.00420**</td>
+<td class='texout-mono'>-0.00647***</td>
+<td class='texout-mono'>-0.00659***</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(0.00202)</td>
+<td class='texout-mono'>(0.000700)</td>
+<td class='texout-mono'>(0.000637)</td>
+</tr>
+<tr>
+<td>headroom</td>
+<td class='texout-mono'>-0.0592</td>
+<td class='texout-mono'>-0.219</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(0.645)</td>
+<td class='texout-mono'>(0.542)</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>trunk</td>
+<td class='texout-mono'>-0.0122</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(0.159)</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>length</td>
+<td class='texout-mono'>-0.0631</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(0.0644)</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>turn</td>
+<td class='texout-mono'>-0.165</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(0.198)</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>displacement</td>
+<td class='texout-mono'>0.000792</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(0.0103)</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+</tr>
+<tr>
+<td>Constant</td>
+<td class='texout-mono'>53.14***</td>
+<td class='texout-mono'>41.99***</td>
+<td class='texout-mono'>41.68***</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(7.584)</td>
+<td class='texout-mono'>(2.312)</td>
+<td class='texout-mono'>(2.166)</td>
+</tr>
+<tr>
+<td>Observations</td>
+<td class='texout-mono'>74</td>
+<td class='texout-mono'>74</td>
+<td class='texout-mono'>74</td>
+</tr>
+<tr class='texout-bottomline'>
+<td>R-squared</td>
+<td class='texout-mono'>0.677</td>
+<td class='texout-mono'>0.663</td>
+<td class='texout-mono'>0.663</td>
+</tr>
+<tr class='texout-notes'><td colspan='4'>Standard errors in parentheses</td></tr>
+<tr class='texout-notes'><td colspan='4'>*** p&lt;0.01, ** p&lt;0.05, * p&lt;0.1</td></tr>
+</tbody>
+</table>
+</div>
+</body></html>
