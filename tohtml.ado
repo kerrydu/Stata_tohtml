@@ -573,7 +573,7 @@ void function rewrite_md(string scalar ofi, string scalar tfi, real scalar repla
 {
     // 1. 读取文件
     fcon = cat(ofi)
-    
+    fcon = ishererep(fcon)
     // 2. 合并 HTML 行
     fcon = merge_html_vectorized(fcon)
     fcon = clean_textcell_content(fcon)
@@ -667,7 +667,7 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
 {
     // 1. 读取文件
     fcon = cat(ofi)
-    
+    fcon = ishererep(fcon)
     // 2. 合并 HTML 行
     fcon = merge_html_vectorized(fcon)
 
@@ -1037,6 +1037,7 @@ void function merge_cmdlog_blocks(string scalar clean_md, string scalar cmdlog_m
 {
  
     clean = cat(clean_md)
+    clean = ishererep(clean)
     clean = merge_html_vectorized(clean)
     clean = subisheredintxt(clean)
     clean_trim = ustrltrim(clean)
@@ -1759,4 +1760,33 @@ void write_log(string matrix tables)
    mm_outsheet(st_local("templog"), fh, "replace")
 
 }
+
+string colvector function ishererep(string colvector content)
+{
+    lines =content
+    lines2 = usubinstr(lines," ","",.)
+    flag = selectindex(ustrpos(lines2, "**#") :== 1)
+    if (length(flag) > 0) {
+       lines[flag] = ustrltrim(lines[flag])
+       lines[flag] = usubinstr(lines[flag], "**", "ishere ", 1)
+    }
+    flag = selectindex(ustrpos(lines2, "**/*") :== 1)
+    if (length(flag) > 0) {
+       lines[flag] = ustrltrim(lines[flag])
+       lines[flag] = usubinstr(lines[flag], "**", "ishere ", 1)
+    }
+    flag = selectindex(ustrpos(lines2, "***/") :== 1)
+    if (length(flag) > 0) {
+       lines[flag] = ustrltrim(lines[flag])
+       lines[flag] = usubinstr(lines[flag], "**", "ishere ", 1)
+    }
+
+    flag = selectindex(ustrpos(lines2, "**```") :== 1)
+    if (length(flag) > 0) {
+       lines[flag] = ustrltrim(lines[flag])
+       lines[flag] = usubinstr(lines[flag], "**```", "ishere ```", 1)
+    }
+    return(lines)
+}
+
 end
