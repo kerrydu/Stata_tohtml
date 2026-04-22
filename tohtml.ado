@@ -631,6 +631,7 @@ void function rewrite_md(string scalar ofi, string scalar tfi, real scalar repla
     // 首先使用正则表达式找到 任意空格<iframe任意空格*.md任意空格></iframe>任意空格 的行
     regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
     flag = selectindex(regexm(fcon, regex))
+    fconnew = fcon
     if (sum(flag) > 0) {
         if (flag[i]<length(fcon)){
             fconnew = fcon[1::(flag[1]-1)]
@@ -702,6 +703,7 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
     // 首先使用正则表达式找到 任意空格<iframe任意空格*.md任意空格></iframe>任意空格 的行
     regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
     flag = selectindex(regexm(fcon, regex))
+    fconnew = fcon
     if (sum(flag) > 0) {
         if (flag[i]<length(fcon)){
             fconnew = fcon[1::(flag[1]-1)]
@@ -1202,6 +1204,7 @@ void function merge_cmdlog_blocks(string scalar clean_md, string scalar cmdlog_m
     // 首先使用正则表达式找到 任意空格<iframe任意空格*.md任意空格></iframe>任意空格 的行
     regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
     flag = selectindex(regexm(fcon, regex))
+    fconnew = fcon
     if (sum(flag) > 0) {
         if (flag[i]<length(fcon)){
             fconnew = fcon[1::(flag[1]-1)]
