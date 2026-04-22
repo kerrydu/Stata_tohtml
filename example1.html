@@ -1,0 +1,47 @@
+<script>MathJax = {  tex: {    inlineMath: [['$', '$'], ['\\(', '\\)']],    displayMath: [['$$', '$$'], ['\\[', '\\]']]  }};</script><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="stylesheet" href="./css/github.css">
+<hr />
+<pre><code>  name:  &lt;unnamed&gt;
+   log:  E:\Stata_tohtml\example1.log
+</code></pre>
+<p>log type:  text opened on:  22 Apr 2026, 14:41:00</p>
+<p>. * Add a title</p>
+<h1><a href="#my-first-data-analysis" id="my-first-data-analysis">My First Data Analysis</a></h1>
+<p>. * Mark code block</p>
+<pre><code>. * Perform standard analysis
+. sysuse auto, clear
+(1978 automobile data)
+
+. summarize price mpg weight
+
+    Variable |        Obs        Mean    Std. dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         74    6165.257    2949.496       3291      15906
+         mpg |         74     21.2973    5.785503         12         41
+      weight |         74    3019.459    777.1936       1760       4840
+
+. regress price mpg weight
+
+      Source |       SS           df       MS      Number of obs   =        74
+-------------+----------------------------------   F(2, 71)        =     14.74
+       Model |   186321280         2  93160639.9   Prob &gt; F        =    0.0000
+    Residual |   448744116        71  6320339.67   R-squared       =    0.2934
+-------------+----------------------------------   Adj R-squared   =    0.2735
+       Total |   635065396        73  8699525.97   Root MSE        =      2514
+
+------------------------------------------------------------------------------
+       price | Coefficient  Std. err.      t    P&gt;|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         mpg |  -49.51222   86.15604    -0.57   0.567    -221.3025     122.278
+      weight |   1.746559   .6413538     2.72   0.008      .467736    3.025382
+       _cons |   1946.069    3597.05     0.54   0.590    -5226.245    9118.382
+------------------------------------------------------------------------------
+
+. * Close log
+. log close
+      name:  &lt;unnamed&gt;
+       log:  E:\Stata_tohtml\example1.log
+  log type:  text
+ closed on:  22 Apr 2026, 14:41:01
+------------------------------------------------------------------------------------------------------
+</code></pre>

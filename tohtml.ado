@@ -574,6 +574,7 @@ void function rewrite_md(string scalar ofi, string scalar tfi, real scalar repla
     // 1. 读取文件
     fcon = cat(ofi)
     fcon = ishererep(fcon)
+    fcon
     // 2. 合并 HTML 行
     fcon = merge_html_vectorized(fcon)
     fcon = clean_textcell_content(fcon)
@@ -1771,23 +1772,23 @@ string colvector function ishererep(string colvector content)
     flag = selectindex(ustrpos(lines2, ".**#") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = usubinstr(lines[flag], ". **", "ishere ", 1)
+       lines[flag] = ustrregexra(lines[flag], "^\.\s*\*\*\s*", ". ishere ")
     }
     flag = selectindex(ustrpos(lines2, ".**/*") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = usubinstr(lines[flag], ". **", "ishere ", 1)
+       lines[flag] = ustrregexra(lines[flag], "^\.\s*\*\*\s*", ". ishere ")
     }
     flag = selectindex(ustrpos(lines2, ".***/") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = usubinstr(lines[flag], ". **", "ishere ", 1)
+       lines[flag] = ustrregexra(lines[flag], "^\.\s*\*\*\s*", ". ishere ")
     }
 
     flag = selectindex(ustrpos(lines2, ".**```") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = usubinstr(lines[flag], ". **```", "ishere ```", 1)
+       lines[flag] = ustrregexra(lines[flag], "^\.\s*\*\*\s*", ". ishere ")
     }
     return(lines)
 }
