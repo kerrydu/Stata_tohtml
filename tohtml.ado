@@ -1782,7 +1782,7 @@ string colvector function ishererep(string colvector content)
     flag = selectindex(ustrpos(lines2, ">***/") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = ustrregexra(lines[flag], "^\>\s*\*\*\s*", ". ishere ")
+       lines[flag] = ustrregexra(lines[flag], "^\>\s*\*\*\s*", "> ishere ")
     }
 
     flag = selectindex(ustrpos(lines2, ".**```") :== 1)
