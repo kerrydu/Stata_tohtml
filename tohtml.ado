@@ -1768,26 +1768,26 @@ string colvector function ishererep(string colvector content)
 {
     lines =content
     lines2 = usubinstr(lines," ","",.)
-    flag = selectindex(ustrpos(lines2, "**#") :== 1)
+    flag = selectindex(ustrpos(lines2, ". **#") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = usubinstr(lines[flag], "**", "ishere ", 1)
+       lines[flag] = usubinstr(lines[flag], ". **", "ishere ", 1)
     }
-    flag = selectindex(ustrpos(lines2, "**/*") :== 1)
+    flag = selectindex(ustrpos(lines2, ". **/*") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = usubinstr(lines[flag], "**", "ishere ", 1)
+       lines[flag] = usubinstr(lines[flag], ". **", "ishere ", 1)
     }
-    flag = selectindex(ustrpos(lines2, "***/") :== 1)
+    flag = selectindex(ustrpos(lines2, ". ***/") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = usubinstr(lines[flag], "**", "ishere ", 1)
+       lines[flag] = usubinstr(lines[flag], ". **", "ishere ", 1)
     }
 
-    flag = selectindex(ustrpos(lines2, "**```") :== 1)
+    flag = selectindex(ustrpos(lines2, ". **```") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = usubinstr(lines[flag], "**```", "ishere ```", 1)
+       lines[flag] = usubinstr(lines[flag], ". **```", "ishere ```", 1)
     }
     return(lines)
 }
