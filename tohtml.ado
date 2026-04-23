@@ -716,7 +716,12 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
             mdtext = extractmdtable(fcon[flag[i]])
             fconnew = fconnew \ mdtext 
             if((flag[i]<length(fcon)) & (i<length(flag))) {
-              fconnew = fconnew \ fcon[(flag[i]+1)::(flag[i+1]-1)]
+              if (flag[i]+1 !=flag[i+1]){
+                fconnew = fconnew \ fcon[(flag[i]+1)::(flag[i+1]-1)]
+              }
+              else{
+                fconnew = fconnew \ " "
+              }
              }
              else if(((flag[i]<length(fcon)) & (i==length(flag)))) {
                 fconnew = fconnew \ fcon[(flag[i]+1)::length(fcon)]
