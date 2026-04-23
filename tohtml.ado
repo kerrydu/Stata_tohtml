@@ -1676,7 +1676,7 @@ program define alltohtml,rclass
     if "`height'" == "" local height "400px"
     if "`width'" == "" local width "100%"    
     local zoomstyle  style="zoom:`zoom';"
-    mata: itab = `"<img src="_filepath_" `zoomstyle' />"'
+    mata: ifig = `"<img src="_filepath_" `zoomstyle' />"'
 
     mata: tables = J(0,1,"")
     mata: tabletitles = J(0,1,"")
@@ -1720,7 +1720,7 @@ program define alltohtml,rclass
               local file `file'
               mata: tabletitles = tabletitles \ `"`file'"'
               local file `folder'/`file'
-              mata: tables = tables \ usubinstr(itab,"_filepath_",`"`file'"',1)
+              mata: tables = tables \ usubinstr(ifig,"_filepath_",`"`file'"',1)
             }
         }
 
