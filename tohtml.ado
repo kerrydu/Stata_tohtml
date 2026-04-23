@@ -706,7 +706,7 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
     flag = selectindex(regexm(fcon, regex))
     fconnew = fcon
     if (sum(flag) > 0) {
-        if (flag[i]<length(fcon)){
+        if (flag[1]<length(fcon)){
             fconnew = fcon[1::(flag[1]-1)]
         }
         else{
@@ -754,7 +754,7 @@ string colvector extractmdtable(string scalar line){
         line2 = strtrim(substr(line2, 1, strlen(line2)-1))
     }
     if (!fileexists(line2)) {
-        printf("{err}extractmdtable: 文件不存在: %s\n", line2)
+        printf("{err}extractmdtable: file not exist: %s\n", line2)
         return(J(0, 1, ""))
     }
     mdtext = cat(line2)
