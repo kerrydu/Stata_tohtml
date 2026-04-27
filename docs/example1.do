@@ -1,4 +1,3 @@
-cd D:\BaiduSyncdisk\paper\16\examples
 capture log close
 log using "example1.log", replace text 
 
