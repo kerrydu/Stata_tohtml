@@ -5,36 +5,59 @@
     <title>Stata tohtml Examples</title>
     <style>
         body {
-            max-width: 900px;
+            max-width: 950px;
             margin: 40px auto;
             font-family: Arial, sans-serif;
             line-height: 1.6;
+            color: #222;
         }
         h1 {
             color: #2c7fb8;
+            margin-bottom: 10px;
         }
         h2 {
             color: #2c7fb8;
-            margin-top: 30px;
+            margin-top: 0;
         }
         a {
             color: #2c7fb8;
             text-decoration: none;
+            font-weight: 600;
         }
         a:hover {
             text-decoration: underline;
-        }
-        .example {
-            border: 1px solid #ddd;
-            padding: 16px 20px;
-            margin-top: 20px;
-            border-radius: 6px;
-            background: #fafafa;
         }
         code {
             background: #f3f3f3;
             padding: 2px 5px;
             border-radius: 4px;
+            font-family: Consolas, Menlo, monospace;
+        }
+        .intro {
+            margin-bottom: 28px;
+        }
+        .example {
+            border: 1px solid #ddd;
+            padding: 18px 22px;
+            margin-top: 20px;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .mode {
+            display: inline-block;
+            margin-bottom: 8px;
+            padding: 4px 9px;
+            border-radius: 5px;
+            background: #eaf4fb;
+            color: #2c7fb8;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .links {
+            margin-top: 12px;
+        }
+        .links a {
+            margin-right: 18px;
         }
     </style>
 </head>
@@ -42,26 +65,62 @@
 
 <h1>Stata tohtml Examples</h1>
 
-<p>
-This page provides examples showing how to use <code>ishere</code> and <code>tohtml</code>
-to convert Stata logs, commands, results, figures, and tables into HTML documents.
+<p class="intro">
+This page provides three examples showing how to use <code>tohtml</code> to convert
+Stata logs, commands, results, figures, and tables into HTML documents. The three
+examples are based on the same Stata workflow and contain the same figures and
+tables, but they use different output modes of <code>tohtml</code>.
 </p>
 
 <div class="example">
-    <h2>Example 1: Basic Workflow with Figures and Regression Tables</h2>
+    <span class="mode">Example 1: detail mode</span>
+    <h2>Detailed HTML Output</h2>
     <p>
-        This example uses Stata's auto dataset to demonstrate data preparation,
-        descriptive figures, regression output, and an exported HTML regression table.
+        This example demonstrates the <code>detail</code> mode of <code>tohtml</code>.
+        It keeps a relatively complete record of the Stata workflow, including
+        commands, selected log contents, figures, and regression output. This mode
+        is useful when users want a more comprehensive HTML record of their analysis.
     </p>
-    <p>
+    <div class="links">
         <a href="example1.html">View HTML output</a>
-    </p>
+        <a href="example1.do">View do-file</a>
+        <a href="example1_clean.md">View Markdown file</a>
+        <a href="example1.log">View log file</a>
+    </div>
+</div>
+
+<div class="example">
+    <span class="mode">Example 2: clean mode</span>
+    <h2>Clean HTML Output</h2>
     <p>
-        <a href="example1.do">View Stata do-file</a>
+        This example demonstrates the <code>clean</code> mode of <code>tohtml</code>.
+        It produces a cleaner HTML document by reducing unnecessary log information
+        while retaining the main analytical contents, including figures and tables.
+        This mode is suitable for users who prefer a more readable report-style output.
     </p>
+    <div class="links">
+        <a href="example2.html">View HTML output</a>
+        <a href="example2.do">View do-file</a>
+        <a href="example2.clean.md">View Markdown file</a>
+        <a href="example2.log">View log file</a>
+    </div>
+</div>
+
+<div class="example">
+    <span class="mode">Example 3: cleancode mode</span>
+    <h2>Clean Code HTML Output</h2>
     <p>
-        <a href="example1_clean.md">View generated Markdown file</a>
+        This example demonstrates the <code>cleancode</code> mode of <code>tohtml</code>.
+        It focuses on presenting clean Stata code together with the corresponding
+        outputs, figures, and tables. This mode is useful when users want to share
+        reproducible examples with concise and readable code.
     </p>
+    <div class="links">
+        <a href="example3.html">View HTML output</a>
+        <a href="example3.do">View do-file</a>
+        <a href="example3_code.md">View Markdown file</a>
+        <a href="example3.log">View log file</a>
+    </div>
 </div>
 
 </body>
