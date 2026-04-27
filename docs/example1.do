@@ -1,6 +1,6 @@
-
+cd D:\BaiduSyncdisk\paper\16\examples
 capture log close
-log using "demo.log", replace text 
+log using "example1.log", replace text 
 
 ishere # Data Preparation
 ishere
@@ -30,7 +30,7 @@ graph export "price_mpg.png", replace
 ishere fig using "price_mpg.png"
 
 ishere # Regression
-ishere ## Narrative Example
+ishere ## Table 1
 ishere
 regress price mpg weight
 local r2 = e(r2)
@@ -56,4 +56,4 @@ estimates store model5
 outreg2e [model*] using "model.html", replace html
 ishere tab using "model.html"
 
-tohtml "demo.log",  html("demo.html") css(githubstyle) replace
+tohtml "example1.log",  html("example1.html") css(githubstyle) replace
