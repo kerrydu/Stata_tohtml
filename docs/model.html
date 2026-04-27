@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html><head><meta charset='utf-8'>
+<style>
+.texout-table{width:auto;min-width:720px;max-width:100%;margin:0;border-collapse:collapse;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;color:#222;table-layout:auto;}
+.texout-table-wrap{width:100%;overflow-x:auto;padding:6px 4px;}
+.texout-table{border-top:2px solid #111;}
+.texout-table th{text-align:left;padding:10px 14px;font-weight:600;}
+.texout-table td{padding:8px 14px;text-align:left;}
+.texout-table td:first-child,.texout-table th:first-child{text-align:left;}
+.texout-headline td,.texout-headline th{border-bottom:1px solid #111;}
+.texout-bottomline td,.texout-bottomline th{border-bottom:2px solid #111;}
+.texout-mono{font-family:'Courier New',Consolas,monospace;}
+</style>
+<script>
+// inject override css when embedded in iframe
+if (window.self !== window.top) {
+  var link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = '/css/table-override.css';
+  link.onerror = function () { if (link && link.parentNode) { link.parentNode.removeChild(link); } };
+  document.head.appendChild(link);
+}
+</script>
+</head><body>
+<div class='texout-table-wrap'>
+<table class='texout-table'>
+<thead>
+<tr>
+<th>&nbsp;</th>
+<th>(1)</th>
+<th>(2)</th>
+<th>(3)</th>
+<th>(4)</th>
+<th>(5)</th>
+</tr>
+<tr>
+<th>&nbsp;</th>
+<th>model1</th>
+<th>model2</th>
+<th>model3</th>
+<th>model4</th>
+<th>model5</th>
+</tr>
+<tr class='texout-headline'>
+<th>VARIABLES</th>
+<th>price</th>
+<th>price</th>
+<th>price</th>
+<th>price</th>
+<th>price</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>mpg</td>
+<td class='texout-mono'>21.85</td>
+<td class='texout-mono'>-238.9***</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>21.85</td>
+<td class='texout-mono'>21.85</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(80.75)</td>
+<td class='texout-mono'>(57.48)</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>(80.75)</td>
+<td class='texout-mono'>(80.75)</td>
+</tr>
+<tr>
+<td>weight</td>
+<td class='texout-mono'>3.465***</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>3.465***</td>
+<td class='texout-mono'>3.465***</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(0.778)</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>(0.778)</td>
+<td class='texout-mono'>(0.778)</td>
+</tr>
+<tr>
+<td>1.foreign</td>
+<td class='texout-mono'>3,673***</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>312.3</td>
+<td class='texout-mono'>3,673***</td>
+<td class='texout-mono'>3,673***</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(664.9)</td>
+<td class='texout-mono'>&nbsp;</td>
+<td class='texout-mono'>(701.8)</td>
+<td class='texout-mono'>(664.9)</td>
+<td class='texout-mono'>(664.9)</td>
+</tr>
+<tr>
+<td>Constant</td>
+<td class='texout-mono'>-5,854</td>
+<td class='texout-mono'>11,253***</td>
+<td class='texout-mono'>6,072***</td>
+<td class='texout-mono'>-5,854</td>
+<td class='texout-mono'>-5,854</td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td class='texout-mono'>(3,874)</td>
+<td class='texout-mono'>(1,376)</td>
+<td class='texout-mono'>(431.2)</td>
+<td class='texout-mono'>(3,874)</td>
+<td class='texout-mono'>(3,874)</td>
+</tr>
+<tr>
+<td>Observations</td>
+<td class='texout-mono'>74</td>
+<td class='texout-mono'>74</td>
+<td class='texout-mono'>74</td>
+<td class='texout-mono'>74</td>
+<td class='texout-mono'>74</td>
+</tr>
+<tr class='texout-bottomline'>
+<td>R-squared</td>
+<td class='texout-mono'>0.500</td>
+<td class='texout-mono'>0.220</td>
+<td class='texout-mono'>0.002</td>
+<td class='texout-mono'>0.500</td>
+<td class='texout-mono'>0.500</td>
+</tr>
+<tr class='texout-notes'><td colspan='6'>Robust standard errors in parentheses</td></tr>
+<tr class='texout-notes'><td colspan='6'>*** p&lt;0.01, ** p&lt;0.05, * p&lt;0.1</td></tr>
+</tbody>
+</table>
+</div>
+</body></html>

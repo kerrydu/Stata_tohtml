@@ -1,0 +1,112 @@
+<script>MathJax = {  tex: {    inlineMath: [['$', '$'], ['\\(', '\\)']],    displayMath: [['$$', '$$'], ['\\[', '\\]']]  }};</script><script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<link rel="stylesheet" href="./css/github.css">
+<hr />
+<pre><code>  name:  &lt;unnamed&gt;
+   log:  D:\BaiduSyncdisk\paper\16\examples\example1.log
+</code></pre>
+<p>log type:  text opened on:  27 Apr 2026, 20:37:32</p>
+<h1><a href="#data-preparation" id="data-preparation">Data Preparation</a></h1>
+<pre><code>
+. sysuse auto, clear
+(1978 automobile data)
+
+. disp &quot;Loaded auto.dta. Observations: `c(N)', Variables: `c(k)'&quot;
+Loaded auto.dta. Observations: 74, Variables: 12
+
+. // Generate analysis variables
+. gen lprice   = ln(price)
+
+. gen weightkg = weight*0.453592
+
+. label var lprice   &quot;Log of price&quot;
+
+. label var weightkg &quot;Weight (kg)&quot;
+
+. disp &quot;Variables created: lprice, weightkg&quot;
+Variables created: lprice, weightkg
+
+</code></pre>
+<h1><a href="#figures" id="figures">Figures</a></h1>
+<h2><a href="#figure-1" id="figure-1">Figure 1</a></h2>
+<pre><code>
+. histogram price, normal title(&quot;Price distribution&quot;)
+(bin=8, start=3291, width=1576.875)
+
+. graph export &quot;price_hist.png&quot;, replace
+file price_hist.png saved as PNG format
+
+. ishere fig using &quot;price_hist.png&quot;
+
+</code></pre>
+<p><img src="price_hist.png" style="zoom:100%;"></p>
+<h2><a href="#figure-2" id="figure-2">Figure 2</a></h2>
+<pre><code>
+. twoway (scatter price mpg) (lfit price mpg), ///
+&gt;     title(&quot;Price vs MPG with linear fit&quot;) legend(order(1 &quot;Actual&quot; 2 &quot;Fitted&quot;))
+
+. graph export &quot;price_mpg.png&quot;, replace  
+file price_mpg.png saved as PNG format
+
+. ishere fig using &quot;price_mpg.png&quot;
+
+</code></pre>
+<p><img src="price_mpg.png" style="zoom:100%;"></p>
+<h1><a href="#regression" id="regression">Regression</a></h1>
+<h2><a href="#table-1" id="table-1">Table 1</a></h2>
+<pre><code>
+. regress price mpg weight
+
+      Source |       SS           df       MS      Number of obs   =        74
+-------------+----------------------------------   F(2, 71)        =     14.74
+       Model |   186321280         2  93160639.9   Prob &gt; F        =    0.0000
+    Residual |   448744116        71  6320339.67   R-squared       =    0.2934
+-------------+----------------------------------   Adj R-squared   =    0.2735
+       Total |   635065396        73  8699525.97   Root MSE        =      2514
+
+------------------------------------------------------------------------------
+       price | Coefficient  Std. err.      t    P&gt;|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         mpg |  -49.51222   86.15604    -0.57   0.567    -221.3025     122.278
+      weight |   1.746559   .6413538     2.72   0.008      .467736    3.025382
+       _cons |   1946.069    3597.05     0.54   0.590    -5226.245    9118.382
+------------------------------------------------------------------------------
+
+. local r2 = e(r2)
+
+. display %5.3f `r2'
+0.293
+
+. * emit the value
+. ishere display %5.3f `r2'
+0.293
+
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model1
+
+. qui regress price mpg , vce(robust)
+
+. estimates store model2
+
+. qui regress price i.foreign, vce(robust)
+
+. estimates store model3
+
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model4
+
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model5
+
+. outreg2e [model*] using &quot;model.html&quot;, replace html
+model.html
+model.md
+dir : seeout
+
+. ishere tab using &quot;model.html&quot;
+
+</code></pre>
+<iframe src='model.html' width='100%' height='400px' frameBorder='0'></iframe>
+<p>. tohtml &ldquo;example1.log&rdquo;,  html(&ldquo;example1.html&rdquo;) css(githubstyle) replace</p>
