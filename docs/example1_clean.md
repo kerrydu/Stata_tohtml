@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------------------------------------------------------
       name:  <unnamed>
-       log:  D:\BaiduSyncdisk\paper\16\examples\example1.log
+       log:  D:\examples\example1.log
   log type:  text
  opened on:  27 Apr 2026, 20:37:32
 
