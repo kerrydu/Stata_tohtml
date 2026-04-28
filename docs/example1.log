@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------------------------------------------------------
       name:  <unnamed>
-       log:  D:\BaiduSyncdisk\paper\16\examples\example1.log
+       log:  D:\examples\example1.log
   log type:  text
  opened on:  27 Apr 2026, 20:37:32
 
@@ -133,7 +133,7 @@ dir : seeout
 . 
 . tohtml "example1.log",  html("example1.html") css(githubstyle) replace
 % cleaned markdown written to example1_clean.md
-successfully converted "D:/BaiduSyncdisk/paper/16/examples/example1.html"
+successfully converted "D:/examples/example1.html"
 
 . 
 . 
