@@ -1,0 +1,18 @@
+v 3
+d tohtml: generate html document based on Stata log file
+d
+d
+d Author: Kerry Du, School of Management, Xiamen University
+d
+d
+d Support: kerrydu@xmu.edu.cn
+d
+f ishere.ado
+f ishere.sthlp
+f tohtml.ado
+f tohtml.sthlp
+f outreg2e.ado
+f outreg2e.sthlp
+f logoute.ado
+f logoute.sthlp
+
