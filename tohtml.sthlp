@@ -33,7 +33,8 @@ Basic usage
 {synopt:{opt replace}}overwrite existing output files{p_end}
 
 {syntab:Style options}
-{synopt:{opt css(filename|githubstyle)}}specify CSS file or use GitHub style; default is {cmd:githubstyle}{p_end}
+{synopt:{opt css(filename|githubstyle)}}CSS file; default is package resource {bf:tohtml.css} ({cmd:githubstyle} is an alias){p_end}
+{synopt:{opt mathjax}}inject MathJax when equations are detected (independent of CSS){p_end}
 
 {syntab:Portable package options}
 {synopt:{opt bundle}}collect figures/tables into {bf:figures/} and {bf:tables/} under the HTML folder{p_end}
@@ -113,18 +114,20 @@ the command will error.
 
 {phang}
 {opt css(filename|githubstyle)} applies CSS styling to the generated HTML file.
-When {opt html()} is specified and {opt css()} is omitted, {cmd:githubstyle} is used by default.
-You can specify:
+When {opt html()} is specified and {opt css()} is omitted, the package resource
+{bf:tohtml.css} is used (installed next to {cmd:tohtml.ado}). {cmd:githubstyle}
+and {cmd:tohtml} are accepted as aliases for that default file. You may also
+pass the path to a custom CSS file. Requires {opt html()}. The chosen CSS is
+copied to a {bf:css/} subdirectory beside the HTML output (and as
+{bf:table-override.css} for embedded tables).
 
-{pmore2}
-- Path to a custom CSS file
-
-{pmore2}
-- {cmd:githubstyle} to use the built-in GitHub-style CSS (default)
-
-{pmore2}
-Using this option requires the {opt html()} option. The CSS file will be copied to a css 
-subdirectory in the HTML file's location.
+{phang}
+{opt mathjax} enables MathJax for LaTeX formulas in the HTML report. This option
+is independent of {opt css()}: you can combine MathJax with {bf:tohtml.css} or any
+custom stylesheet. The MathJax CDN script is injected only when equation
+delimiters are detected in the cleaned Markdown (e.g. {cmd:$...$}, {cmd:$$...$$},
+{cmd:\(...\)}, {cmd:\[...\]}); otherwise nothing is linked. Requires {opt html()}
+and internet access when viewing formulas.
 
 
 {dlgtab:Portable package options}
@@ -151,8 +154,8 @@ where {bf:ROOT} is the directory of {opt html()}, then rewrites links to relativ
 {cmd:zip("delivery/report_v1.zip")}. Requires {opt html()}.
 
 {pmore2}
-Note: MathJax is still loaded from a CDN, so mathematical formulas need internet access
-when viewing the unzipped HTML.
+Note: If you used {opt mathjax}, MathJax is still loaded from a CDN, so formulas
+need internet access when viewing the unzipped HTML.
 
 
 {dlgtab:Cleaning modes}
@@ -205,10 +208,10 @@ commands together with figures and tables, without lengthy output.
 {phang2}{cmd:. tohtml "analysis.md", html("report/report.html") zip("report_v1.zip") replace}{p_end}
 
 {pstd}Use GitHub style{p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("analysis.html") css(githubstyle) replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.md", html("analysis.html") replace}{p_end}
 
-{pstd}Use custom CSS{p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("analysis.html") css("mystyle.css") replace}{p_end}
+{pstd}Use custom CSS (optionally with MathJax){p_end}
+{phang2}{cmd:. tohtml "analysis.md", html("analysis.html") css("mystyle.css") mathjax replace}{p_end}
 
 {pstd}Specify output file names{p_end}
 {phang2}{cmd:. tohtml "analysis.md", cleanmd("report.md") html("report.html") replace}{p_end}
@@ -253,15 +256,15 @@ commands together with figures and tables, without lengthy output.
 {phang2}{cmd:. translate analysis.smcl analysis.md, translator(smcl2log) replace}{p_end}
 
 {pstd}3. Use tohtml to generate HTML report{p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("report.html") css(githubstyle) replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.md", html("report.html") replace}{p_end}
 
 
 {title:Remarks}
 
 {pstd}
-{bf:Mathematical formulas}: When using the {opt css(githubstyle)} option, {cmd:tohtml} automatically
-injects the MathJax library, enabling LaTeX mathematical formulas in Markdown. Use $...$ for inline formulas
-and $$...$$ for display formulas.
+{bf:Mathematical formulas}: Specify the {opt mathjax} option to enable LaTeX formulas
+(independent of CSS). {cmd:tohtml} injects the MathJax library only when equation
+delimiters are found. Use {cmd:$...$} for inline formulas and {cmd:$$...$$} for display formulas.
 
 {pstd}
 {bf:File paths}: All backslashes in file paths are automatically converted to forward slashes for cross-platform compatibility.

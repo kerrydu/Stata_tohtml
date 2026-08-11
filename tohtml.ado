@@ -1,3 +1,4 @@
+*! version 1.6, 2026-08-11
 *! version 1.5, 2026-08-11
 *! version 1.4, 2026-08-11
 *! version 1.3, 2026-08-11
@@ -9,7 +10,7 @@ cap which pathutil
 if _rc ssc install pathutil, replace
 version 16
     syntax anything ,  [ cleanmd(string) REPlace HTML(string) ///
-                         CSS(string) ///
+                         CSS(string) MATHJAX ///
                          CLEAN CLEANCODE ///
                          BUNDLE ZIP(string) ///
                          width(string) height(string) zoom(string)]
@@ -94,40 +95,14 @@ version 16
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
-        if "`css'" == "" local css "githubstyle"
-
         markdown `outfile', saving(`"`html'"') replace
-        if "`css'" == "githubstyle" {
-            mata: st_local("html_dir", path_dir(`"`html'"'))
-            if "`html_dir'" == "" local html_dir "."
-            cap mkdir "`html_dir'/css"
-            local css_dest "`html_dir'/css/github.css"
-            mata: write_github_css(`"`css_dest'"')
-            mata: inject_css(`"`html'"', "./css/github.css")
-            mata: inject_mathjax(`"`html'"')
-            copy "`html_dir'/css/github.css" "`html_dir'/css/table-override.css", replace
-        }
-        else if "`css'" != "" {
-            mata: st_local("css_base", pathbasename(`"`css'"'))
-            mata: st_local("html_dir", path_dir(`"`html'"'))
-            if "`html_dir'" == "" local html_dir "."
-            cap mkdir "`html_dir'/css"
-            local css_dest "`html_dir'/css/`css_base'"
-            mata: st_local("css_norm", normalize_path(`"`css'"'))
-            mata: st_local("css_dest_norm", normalize_path(`"`css_dest'"'))
-            if `"`css_norm'"' != `"`css_dest_norm'"' {
-                copy `"`css_norm'"' `"`css_dest'"', replace
-                copy `"`css_norm'"' "`html_dir'/css/table-override.css", replace
-            }
-            mata: inject_css(`"`html'"', "./css/`css_base'")
-        }
+        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax'
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
-        // di as text "% html regenerated to `html'"
     }
-    else if "`css'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`bundle'" != "" | "`zip'" != "" {
+        di as error "css()/mathjax/bundle/zip require html()"
         exit 198
     }
 end
@@ -135,7 +110,7 @@ end
 
 program define cleancode
     syntax anything , CLEANCODE [cleanmd(string) REPlace HTML(string) ///
-                                         CSS(string) ///
+                                         CSS(string) MATHJAX ///
                                          BUNDLE ZIP(string) ///
                                          width(string) height(string) zoom(string)]
 
@@ -191,39 +166,14 @@ program define cleancode
 
     // Optional: regenerate HTML from code markdown
     if "`html'" != "" {
-        if "`css'" == "" local css "githubstyle"
         markdown `outfile', saving(`"`html'"') replace
-        if "`css'" == "githubstyle" {
-            mata: st_local("html_dir", path_dir(`"`html'"'))
-            if "`html_dir'" == "" local html_dir "."
-            cap mkdir "`html_dir'/css"
-            local css_dest "`html_dir'/css/github.css"
-            mata: write_github_css(`"`css_dest'"')
-            mata: inject_css(`"`html'"', "./css/github.css")
-            mata: inject_mathjax(`"`html'"')
-            copy "`html_dir'/css/github.css" "`html_dir'/css/table-override.css", replace
-        }
-        else if "`css'" != "" {
-            mata: st_local("css_base", pathbasename(`"`css'"'))
-            mata: st_local("html_dir", path_dir(`"`html'"'))
-            if "`html_dir'" == "" local html_dir "."
-            cap mkdir "`html_dir'/css"
-            local css_dest "`html_dir'/css/`css_base'"
-            mata: st_local("css_norm", normalize_path(`"`css'"'))
-            mata: st_local("css_dest_norm", normalize_path(`"`css_dest'"'))
-            if `"`css_norm'"' != `"`css_dest_norm'"' {
-                copy `"`css_norm'"' `"`css_dest'"', replace
-                copy `"`css_norm'"' "`html_dir'/css/override.css", replace
-            }
-            mata: inject_css(`"`html'"', "./css/`css_base'")
-        }
+        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax'
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
-        // di as text "% html regenerated to `html'"
     }
-    else if "`css'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`bundle'" != "" | "`zip'" != "" {
+        di as error "css()/mathjax/bundle/zip require html()"
         exit 198
     }
 end
@@ -237,7 +187,7 @@ end
 
 
 program define mclean
-    syntax anything , [cleanmd(string)  REPlace HTML(string) CSS(string) ///
+    syntax anything , [cleanmd(string)  REPlace HTML(string) CSS(string) MATHJAX ///
                        CLEAN CLEANCODE ///
                        BUNDLE ZIP(string) ///
                        width(string) height(string) zoom(string)]
@@ -283,41 +233,16 @@ program define mclean
     mata: rewrite_md2(`"`infile'"', `"`outfile'"', `repl')
     di as text "% cleaned markdown written to " `"`outfile'"'
 
-        // Optional: regenerate HTML from cleaned markdown
+    // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
-        if "`css'" == "" local css "githubstyle"
         markdown `outfile', saving(`"`html'"') replace
-        if "`css'" == "githubstyle" {
-            mata: st_local("html_dir", path_dir(`"`html'"'))
-            if "`html_dir'" == "" local html_dir "."
-            cap mkdir "`html_dir'/css"
-            local css_dest "`html_dir'/css/github.css"
-            mata: write_github_css(`"`css_dest'"')
-            mata: inject_css(`"`html'"', "./css/github.css")
-            mata: inject_mathjax(`"`html'"')
-            copy "`html_dir'/css/github.css" "`html_dir'/css/table-override.css", replace
-        }
-        else if "`css'" != "" {
-            mata: st_local("css_base", pathbasename(`"`css'"'))
-            mata: st_local("html_dir", path_dir(`"`html'"'))
-            if "`html_dir'" == "" local html_dir "."
-            cap mkdir "`html_dir'/css"
-            local css_dest "`html_dir'/css/`css_base'"
-            mata: st_local("css_norm", normalize_path(`"`css'"'))
-            mata: st_local("css_dest_norm", normalize_path(`"`css_dest'"'))
-            if `"`css_norm'"' != `"`css_dest_norm'"' {
-                copy `"`css_norm'"' `"`css_dest'"', replace
-                copy `"`css_norm'"' "`html_dir'/css/override.css", replace
-            }
-            mata: inject_css(`"`html'"', "./css/`css_base'")
-        }
+        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax'
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
-        // di as text "% html regenerated to `html'"
     }
-    else if "`css'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`bundle'" != "" | "`zip'" != "" {
+        di as error "css()/mathjax/bundle/zip require html()"
         exit 198
     }
 end
@@ -325,7 +250,7 @@ end
 
 
 program define mclean2
-    syntax [anything] , [cleanmd(string)  REPlace HTML(string) CSS(string) ///
+    syntax [anything] , [cleanmd(string)  REPlace HTML(string) CSS(string) MATHJAX ///
                        CLEAN CLEANCODE ///
                        BUNDLE ZIP(string) ///
                        width(string) height(string) zoom(string)]
@@ -374,42 +299,68 @@ program define mclean2
     mata: rewrite_md2(`"`infile'"', `"`outfile'"', `repl')
     di as text "% cleaned markdown written to " `"`outfile'"'
 
-        // Optional: regenerate HTML from cleaned markdown
+    // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
-        if "`css'" == "" local css "githubstyle"
         markdown `outfile', saving(`"`html'"') replace
-        if "`css'" == "githubstyle" {
-            mata: st_local("html_dir", path_dir(`"`html'"'))
-            if "`html_dir'" == "" local html_dir "."
-            cap mkdir "`html_dir'/css"
-            local css_dest "`html_dir'/css/github.css"
-            mata: write_github_css(`"`css_dest'"')
-            mata: inject_css(`"`html'"', "./css/github.css")
-            mata: inject_mathjax(`"`html'"')
-            copy "`html_dir'/css/github.css" "`html_dir'/css/table-override.css", replace
-        }
-        else if "`css'" != "" {
-            mata: st_local("css_base", pathbasename(`"`css'"'))
-            mata: st_local("html_dir", path_dir(`"`html'"'))
-            if "`html_dir'" == "" local html_dir "."
-            cap mkdir "`html_dir'/css"
-            local css_dest "`html_dir'/css/`css_base'"
-            mata: st_local("css_norm", normalize_path(`"`css'"'))
-            mata: st_local("css_dest_norm", normalize_path(`"`css_dest'"'))
-            if `"`css_norm'"' != `"`css_dest_norm'"' {
-                copy `"`css_norm'"' `"`css_dest'"', replace
-                copy `"`css_norm'"' "`html_dir'/css/override.css", replace
-            }
-            mata: inject_css(`"`html'"', "./css/`css_base'")
-        }
+        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax'
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
-        // di as text "% html regenerated to `html'"
     }
-    else if "`css'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`bundle'" != "" | "`zip'" != "" {
+        di as error "css()/mathjax/bundle/zip require html()"
         exit 198
+    }
+end
+
+
+
+capture program drop tohtml_style
+program define tohtml_style
+    version 16
+    syntax , HTML(string) [CSS(string) MATHJAX MD(string)]
+
+    // Resolve CSS source: default / githubstyle / tohtml → package resource tohtml.css
+    local css_l = ustrlower(strtrim(`"`css'"'))
+    if `"`css_l'"' == "" | `"`css_l'"' == "githubstyle" | `"`css_l'"' == "tohtml" {
+        quietly findfile tohtml.css
+        if `"`r(fn)'"' == "" {
+            di as error "tohtml.css not found; reinstall the tohtml package"
+            exit 601
+        }
+        local css_src `"`r(fn)'"'
+        local css_base "tohtml.css"
+    }
+    else {
+        confirm file `"`css'"'
+        local css_src `css'
+        mata: st_local("css_base", path_base(normalize_path(st_local("css_src"))))
+    }
+
+    mata: st_local("html_dir", path_dir(`"`html'"'))
+    if "`html_dir'" == "" local html_dir "."
+    cap mkdir "`html_dir'/css"
+    local css_dest "`html_dir'/css/`css_base'"
+
+    mata: st_local("css_norm", normalize_path(`"`css_src'"'))
+    mata: st_local("css_dest_norm", normalize_path(`"`css_dest'"'))
+    if `"`css_norm'"' != `"`css_dest_norm'"' {
+        copy `"`css_src'"' `"`css_dest'"', replace
+        copy `"`css_src'"' "`html_dir'/css/table-override.css", replace
+    }
+    mata: inject_css(`"`html'"', "./css/`css_base'")
+
+    // MathJax is opt-in and only injected when equations are present
+    if "`mathjax'" != "" {
+        local mathsrc `md'
+        if `"`mathsrc'"' == "" local mathsrc `html'
+        mata: st_numscalar("hasmath", content_has_math(`"`mathsrc'"'))
+        if hasmath {
+            mata: inject_mathjax(`"`html'"')
+        }
+        else {
+            di as text "% mathjax skipped (no equations detected in `mathsrc')"
+        }
     }
 end
 
@@ -1545,162 +1496,6 @@ void function merge_cmdlog_blocks(string scalar clean_md, string scalar cmdlog_m
 
 }
 
-void function write_github_css(string scalar filepath)
-{
-    css = J(0, 1, "")
-    css = css \ ":root {"
-    css = css \ "    --side-bar-bg-color: #fafafa;"
-    css = css \ "    --control-text-color: #777;"
-    css = css \ "    --font-sans-serif: " + char(34) + "Open Sans" + char(34) + ", " + char(34) + "Clear Sans" + char(34) + ", " + char(34) + "Helvetica Neue" + char(34) + ", Helvetica, Arial, sans-serif;"
-    css = css \ "    --font-monospace: " + char(34) + "Consolas" + char(34) + ", " + char(34) + "Monaco" + char(34) + ", " + char(34) + "Bitstream Vera Sans Mono" + char(34) + ", " + char(34) + "Courier New" + char(34) + ", monospace;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "body {"
-    css = css \ "    font-family: var(--font-sans-serif);"
-    css = css \ "    font-size: 16px;"
-    css = css \ "    line-height: 1.6;"
-    css = css \ "    color: #333;"
-    css = css \ "    background-color: white;"
-    css = css \ "    margin: 0 auto;"
-    css = css \ "    padding: 2rem;"
-    css = css \ "    max-width: 900px;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Headings */"
-    css = css \ "h1, h2, h3, h4, h5, h6 {"
-    css = css \ "    color: #333;"
-    css = css \ "    line-height: 1.25;"
-    css = css \ "    margin-top: 24px;"
-    css = css \ "    margin-bottom: 16px;"
-    css = css \ "    font-weight: bold;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "h1 { font-size: 2.25em; padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }"
-    css = css \ "h2 { font-size: 1.75em; padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }"
-    css = css \ "h3 { font-size: 1.5em; }"
-    css = css \ "h4 { font-size: 1.25em; }"
-    css = css \ "h5 { font-size: 1em; }"
-    css = css \ "h6 { font-size: 0.875em; color: #777; }"
-    css = css \ ""
-    css = css \ "/* Links */"
-    css = css \ "a {"
-    css = css \ "    color: #4183C4;"
-    css = css \ "    text-decoration: none;"
-    css = css \ "}"
-    css = css \ "a:hover {"
-    css = css \ "    text-decoration: underline;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Paragraphs & Lists */"
-    css = css \ "p, blockquote, ul, ol, dl, table, pre {"
-    css = css \ "    margin-top: 0;"
-    css = css \ "    margin-bottom: 16px;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "ul, ol {"
-    css = css \ "    padding-left: 2em;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Blockquotes */"
-    css = css \ "blockquote {"
-    css = css \ "    padding: 0 1em;"
-    css = css \ "    color: #777;"
-    css = css \ "    border-left: 0.25em solid #dfe2e5;"
-    css = css \ "    background: transparent;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Tables - GitHub Style */"
-    css = css \ "table {"
-    css = css \ "    border-collapse: collapse;"
-    css = css \ "    border-spacing: 0;"
-    css = css \ "    width: 100%;"
-    css = css \ "    margin-bottom: 16px;"
-    css = css \ "    display: block;"
-    css = css \ "    overflow: auto;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "table tr {"
-    css = css \ "    background-color: #fff;"
-    css = css \ "    border-top: 1px solid #c6cbd1;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "table tr:nth-child(2n) {"
-    css = css \ "    background-color: #f6f8fa;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "table th, table td {"
-    css = css \ "    border: 1px solid #dfe2e5;"
-    css = css \ "    padding: 6px 13px;"
-    css = css \ "    margin: 0;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "table th {"
-    css = css \ "    font-weight: 600;"
-    css = css \ "    background-color: #f6f8fa; /* Header background usually distinct */"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Code Blocks & Inline Code */"
-    css = css \ "code, kbd, pre, samp {"
-    css = css \ "    font-family: var(--font-monospace);"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Inline code */"
-    css = css \ "code {"
-    css = css \ "    background-color: #f3f4f4;"
-    css = css \ "    padding: 2px 4px;"
-    css = css \ "    border-radius: 3px;"
-    css = css \ "    font-size: 0.9em;"
-    css = css \ "    margin: 0 2px;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Block code (pre) */"
-    css = css \ "pre {"
-    css = css \ "    background-color: #f8f8f8;"
-    css = css \ "    border: 1px solid #e7eaed;"
-    css = css \ "    border-radius: 3px;"
-    css = css \ "    padding: 16px;"
-    css = css \ "    overflow: auto;"
-    css = css \ "    line-height: 1.45;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "pre code {"
-    css = css \ "    background-color: transparent;"
-    css = css \ "    padding: 0;"
-    css = css \ "    margin: 0;"
-    css = css \ "    border: none;"
-    css = css \ "    font-size: 100%; /* Reset from inline code size */"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Specific Stata classes if used */"
-    css = css \ ".stlog, .stcmd {"
-    css = css \ "    font-family: var(--font-monospace);"
-    css = css \ "    white-space: pre-wrap;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Horizontal Rule */"
-    css = css \ "hr {"
-    css = css \ "    height: 0.25em;"
-    css = css \ "    padding: 0;"
-    css = css \ "    margin: 24px 0;"
-    css = css \ "    background-color: #e7e7e7;"
-    css = css \ "    border: 0;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* Images */"
-    css = css \ "img {"
-    css = css \ "    max-width: 100%;"
-    css = css \ "    box-sizing: border-box;"
-    css = css \ "}"
-    css = css \ ""
-    css = css \ "/* MathJax */"
-    css = css \ "mjx-container {"
-    css = css \ "    overflow-x: auto;"
-    css = css \ "    overflow-y: hidden;"
-    css = css \ "}"
-
-    mm_outsheet(filepath, css, "replace")
-}
-
 void function inject_mathjax(string scalar htmlfile)
 {
     lines = cat(htmlfile)
@@ -1736,8 +1531,21 @@ void function inject_mathjax(string scalar htmlfile)
     mm_outsheet(htmlfile, lines, "replace")
 }
 
-
-
+real scalar content_has_math(string scalar filepath)
+{
+    // Detect TeX delimiters used by inject_mathjax configuration
+    lines = cat(filepath)
+    n = rows(lines)
+    for (i = 1; i <= n; i++) {
+        s = lines[i]
+        if (ustrpos(s, "$$") > 0) return(1)
+        if (ustrpos(s, "\\(") > 0) return(1)
+        if (ustrpos(s, "\\[") > 0) return(1)
+        // inline $...$ (non-empty)
+        if (ustrregexm(s, "\$[^$\n]+\$")) return(1)
+    }
+    return(0)
+}
 
 
 
