@@ -150,7 +150,7 @@ outreg2e [model*] using "$results/model2.html", replace html
 ishere tab using "$results/model2.html"
 
 
-tohtml "$logs/example_cleancode.log", cleancode("$project\example_cleancode.do")  html("$logs/example_cleancode.html") css(githubstyle) replace
+tohtml "$logs/example_cleancode.log", cleancode  html("$logs/example_cleancode.html") css(githubstyle) replace
 
 
 

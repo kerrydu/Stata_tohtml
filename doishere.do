@@ -175,11 +175,11 @@ capture log close
 ishere ### Report Generation
 ishere 
 tohtml  "$logs/auto-mini.md",  replace   ///
-    html("$results/auto-mini.html") rpath("$results") ///
+    html("$results/auto-mini.html") ///
     css(githubstyle) cleanmd("$results/auto-mini-clean.md")
 
 // tohtml  "$logs/auto-mini.md",  replace ///
-//     html("$results/auto-mini.html") rpath("$results") ///
+//     html("$results/auto-mini.html") ///
 //     cleancode(C:\Users\kerry\Desktop\auto-mini\css\Stata_log2html_new\Stata_log2html\doishere.do) ///
 //     css(githubstyle) cleanmd("$results/auto-mini-clean.md")
 // disp "HTML report generated: $results/auto-mini.html"

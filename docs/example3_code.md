@@ -58,4 +58,4 @@ outreg2e [model*] using "model.html", replace html
 ```
 <iframe src='model.html' width='100%' height='400px' frameBorder='0'></iframe>
 
-tohtml "example3.log", cleancode("example3.do")  html("example3.html") css(githubstyle) replace
+tohtml "example3.log", cleancode  html("example3.html") css(githubstyle) replace

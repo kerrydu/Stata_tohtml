@@ -33,15 +33,15 @@ Basic usage
 {synopt:{opt replace}}overwrite existing output files{p_end}
 
 {syntab:Style options}
-{synopt:{opt css(filename|githubstyle)}}specify CSS file or use GitHub style{p_end}
+{synopt:{opt css(filename|githubstyle)}}specify CSS file or use GitHub style; default is {cmd:githubstyle}{p_end}
 
-{syntab:Path options}
-{synopt:{opt rpath(directory)}}specify local path of resource files{p_end}
-{synopt:{opt wpath(url)}}specify web path (URL) for resource files{p_end}
+{syntab:Portable package options}
+{synopt:{opt bundle}}collect figures/tables into {bf:figures/} and {bf:tables/} under the HTML folder{p_end}
+{synopt:{opt zip(filename|.)}}create a zip archive of the HTML package (implies {cmd:bundle}); use {cmd:.} for default name{p_end}
 
 {syntab:Cleaning modes}
 {synopt:{opt clean}}keep only headings, images, and tables{p_end}
-{synopt:{opt cleancode(dofile)}}replace log code with code from do-file{p_end}
+{synopt:{opt cleancode}}keep Stata commands from the log (drop output); retain figure/table embeds{p_end}
 
 {syntab:Figure options}
 {synopt:{opt width(string)}}set default width for images and tables{p_end}
@@ -87,7 +87,7 @@ The command can process a single log file or a directory containing multiple tab
 4. {bf:Path management}: Supports resource file path replacement for generating portable reports.
 
 {pmore}
-5. {bf:Multiple modes}: Supports standard mode, minimal mode (clean), and code merging mode (cleancode).
+5. {bf:Multiple modes}: Supports standard mode, minimal mode (clean), and code-only mode (cleancode).
 
 
 {marker options}{...}
@@ -101,6 +101,7 @@ The command can process a single log file or a directory containing multiple tab
 
 {phang}
 {opt html(filename)} converts the cleaned Markdown to HTML after processing.
+If {it:filename} does not end with {bf:.html}, the extension is added automatically.
 Requires the {cmd:markdown} command to be installed.
 
 {phang}
@@ -111,28 +112,47 @@ the command will error.
 {dlgtab:Style options}
 
 {phang}
-{opt css(filename|githubstyle)} applies CSS styling to the generated HTML file. You can specify:
+{opt css(filename|githubstyle)} applies CSS styling to the generated HTML file.
+When {opt html()} is specified and {opt css()} is omitted, {cmd:githubstyle} is used by default.
+You can specify:
 
 {pmore2}
 - Path to a custom CSS file
 
 {pmore2}
-- {cmd:githubstyle} to use the built-in GitHub-style CSS
+- {cmd:githubstyle} to use the built-in GitHub-style CSS (default)
 
 {pmore2}
 Using this option requires the {opt html()} option. The CSS file will be copied to a css 
 subdirectory in the HTML file's location.
 
 
-{dlgtab:Path options}
+{dlgtab:Portable package options}
 
 {phang}
-{opt rpath(directory)} specifies the local path of resource files (images, tables, etc.).
-This path will be replaced with the path specified in {opt wpath()}. Used for generating portable reports.
+{opt bundle} reorganizes linked local resources so the HTML report is self-contained as a folder
+tree. After HTML generation, {cmd:tohtml} scans {cmd:<img>} / {cmd:<iframe>} references, copies
+files into:
+
+{pmore2}
+{bf:ROOT/css/}{break}
+{bf:ROOT/figures/}{break}
+{bf:ROOT/tables/}
+
+{pmore2}
+where {bf:ROOT} is the directory of {opt html()}, then rewrites links to relative paths
+({cmd:./figures/...}, {cmd:./tables/...}, {cmd:./css/...}). Requires {opt html()}.
 
 {phang}
-{opt wpath(url)} specifies the target path for resource files, typically a relative path (e.g., "./") or URL.
-In the generated Markdown/HTML, {opt rpath()} will be replaced with this path.
+{opt zip(filename|.)} first performs {opt bundle}, then creates a zip archive with Stata's
+{help zipfile} command so you can share one file with colleagues. Use {cmd:zip(.)} (or
+{cmd:zip(auto)}) to name the archive after the HTML file (e.g., {bf:report.html} →
+{bf:report.zip} in {bf:ROOT}). A custom path/name is also allowed, e.g.
+{cmd:zip("delivery/report_v1.zip")}. Requires {opt html()}.
+
+{pmore2}
+Note: MathJax is still loaded from a CDN, so mathematical formulas need internet access
+when viewing the unzipped HTML.
 
 
 {dlgtab:Cleaning modes}
@@ -140,15 +160,19 @@ In the generated Markdown/HTML, {opt rpath()} will be replaced with this path.
 {phang}
 {opt clean} activates minimal cleaning mode, keeping only headings starting with #, <img> tags, 
 <iframe> tags, and content within {cmd:ishere} text blocks. Removes all code and output.
+May not be combined with {opt cleancode}.
 
 {phang}
-{opt cleancode(dofile)} activates code merging mode. Uses the original code from the specified 
-do-file to replace code in the log file. The do-file must contain {cmd:ishere} markers to indicate
-the positions of figures, tables, and other elements.
+{opt cleancode} activates code-only mode. Stata already echoes commands in the log
+(lines beginning with {cmd:.}, with continuations beginning with {cmd:>}). This option
+keeps those command lines and drops command output. Lines that insert figures/tables
+({cmd:<img>}, {cmd:<iframe>}) are also kept. No separate do-file is required, so the
+report always matches the log that was actually run.
+{opt clean} and {opt cleancode} may not be combined.
 
 {pmore2}
-This mode is suitable when you want to display clean code (from do-file) alongside
-execution results (from log file) in the report.
+This mode is suitable for teaching materials or technical documentation that show
+commands together with figures and tables, without lengthy output.
 
 
 {dlgtab:Figure options}
@@ -172,6 +196,14 @@ execution results (from log file) in the report.
 {pstd}Generate both Markdown and HTML{p_end}
 {phang2}{cmd:. tohtml "analysis.md", html("analysis.html") replace}{p_end}
 
+{pstd}Bundle resources into css/figures/tables under the HTML folder{p_end}
+{phang2}{cmd:. tohtml "analysis.md", html("report/report.html") bundle replace}{p_end}
+
+{pstd}Bundle and create a zip archive for sharing{p_end}
+{phang2}{cmd:. tohtml "analysis.md", html("report/report.html") zip(.) replace}{p_end}
+
+{phang2}{cmd:. tohtml "analysis.md", html("report/report.html") zip("report_v1.zip") replace}{p_end}
+
 {pstd}Use GitHub style{p_end}
 {phang2}{cmd:. tohtml "analysis.md", html("analysis.html") css(githubstyle) replace}{p_end}
 
@@ -181,15 +213,11 @@ execution results (from log file) in the report.
 {pstd}Specify output file names{p_end}
 {phang2}{cmd:. tohtml "analysis.md", cleanmd("report.md") html("report.html") replace}{p_end}
 
-{pstd}Path replacement: Generate portable report{p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("report.html") ///}{p_end}
-{phang2}{cmd:    rpath("C:/Users/myname/analysis/output") wpath("./") replace}{p_end}
-
 {pstd}Minimal mode: Keep only headings and figures/tables{p_end}
 {phang2}{cmd:. tohtml "analysis.md", clean replace}{p_end}
 
 {pstd}Code merging mode: Use code from do-file{p_end}
-{phang2}{cmd:. tohtml "analysis.md", cleancode("analysis.do") html("report.html") replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.md", cleancode html("report.html") replace}{p_end}
 
 {pstd}Process entire directory{p_end}
 {phang2}{cmd:. tohtml "output/", html("report.html") zoom(80%) replace}{p_end}

@@ -136,7 +136,7 @@ tohtml filename_or_directory [, options]
 
 - **Standard Mode** (default): Preserves all code and output, creating comprehensive documentation
 - **Clean Mode** (`clean` option): Retains only headings, figures, tables, and text blocks, removing code and console output
-- **Cleancode Mode** (`cleancode(dofile)` option): Uses clean code from the original do-file while displaying execution results from the log
+- **Cleancode Mode** (`cleancode` option): Keeps Stata commands echoed in the log (lines starting with `.`, plus `>` continuations) and figure/table embeds, while dropping command output. No separate do-file is required.
 
 ### 2.4 Workflow Integration
 
@@ -348,22 +348,17 @@ The `clean` option removes all console output and code blocks, keeping only head
 
 ### 3.6 Cleancode Mode for Technical Documentation
 
-For documentation that combines clean code with execution results:
+For documentation that shows commands (without lengthy output) together with figures and tables:
 
 ```stata
-* Create the do-file: analysis.do
-* (This file contains clean, well-commented code with ishere markers)
-
-log using "analysis.smcl", replace
-do analysis.do
+log using "analysis.log", replace text
+* ... analysis with ishere markers ...
 log close
 
-translate analysis.smcl analysis.md, translator(smcl2log) replace
-tohtml analysis.md, cleancode(analysis.do) html(analysis.html) ///
-    css(githubstyle) replace
+tohtml analysis.log, cleancode html(analysis.html) replace
 ```
 
-The `cleancode()` option uses the original do-file's clean code while displaying the execution results from the log. This mode is perfect for teaching materials or technical documentation where code readability matters.
+The `cleancode` option keeps lines that Stata echoes as commands (starting with `.`, with `>` continuations) and figure/table embeds (`<img>`, `<iframe>`), while dropping command output. Because everything is taken from the same log, the report cannot drift from the do-file that actually produced the results.
 
 ### 3.7 Advanced: Path Management for Portable Reports
 
@@ -380,13 +375,12 @@ ishere fig using "C:/Users/myname/project/figures/scatter.png"
 
 log close
 
-* Convert with path replacement
+* Convert with a self-contained package for sharing
 translate report.smcl report.md, translator(smcl2log) replace
-tohtml report.md, html(report.html) css(githubstyle) ///
-    rpath("C:/Users/myname/project/figures") wpath("./figures") replace
+tohtml report.md, html(report/report.html) zip(.) replace
 ```
 
-The `rpath()` and `wpath()` options replace absolute paths with relative paths, making the report portable across different systems. This feature is essential for collaborative projects or web deployment.
+The `bundle` / `zip()` options collect figures and tables into a portable folder (and optional archive), making the report easy to share across systems or deploy to the web.
 
 ### 3.8 Processing Entire Directories
 

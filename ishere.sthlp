@@ -102,6 +102,7 @@ This mode is used for:
 
 {pmore2}
 - Marking text blocks: {cmd:ishere /*} ... {cmd:ishere */}
+(equivalently {cmd:/**} ... {cmd:**/})
 
 {pmore2}
 - Specifying inserting a table: ishere tab[other_text] 

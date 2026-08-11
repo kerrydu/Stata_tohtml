@@ -7545,10 +7545,14 @@ prog define _texout2html, sortpreserve
 		file write htmlout "<script>" _n
 		file write htmlout "// inject override css when embedded in iframe" _n
 		file write htmlout "if (window.self !== window.top) {" _n
+		file write htmlout "  var candidates = ['../css/table-override.css','./css/table-override.css'];" _n
 		file write htmlout "  var link = document.createElement('link');" _n
 		file write htmlout "  link.rel = 'stylesheet';" _n
-		file write htmlout "  link.href = '/css/table-override.css';" _n
-		file write htmlout "  link.onerror = function () { if (link && link.parentNode) { link.parentNode.removeChild(link); } };" _n
+		file write htmlout "  link.href = candidates[0];" _n
+		file write htmlout "  link.onerror = function () {" _n
+		file write htmlout "    if (link.href.indexOf(candidates[0]) >= 0) { link.href = candidates[1]; }" _n
+		file write htmlout "    else if (link && link.parentNode) { link.parentNode.removeChild(link); }" _n
+		file write htmlout "  };" _n
 		file write htmlout "  document.head.appendChild(link);" _n
 		file write htmlout "}" _n
 		file write htmlout "</script>" _n
