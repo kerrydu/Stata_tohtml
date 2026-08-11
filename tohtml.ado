@@ -1,3 +1,4 @@
+*! version 1.5, 2026-08-11
 *! version 1.4, 2026-08-11
 *! version 1.3, 2026-08-11
 *! version 1.2, 2026-08-11
@@ -1407,7 +1408,7 @@ void function merge_cmdlog_blocks(string scalar clean_md, string scalar cmdlog_m
          }
     }
 
-    // 3. 检查 ishere /* */  闭合
+    // 3. 检查 /** **/  闭合（拒绝旧版 ishere /* */）
       cmd = check_isheretxt_closed(cmd)
 
     // 4. 统计 ishere fig/tab 数量
@@ -1740,42 +1741,55 @@ void function inject_mathjax(string scalar htmlfile)
 
 
 
+string colvector function line_cmd_token(string scalar raw)
+{
+    // Strip SMCL / prompt; return space-free command token for matching
+    s = ustrltrim(raw)
+    changed = 1
+    while (changed) {
+        changed = 0
+        if (ustrpos(s, "{com}") == 1) {
+            s = ustrltrim(usubstr(s, 6, .))
+            changed = 1
+        }
+        else if (ustrpos(s, "{res}") == 1) {
+            s = ustrltrim(usubstr(s, 6, .))
+            changed = 1
+        }
+        else if (ustrpos(s, "{txt}") == 1) {
+            s = ustrltrim(usubstr(s, 6, .))
+            changed = 1
+        }
+    }
+    if (usubstr(s, 1, 1) == "." | usubstr(s, 1, 1) == ">") {
+        s = ustrltrim(usubstr(s, 2, .))
+    }
+    return(usubinstr(s, " ", "", .))
+}
+
+void function reject_deprecated_isheretxt(string colvector lines)
+{
+    for (i = 1; i <= rows(lines); i++) {
+        tok = line_cmd_token(lines[i])
+        if (tok == "ishere/*" | tok == "ishere*/" |
+            ustrpos(tok, "ishere/*") == 1 | ustrpos(tok, "ishere*/") == 1) {
+            errprintf("Error: ishere /* and ishere */ are no longer supported; use /** and **/\n")
+            _error(199)
+        }
+    }
+}
+
 string colvector function normalize_mdblock_markers(string colvector content)
 {
-    // /** ... **/  <=>  ishere /* ... ishere */
+    // Only /** ... **/ mark markdown narrative blocks (internal: _ishere_/* ... _ishere_*/)
     lines = content
     for (i = 1; i <= rows(lines); i++) {
-        s = ustrltrim(lines[i])
-        prefix = ""
-        rest = s
-        // strip common SMCL / log control prefixes
-        changed = 1
-        while (changed) {
-            changed = 0
-            if (ustrpos(rest, "{com}") == 1) {
-                rest = ustrltrim(usubstr(rest, 6, .))
-                changed = 1
-            }
-            else if (ustrpos(rest, "{res}") == 1) {
-                rest = ustrltrim(usubstr(rest, 6, .))
-                changed = 1
-            }
-            else if (ustrpos(rest, "{txt}") == 1) {
-                rest = ustrltrim(usubstr(rest, 6, .))
-                changed = 1
-            }
+        tok = line_cmd_token(lines[i])
+        if (tok == "/**") {
+            lines[i] = "_ishere_/*"
         }
-        // optional Stata prompt
-        if (usubstr(rest, 1, 1) == "." | usubstr(rest, 1, 1) == ">") {
-            prefix = usubstr(rest, 1, 1) + " "
-            rest = ustrltrim(usubstr(rest, 2, .))
-        }
-        token = usubinstr(rest, " ", "", .)
-        if (token == "/**") {
-            lines[i] = prefix + "ishere /*"
-        }
-        else if (token == "**/") {
-            lines[i] = prefix + "ishere */"
+        else if (tok == "**/") {
+            lines[i] = "_ishere_*/"
         }
     }
     return(lines)
@@ -1783,54 +1797,52 @@ string colvector function normalize_mdblock_markers(string colvector content)
 
 string colvector clean_textcell_content(string colvector lines)
 {
-  // 必须放在开始处理
-  lines = normalize_mdblock_markers(lines)
-  lines2 = strltrim(lines)
-  lines2 = strltrim(substr(lines2,2,.))
-  r1 = ustrpos(lines2, "ishere") :== 1
-  
-  lines2 = strltrim(substr(lines2, ustrlen("ishere")+1, .))
-  r12 = ustrpos(lines2,"/*") :== 1
-  r22 = ustrpos(lines2,"*/") :== 1
-  r12 = r1 :& r12
-  
-  r22 = r1 :& r22
-  
-  if (sum(r12)!=sum(r22)){
-       errprintf("Error: unmatched ishere /* and */ (/**) (**/)\n")
-       _error(199)
-   }
-  if (sum(r12)==0){ 
-    return(lines)
-  }
-  idx12 = select(1::rows(lines), r12)
-  idx22 = select(1::rows(lines), r22)
+    // Markdown narrative blocks: /** ... **/ only
+    reject_deprecated_isheretxt(lines)
+    lines = normalize_mdblock_markers(lines)
 
-   if (length(idx12)!=length(idx22)){
-       errprintf("Error: unmatched ishere /* and */ (/**) (**/)\n")
-       _error(199)
-   }
-   if (length(idx12)>0){
-       for (i=1;i<=length(idx12);i++){
-           if (idx12[i]>=idx22[i]) {
-                errprintf("Error: unmatched ishere /* and */ (/**) (**/)\n")
-               _error(199)
-           }
-           if ((i+1) < length(idx12)) {
-		   	 if (idx12[i]<length(lines) & idx12[i+1] < idx22[i]) {
-                errprintf("Error: overlapping ishere /* and */ (/**) (**/)\n")
-                _error(199)    
-               }
-		   	
-		   }
-           
-        lines[idx12[i]..idx22[i]] = substr(lines[idx12[i]..idx22[i]],2,.)
+    trim = ustrtrim(lines)
+    r12 = (trim :== "_ishere_/*")
+    r22 = (trim :== "_ishere_*/")
+
+    if (sum(r12) != sum(r22)) {
+        errprintf("Error: unmatched /** and **/\n")
+        _error(199)
+    }
+    if (sum(r12) == 0) {
+        return(lines)
+    }
+
+    idx12 = selectindex(r12)
+    idx22 = selectindex(r22)
+
+    if (length(idx12) != length(idx22)) {
+        errprintf("Error: unmatched /** and **/\n")
+        _error(199)
+    }
+
+    for (i = 1; i <= length(idx12); i++) {
+        if (idx12[i] >= idx22[i]) {
+            errprintf("Error: unmatched /** and **/\n")
+            _error(199)
+        }
+        if ((i + 1) <= length(idx12)) {
+            if (idx12[i + 1] < idx22[i]) {
+                errprintf("Error: overlapping /** and **/\n")
+                _error(199)
+            }
+        }
+        // Strip leading "." / ">" from log-echoed lines inside the block
+        for (j = idx12[i] + 1; j <= idx22[i] - 1; j++) {
+            s = ustrltrim(lines[j])
+            if (usubstr(s, 1, 1) == "." | usubstr(s, 1, 1) == ">") {
+                lines[j] = ustrltrim(usubstr(s, 2, .))
+            }
+        }
         lines[idx12[i]] = "_ishere_/*"
         lines[idx22[i]] = "_ishere_*/"
-      }
-   }
-   return(lines)
-
+    }
+    return(lines)
 }
 
 
@@ -1883,40 +1895,39 @@ string colvector function get_header(string colvector lines)
 
 
 string colvector function check_isheretxt_closed(string colvector lines)
-{ 
-  lines = normalize_mdblock_markers(lines)
-  lines2 = usubinstr(lines, " ", "", .)
-  flag1 = (ustrpos(lines2, "ishere/*") :== 1)
-  flag2 = (ustrpos(lines2, "ishere*/") :== 1)
-  if (sum(flag1)!=sum(flag2)){
-       errprintf("Error: unmatched ishere /* and */ (/**) (**/)\n")
-       _error(199)
-   }
-   if (sum(flag1)==0){ 
-        return(lines)
-   }
-   idx1 = selectindex(flag1)
-   idx2 = selectindex(flag2)
+{
+    // Do-file path: same /** ... **/ rules as clean_textcell_content
+    reject_deprecated_isheretxt(lines)
+    lines = normalize_mdblock_markers(lines)
 
-   for (i=1;i<=length(idx1);i++){
-      if (idx2[i]<=idx1[i]) {
-        errprintf("Error: unmatched ishere /* and */ (/**) (**/)\n")
+    trim = ustrtrim(lines)
+    flag1 = (trim :== "_ishere_/*")
+    flag2 = (trim :== "_ishere_*/")
+    if (sum(flag1) != sum(flag2)) {
+        errprintf("Error: unmatched /** and **/\n")
         _error(199)
-       }
-       if ((i+1) < length(idx1)) {
-         if (idx1[i]<length(lines) & idx1[i+1] < idx2[i]) {
-            errprintf("Error: overlapping ishere /* and */ (/**) (**/)\n")
-            _error(199)    
-          }
+    }
+    if (sum(flag1) == 0) {
+        return(lines)
+    }
+    idx1 = selectindex(flag1)
+    idx2 = selectindex(flag2)
+
+    for (i = 1; i <= length(idx1); i++) {
+        if (idx2[i] <= idx1[i]) {
+            errprintf("Error: unmatched /** and **/\n")
+            _error(199)
+        }
+        if ((i + 1) <= length(idx1)) {
+            if (idx1[i + 1] < idx2[i]) {
+                errprintf("Error: overlapping /** and **/\n")
+                _error(199)
+            }
         }
         lines[idx1[i]] = "_ishere_/*"
         lines[idx2[i]] = "_ishere_*/"
-
-   }
-
-   return(lines)
-
-
+    }
+    return(lines)
 }
 
 real scalar lastpos(string scalar s, string scalar ch)
@@ -2103,22 +2114,24 @@ void write_log(string matrix tables)
 
 string colvector function ishererep(string colvector content)
 {
-    lines =content
-    lines2 = usubinstr(lines," ","",.)
+    lines = content
+    lines2 = usubinstr(lines, " ", "", .)
     flag = selectindex(ustrpos(lines2, ".**#") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
        lines[flag] = ustrregexra(lines[flag], "^\.\s*\*\*\s*", ". ishere ")
     }
+    // . **/*  →  . /**   (do not use ishere /*)
     flag = selectindex(ustrpos(lines2, ".**/*") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = ustrregexra(lines[flag], "^\.\s*\*\*\s*", ". ishere ")
+       lines[flag] = ustrregexra(lines[flag], "^\.\s*\*\*\s*/\*", ". /**")
     }
-    flag = selectindex(ustrpos(lines2, ">***/") :== 1)
+    // > **/  (spaces removed: >**/)
+    flag = selectindex(ustrpos(lines2, ">**/") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = ustrregexra(lines[flag], "^\>\s*\*\*\s*", "> ishere ")
+       lines[flag] = ustrregexra(lines[flag], "^\>\s*\*\*\s*/", "> **/")
     }
 
     flag = selectindex(ustrpos(lines2, ".**```") :== 1)
@@ -2132,22 +2145,24 @@ string colvector function ishererep(string colvector content)
 
 string colvector function ishererep2(string colvector content)
 {
-    lines =content
-    lines2 = usubinstr(lines," ","",.)
+    lines = content
+    lines2 = usubinstr(lines, " ", "", .)
     flag = selectindex(ustrpos(lines2, "**#") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
        lines[flag] = ustrregexra(lines[flag], "^\s*\*\*\s*", "ishere ")
     }
+    // **/* → /** 
     flag = selectindex(ustrpos(lines2, "**/*") :== 1)
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = ustrregexra(lines[flag], "^\s*\*\*\s*", "ishere ")
+       lines[flag] = ustrregexra(lines[flag], "^\s*\*\*\s*/\*", "/**")
     }
-    flag = selectindex(ustrpos(lines2, "***/") :== 1)
+    // **/ closing (avoid matching /**)
+    flag = selectindex((ustrpos(lines2, "**/") :== 1) :* (ustrpos(lines2, "/**") :!= 1))
     if (length(flag) > 0) {
        lines[flag] = ustrltrim(lines[flag])
-       lines[flag] = ustrregexra(lines[flag], "^\s*\*\*\s*", "ishere ")
+       lines[flag] = ustrregexra(lines[flag], "^\s*\*\*\s*/", "**/")
     }
 
     flag = selectindex(ustrpos(lines2, "**```") :== 1)

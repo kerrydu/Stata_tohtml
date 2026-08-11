@@ -159,8 +159,8 @@ when viewing the unzipped HTML.
 
 {phang}
 {opt clean} activates minimal cleaning mode, keeping only headings starting with #, <img> tags, 
-<iframe> tags, and content within {cmd:ishere} text blocks. Removes all code and output.
-May not be combined with {opt cleancode}.
+<iframe> tags, and Markdown narrative blocks marked with {cmd:/**} ... {cmd:**/}.
+Removes all code and output. May not be combined with {opt cleancode}.
 
 {phang}
 {opt cleancode} activates code-only mode. Stata already echoes commands in the log
