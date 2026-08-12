@@ -1,3 +1,5 @@
+*! version 1.8, 2026-08-12
+*! version 1.7, 2026-08-12
 *! version 1.6, 2026-08-11
 *! version 1.5, 2026-08-11
 *! version 1.4, 2026-08-11
@@ -9,7 +11,7 @@ program define tohtml
 cap which pathutil
 if _rc ssc install pathutil, replace
 version 16
-    syntax anything ,  [ cleanmd(string) REPlace HTML(string) ///
+    syntax anything ,  [ MD(string) REPlace HTML(string) ///
                          CSS(string) MATHJAX ///
                          CLEAN CLEANCODE ///
                          BUNDLE ZIP(string) ///
@@ -43,24 +45,25 @@ version 16
 
    // log file specified
     confirm file `"`anything'"'
-	local saving `cleanmd'
-    local saving = subinstr(`"`saving'"', "\", "/", .)
     if "`clean'" != "" {
         mclean `0'
         exit
     }
     if "`cleancode'" != "" {
-        cleancode `0' 
+        cleancode `0'
         exit
     }
-    if `"`saving'"' == "" {
-        //在anything扩展名之前加clean，思路找到最后一个.的位置，然后把扩展名之前的部分替换成clean.md
-        local saving = usubstr("`anything'", 1, ustrpos("`anything'", ".")-1) + "_clean.md"
-    }
-    local using `anything'
-    // Resolve paths
-    local infile `using'
-    local outfile `saving'
+
+    local src_orig `anything'
+    // SMCL → text log (tempfile owned here so it survives until this program ends)
+    tempfile _tohtml_smcltxt
+    tohtml_ensure_textlog, from(`"`anything'"') dest(`"`_tohtml_smcltxt'.log"')
+    local infile `r(file)'
+
+    // name outputs from original path; read content from (possibly translated) file
+    tohtml_resolve_md, from(`"`src_orig'"') md(`"`md'"') html(`"`html'"')
+    local outfile `r(md)'
+    local html `r(html)'
 
     // If outfile exists and no replace, stop
     capture confirm new file `"`outfile'"'
@@ -70,9 +73,6 @@ version 16
     }
 
     if `"`html'"' != "" {
-        if ustrright(ustrlower(`"`html'"'), 5) != ".html" {
-            local html `"`html'.html"'
-        }
         capture confirm new file "`html'"
         if _rc  & "`replace'" == "" {
             di as error "output file exists; use replace"
@@ -91,7 +91,7 @@ version 16
     local repl = ("`replace'" != "")
     mata: rewrite_md(`"`infile'"', `"`outfile'"', `repl')
 
-    di as text "% cleaned markdown written to " "`outfile'"
+    di as text "% markdown written to " "`outfile'"
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
@@ -109,30 +109,32 @@ end
 
 
 program define cleancode
-    syntax anything , CLEANCODE [cleanmd(string) REPlace HTML(string) ///
+    syntax anything , CLEANCODE [MD(string) REPlace HTML(string) ///
                                          CSS(string) MATHJAX ///
                                          BUNDLE ZIP(string) ///
                                          width(string) height(string) zoom(string)]
 
-    local saving `cleanmd'
     removequotes , t(`anything')
     local anything  `r(s)'
+    local anything = subinstr(`"`anything'"', "\", "/", .)
+    confirm file `"`anything'"'
+    local src_orig `anything'
+    tempfile _tohtml_smcltxt
+    tohtml_ensure_textlog, from(`"`anything'"') dest(`"`_tohtml_smcltxt'.log"')
+    local anything `r(file)'
 
-    if `"`saving'"' == "" {
-        local saving = usubstr(`"`anything'"', 1, ustrpos(`"`anything'"', ".")-1) + "_code.md"
+    tohtml_resolve_md, from(`"`src_orig'"') md(`"`md'"') html(`"`html'"')
+    local outfile `r(md)'
+    local html `r(html)'
+    local infile `anything'
 
-    }
-
-    capture confirm new file `"`saving'"'
+    capture confirm new file `"`outfile'"'
     if _rc  & "`replace'" == "" {
         di as error "output file exists; use replace"
         exit 602
     }
 
     if `"`html'"' != "" {
-        if ustrright(ustrlower(`"`html'"'), 5) != ".html" {
-            local html `"`html'.html"'
-        }
         capture confirm new file "`html'"
         if _rc  & "`replace'" == "" {
             di as error "output file exists; use replace"
@@ -142,27 +144,15 @@ program define cleancode
 
     // If replace is specified, erase existing outfile
     if "`replace'" != "" {
-        capture erase `"`saving'"'
+        capture erase `"`outfile'"'
         capture erase `"`html'"'
     }
-
-
-    local using `anything'
-    local infile `using'
-    local outfile `saving'
-
-    capture confirm file `"`outfile'"'
-    if _rc == 0 & "`replace'" == "" {
-        di as error "output file exists; use replace"
-        exit 602
-    }
-
 
     local replout = ("`replace'" != "")
     // Keep Stata commands (and img/iframe embeds) from the log; drop output
     mata: rewrite_md_cleancode(`"`infile'"', `"`outfile'"', `replout')
 
-    di as text `"% cleancode markdown written to `outfile'"'
+    di as text `"% markdown written to `outfile'"'
 
     // Optional: regenerate HTML from code markdown
     if "`html'" != "" {
@@ -187,7 +177,7 @@ end
 
 
 program define mclean
-    syntax anything , [cleanmd(string)  REPlace HTML(string) CSS(string) MATHJAX ///
+    syntax anything , [MD(string)  REPlace HTML(string) CSS(string) MATHJAX ///
                        CLEAN CLEANCODE ///
                        BUNDLE ZIP(string) ///
                        width(string) height(string) zoom(string)]
@@ -195,14 +185,17 @@ program define mclean
 
     removequotes , t(`anything')
     local anything  `r(s)'
-   local saving `cleanmd'
-    if `"`saving'"' == "" {
-        //在anything扩展名之前加clean，思路找到最后一个.的位置，然后把扩展名之前的部分替换成clean.md
-        local saving = usubstr("`anything'", 1, ustrpos("`anything'", ".")-1) + ".clean.md"
-    }
-    local using `anything'
-    local infile `using'
-    local outfile `saving'
+    local anything = subinstr(`"`anything'"', "\", "/", .)
+    confirm file `"`anything'"'
+    local src_orig `anything'
+    tempfile _tohtml_smcltxt
+    tohtml_ensure_textlog, from(`"`anything'"') dest(`"`_tohtml_smcltxt'.log"')
+    local anything `r(file)'
+
+    tohtml_resolve_md, from(`"`src_orig'"') md(`"`md'"') html(`"`html'"')
+    local outfile `r(md)'
+    local html `r(html)'
+    local infile `anything'
 
     // If outfile exists and no replace, stop
     capture confirm file `"`outfile'"'
@@ -212,9 +205,6 @@ program define mclean
     }
 
     if `"`html'"' != "" {
-        if ustrright(ustrlower(`"`html'"'), 5) != ".html" {
-            local html `"`html'.html"'
-        }
         capture confirm new file "`html'"
         if _rc  & "`replace'" == "" {
             di as error "output file exists; use replace"
@@ -231,7 +221,7 @@ program define mclean
 
     local repl = ("`replace'" != "")
     mata: rewrite_md2(`"`infile'"', `"`outfile'"', `repl')
-    di as text "% cleaned markdown written to " `"`outfile'"'
+    di as text "% markdown written to " `"`outfile'"'
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
@@ -250,7 +240,7 @@ end
 
 
 program define mclean2
-    syntax [anything] , [cleanmd(string)  REPlace HTML(string) CSS(string) MATHJAX ///
+    syntax [anything] , [MD(string)  REPlace HTML(string) CSS(string) MATHJAX ///
                        CLEAN CLEANCODE ///
                        BUNDLE ZIP(string) ///
                        width(string) height(string) zoom(string)]
@@ -259,27 +249,21 @@ program define mclean2
     // removequotes , t(`anything')
     // local anything  `r(s)'
     local anything `c(pwd)'/_tempfile_log_.md
-    local saving `cleanmd'
-    if `"`saving'"' == "" {
-        //在anything扩展名之前加clean，思路找到最后一个.的位置，然后把扩展名之前的部分替换成clean.md
-        local saving = usubstr("`anything'", 1, ustrpos("`anything'", ".")-1) + ".clean.md"
-    }
-    local using `anything'
-    local infile `using'
-    local outfile `saving'
+
+    tohtml_resolve_md, from(`"`anything'"') md(`"`md'"') html(`"`html'"')
+    local outfile `r(md)'
+    local html `r(html)'
+    local infile `anything'
 
     // If outfile exists and no replace, stop
 
-    capture confirm new file `"`saving'"'
+    capture confirm new file `"`outfile'"'
     if _rc  & "`replace'" == "" {
         di as error "output file exists; use replace"
         exit 602
     }
 
     if `"`html'"' != "" {
-        if ustrright(ustrlower(`"`html'"'), 5) != ".html" {
-            local html `"`html'.html"'
-        }
         capture confirm new file "`html'"
         if _rc  & "`replace'" == "" {
             di as error "output file exists; use replace"
@@ -289,7 +273,7 @@ program define mclean2
 
     // If replace is specified, erase existing outfile
     if "`replace'" != "" {
-        capture erase `"`saving'"'
+        capture erase `"`outfile'"'
         capture erase `"`html'"'
     }
   
@@ -297,7 +281,7 @@ program define mclean2
 
     local repl = ("`replace'" != "")
     mata: rewrite_md2(`"`infile'"', `"`outfile'"', `repl')
-    di as text "% cleaned markdown written to " `"`outfile'"'
+    di as text "% markdown written to " `"`outfile'"'
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
@@ -313,6 +297,89 @@ program define mclean2
     }
 end
 
+
+
+capture program drop tohtml_ensure_textlog
+program define tohtml_ensure_textlog, rclass
+    version 16
+    syntax , FROM(string) [DEST(string)]
+
+    local from = subinstr(`"`from'"', "\", "/", .)
+    confirm file `"`from'"'
+
+    mata: st_local("suf", pathsuffix(st_local("from")))
+    local is_smcl = (ustrlower("`suf'") == ".smcl")
+
+    if !`is_smcl' {
+        // content peek: first non-empty line is {smcl}
+        tempname fh
+        file open `fh' using `"`from'"', read text
+        local found 0
+        local nread 0
+        while `nread' < 40 {
+            file read `fh' line
+            if r(eof) continue, break
+            local ++nread
+            local t = ustrtrim(`"`macval(line)'"')
+            if `"`t'"' == "" continue
+            if `"`t'"' == "{smcl}" local found 1
+            continue, break
+        }
+        file close `fh'
+        local is_smcl = `found'
+    }
+
+    if !`is_smcl' {
+        return local file `"`from'"'
+        return scalar translated = 0
+        exit
+    }
+
+    if `"`dest'"' == "" {
+        di as error "tohtml_ensure_textlog: dest() required for SMCL input"
+        exit 198
+    }
+    local dest = subinstr(`"`dest'"', "\", "/", .)
+
+    quietly translate `"`from'"' `"`dest'"', translator(smcl2log) replace
+    di as text "% SMCL log translated to text: `dest'"
+    return local file `"`dest'"'
+    return scalar translated = 1
+end
+
+
+capture program drop tohtml_resolve_md
+program define tohtml_resolve_md, rclass
+    version 16
+    syntax , FROM(string) [MD(string) HTML(string)]
+
+    local from = subinstr(`"`from'"', "\", "/", .)
+    local md = subinstr(`"`md'"', "\", "/", .)
+    local html = subinstr(`"`html'"', "\", "/", .)
+
+    if `"`html'"' != "" {
+        if ustrright(ustrlower(`"`html'"'), 5) != ".html" {
+            local html `"`html'.html"'
+        }
+    }
+
+    if `"`md'"' == "" {
+        if `"`html'"' != "" {
+            // same path as html, extension .md
+            local md = ustrregexra(`"`html'"', "\.[Hh][Tt][Mm][Ll]$", ".md")
+        }
+        else {
+            // no html: same stem as input with .md
+            local md = ustrregexra(`"`from'"', "\.[^.]+$", "") + ".md"
+        }
+    }
+    else if ustrright(ustrlower(`"`md'"'), 3) != ".md" {
+        local md `"`md'.md"'
+    }
+
+    return local md `"`md'"'
+    return local html `"`html'"'
+end
 
 
 capture program drop tohtml_style

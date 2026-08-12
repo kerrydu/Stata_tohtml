@@ -28,8 +28,8 @@ Basic usage
 {synopthdr}
 {synoptline}
 {syntab:Output options}
-{synopt:{opt cleanmd(filename)}}specify output path for cleaned markdown file{p_end}
-{synopt:{opt html(filename)}}generate HTML file from cleaned markdown{p_end}
+{synopt:{opt md(filename)}}output Markdown file; default matches {opt html()} with {bf:.md}{p_end}
+{synopt:{opt html(filename)}}generate HTML file from the Markdown output{p_end}
 {synopt:{opt replace}}overwrite existing output files{p_end}
 
 {syntab:Style options}
@@ -97,11 +97,14 @@ The command can process a single log file or a directory containing multiple tab
 {dlgtab:Output options}
 
 {phang}
-{opt cleanmd(filename)} specifies the output path for the cleaned Markdown file. If not specified,
-"_clean" will be appended to the input filename.
+{opt md(filename)} specifies the output Markdown file. If omitted and {opt html()} is
+specified, the Markdown path is the same as the HTML file with extension {bf:.md}
+(e.g. {cmd:html(report.html)} → {bf:report.md}). If both {opt md()} and {opt html()}
+are omitted, the input stem with extension {bf:.md} is used. If {it:filename} does not
+end with {bf:.md}, the extension is added automatically.
 
 {phang}
-{opt html(filename)} converts the cleaned Markdown to HTML after processing.
+{opt html(filename)} converts the Markdown output to HTML after processing.
 If {it:filename} does not end with {bf:.html}, the extension is added automatically.
 Requires the {cmd:markdown} command to be installed.
 
@@ -214,7 +217,11 @@ commands together with figures and tables, without lengthy output.
 {phang2}{cmd:. tohtml "analysis.md", html("analysis.html") css("mystyle.css") mathjax replace}{p_end}
 
 {pstd}Specify output file names{p_end}
-{phang2}{cmd:. tohtml "analysis.md", cleanmd("report.md") html("report.html") replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", md("report.md") html("report.html") replace}{p_end}
+
+{pstd}Omit {opt md()}: Markdown defaults to the HTML basename{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report.html") replace}{p_end}
+{phang2}{cmd:→ writes report.md and report.html}{p_end}
 
 {pstd}Minimal mode: Keep only headings and figures/tables{p_end}
 {phang2}{cmd:. tohtml "analysis.md", clean replace}{p_end}
@@ -228,9 +235,10 @@ commands together with figures and tables, without lengthy output.
 
 {title:Complete workflow example}
 
-{pstd}1. Create a do-file with ishere markers{p_end}
+{pstd}1. Create a do-file with ishere markers (text log recommended){p_end}
 {phang2}{cmd:. * ---- analysis.do ----}{p_end}
-{phang2}{cmd:. log using "analysis.smcl", replace}{p_end}
+{phang2}{cmd:. capture log close}{p_end}
+{phang2}{cmd:. log using "analysis.log", replace text}{p_end}
 {phang2}{cmd:. ishere # Data Analysis Report}{p_end}
 {phang2}{cmd:.}{p_end}
 {phang2}{cmd:. ishere ## Data Description}{p_end}
@@ -252,11 +260,13 @@ commands together with figures and tables, without lengthy output.
 {phang2}{cmd:.}{p_end}
 {phang2}{cmd:. log close}{p_end}
 
-{pstd}2. Translate SMCL log to Markdown{p_end}
-{phang2}{cmd:. translate analysis.smcl analysis.md, translator(smcl2log) replace}{p_end}
+{pstd}2. Generate the HTML report{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report.html") replace}{p_end}
 
-{pstd}3. Use tohtml to generate HTML report{p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("report.html") replace}{p_end}
+{pstd}
+SMCL logs are also accepted: if the input is {bf:.smcl} (or begins with {cmd:{c -(}smcl{c )-}}),
+{cmd:tohtml} automatically runs {help translate} with translator {cmd:smcl2log} before
+processing. Manual translation is no longer required.
 
 
 {title:Remarks}
@@ -265,6 +275,10 @@ commands together with figures and tables, without lengthy output.
 {bf:Mathematical formulas}: Specify the {opt mathjax} option to enable LaTeX formulas
 (independent of CSS). {cmd:tohtml} injects the MathJax library only when equation
 delimiters are found. Use {cmd:$...$} for inline formulas and {cmd:$$...$$} for display formulas.
+
+{pstd}
+{bf:Log formats}: Prefer text logs ({cmd:log using ..., text}). SMCL logs are detected and
+converted automatically via {cmd:translate ..., translator(smcl2log)}.
 
 {pstd}
 {bf:File paths}: All backslashes in file paths are automatically converted to forward slashes for cross-platform compatibility.
