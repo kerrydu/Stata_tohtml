@@ -102,6 +102,10 @@ specified, the Markdown path is the same as the HTML file with extension {bf:.md
 (e.g. {cmd:html(report.html)} → {bf:report.md}). If both {opt md()} and {opt html()}
 are omitted, the input stem with extension {bf:.md} is used. If {it:filename} does not
 end with {bf:.md}, the extension is added automatically.
+The Markdown output path must differ from the input file; otherwise {cmd:tohtml}
+errors with {err:input file and Markdown output file must be different}
+before any file is deleted. If the input is already a {bf:.md} file, specify
+a different {opt md()} (or an {opt html()} whose basename is not the input).
 
 {phang}
 {opt html(filename)} converts the Markdown output to HTML after processing.
@@ -158,7 +162,8 @@ where {bf:ROOT} is the directory of {opt html()}, then rewrites links to relativ
 
 {pmore2}
 Note: If you used {opt mathjax}, MathJax is still loaded from a CDN, so formulas
-need internet access when viewing the unzipped HTML.
+need internet access when viewing the unzipped HTML. The same applies to
+highlight.js in {opt cleancode} HTML reports.
 
 
 {dlgtab:Cleaning modes}
@@ -174,7 +179,11 @@ Removes all code and output. May not be combined with {opt cleancode}.
 keeps those command lines and drops command output. Lines that insert figures/tables
 ({cmd:<img>}, {cmd:<iframe>}) are also kept. No separate do-file is required, so the
 report always matches the log that was actually run.
-{opt clean} and {opt cleancode} may not be combined.
+When {opt html()} is specified, {cmd:tohtml} automatically injects
+{browse "https://highlightjs.org/":highlight.js} so {cmd:```stata} blocks are
+syntax-highlighted in the HTML (CDN; internet access is required when viewing).
+There is no option to turn this off. {opt clean} and {opt cleancode} may not be
+combined.
 
 {pmore2}
 This mode is suitable for teaching materials or technical documentation that show
@@ -197,24 +206,24 @@ commands together with figures and tables, without lengthy output.
 {title:Examples}
 
 {pstd}Basic usage: Convert log file to Markdown{p_end}
-{phang2}{cmd:. tohtml "analysis.md", replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", replace}{p_end}
 
 {pstd}Generate both Markdown and HTML{p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("analysis.html") replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("analysis.html") replace}{p_end}
 
 {pstd}Bundle resources into css/figures/tables under the HTML folder{p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("report/report.html") bundle replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report/report.html") bundle replace}{p_end}
 
 {pstd}Bundle and create a zip archive for sharing{p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("report/report.html") zip(.) replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report/report.html") zip(.) replace}{p_end}
 
-{phang2}{cmd:. tohtml "analysis.md", html("report/report.html") zip("report_v1.zip") replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report/report.html") zip("report_v1.zip") replace}{p_end}
 
 {pstd}Use GitHub style{p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("analysis.html") replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("analysis.html") replace}{p_end}
 
 {pstd}Use custom CSS (optionally with MathJax){p_end}
-{phang2}{cmd:. tohtml "analysis.md", html("analysis.html") css("mystyle.css") mathjax replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("analysis.html") css("mystyle.css") mathjax replace}{p_end}
 
 {pstd}Specify output file names{p_end}
 {phang2}{cmd:. tohtml "analysis.log", md("report.md") html("report.html") replace}{p_end}
@@ -224,10 +233,10 @@ commands together with figures and tables, without lengthy output.
 {phang2}{cmd:→ writes report.md and report.html}{p_end}
 
 {pstd}Minimal mode: Keep only headings and figures/tables{p_end}
-{phang2}{cmd:. tohtml "analysis.md", clean replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", clean html("analysis_clean.html") replace}{p_end}
 
-{pstd}Code merging mode: Use code from do-file{p_end}
-{phang2}{cmd:. tohtml "analysis.md", cleancode html("report.html") replace}{p_end}
+{pstd}Code-only mode: Keep commands from the log (drop output){p_end}
+{phang2}{cmd:. tohtml "analysis.log", cleancode html("report.html") replace}{p_end}
 
 {pstd}Process entire directory{p_end}
 {phang2}{cmd:. tohtml "output/", html("report.html") zoom(80%) replace}{p_end}
@@ -272,9 +281,24 @@ processing. Manual translation is no longer required.
 {title:Remarks}
 
 {pstd}
-{bf:Mathematical formulas}: Specify the {opt mathjax} option to enable LaTeX formulas
-(independent of CSS). {cmd:tohtml} injects the MathJax library only when equation
-delimiters are found. Use {cmd:$...$} for inline formulas and {cmd:$$...$$} for display formulas.
+{bf:Stata code fences}: Opening Markdown fences for Stata commands are written as
+{cmd:```stata} (Typora, GitHub, and Stata {cmd:markdown} all recognize this).
+Log-header fences remain {cmd:```text}. The default stylesheet {bf:tohtml.css}
+styles {cmd:language-stata} blocks (left border and background).
+With {opt cleancode} and {opt html()}, highlight.js is also injected so those
+blocks receive token-level coloring in the browser.
+
+{pstd}
+{bf:MathJax}: Independent of CSS. {cmd:tohtml} injects the MathJax library only
+when equation delimiters are found ({cmd:$...$}, {cmd:$$...$$}, {cmd:\(...\)},
+{cmd:\[...\]}). A lone {cmd:$100} or an escaped {cmd:\$} does not trigger
+injection.
+
+{pstd}
+{bf:Log header}: In default mode the Stata text-log header ({cmd:name:}, {cmd:log:},
+{cmd:log type:}, {cmd:opened on:}) is wrapped in a {cmd:```text} fence so Markdown
+does not treat the dash line as a horizontal rule. {opt clean} and {opt cleancode}
+drop the header.
 
 {pstd}
 {bf:Log formats}: Prefer text logs ({cmd:log using ..., text}). SMCL logs are detected and

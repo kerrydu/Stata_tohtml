@@ -121,10 +121,15 @@ pre code {
     font-size: 100%; /* Reset from inline code size */
 }
 
-/* Specific Stata classes if used */
-.stlog, .stcmd {
-    font-family: var(--font-monospace);
-    white-space: pre-wrap;
+/* Stata fenced code: ```stata → <code class="language-stata"> */
+pre code.language-stata,
+code.language-stata {
+    color: #24292f;
+}
+
+pre:has(code.language-stata) {
+    background-color: #f6f8fa;
+    border-left: 4px solid #1a7f37;
 }
 
 /* Horizontal Rule */

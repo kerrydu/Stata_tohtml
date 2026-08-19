@@ -1,3 +1,7 @@
+*! version 1.12, 2026-08-19
+*! version 1.11, 2026-08-19
+*! version 1.10, 2026-08-19
+*! version 1.9, 2026-08-19
 *! version 1.8, 2026-08-12
 *! version 1.7, 2026-08-12
 *! version 1.6, 2026-08-11
@@ -64,6 +68,7 @@ version 16
     tohtml_resolve_md, from(`"`src_orig'"') md(`"`md'"') html(`"`html'"')
     local outfile `r(md)'
     local html `r(html)'
+    tohtml_check_md_collision, from(`"`src_orig'"') md(`"`outfile'"')
 
     // If outfile exists and no replace, stop
     capture confirm new file `"`outfile'"'
@@ -127,6 +132,7 @@ program define cleancode
     local outfile `r(md)'
     local html `r(html)'
     local infile `anything'
+    tohtml_check_md_collision, from(`"`src_orig'"') md(`"`outfile'"')
 
     capture confirm new file `"`outfile'"'
     if _rc  & "`replace'" == "" {
@@ -157,7 +163,7 @@ program define cleancode
     // Optional: regenerate HTML from code markdown
     if "`html'" != "" {
         markdown `outfile', saving(`"`html'"') replace
-        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax'
+        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax' highlight
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
@@ -196,6 +202,7 @@ program define mclean
     local outfile `r(md)'
     local html `r(html)'
     local infile `anything'
+    tohtml_check_md_collision, from(`"`src_orig'"') md(`"`outfile'"')
 
     // If outfile exists and no replace, stop
     capture confirm file `"`outfile'"'
@@ -254,6 +261,7 @@ program define mclean2
     local outfile `r(md)'
     local html `r(html)'
     local infile `anything'
+    tohtml_check_md_collision, from(`"`anything'"') md(`"`outfile'"')
 
     // If outfile exists and no replace, stop
 
@@ -382,10 +390,22 @@ program define tohtml_resolve_md, rclass
 end
 
 
+capture program drop tohtml_check_md_collision
+program define tohtml_check_md_collision
+    version 16
+    syntax , FROM(string) MD(string)
+    mata: st_numscalar("tohtml_md_same", paths_are_same(st_local("from"), st_local("md")))
+    if tohtml_md_same {
+        di as error "input file and Markdown output file must be different"
+        exit 198
+    }
+end
+
+
 capture program drop tohtml_style
 program define tohtml_style
     version 16
-    syntax , HTML(string) [CSS(string) MATHJAX MD(string)]
+    syntax , HTML(string) [CSS(string) MATHJAX HIGHLIGHT MD(string)]
 
     // Resolve CSS source: default / githubstyle / tohtml → package resource tohtml.css
     local css_l = ustrlower(strtrim(`"`css'"'))
@@ -416,6 +436,12 @@ program define tohtml_style
         copy `"`css_src'"' "`html_dir'/css/table-override.css", replace
     }
     mata: inject_css(`"`html'"', "./css/`css_base'")
+    mata: normalize_stata_code_class(`"`html'"')
+
+    // cleancode HTML: syntax-highlight ```stata blocks (CDN; no user option)
+    if "`highlight'" != "" {
+        mata: inject_highlightjs(`"`html'"')
+    }
 
     // MathJax is opt-in and only injected when equations are present
     if "`mathjax'" != "" {
@@ -576,6 +602,16 @@ void function inject_css(string scalar htmlfile, string scalar css_rel)
         lines = link \ lines
     }
 
+    mm_outsheet(htmlfile, lines, "replace")
+}
+
+void function normalize_stata_code_class(string scalar htmlfile)
+{
+    // Stata markdown: ```stata → language-stata; leftover ```{stata} → language-{stata}
+    lines = cat(htmlfile)
+    if (rows(lines) == 0) return
+    ugly = "language-" + "{" + "stata" + "}"
+    lines = usubinstr(lines, ugly, "language-stata", .)
     mm_outsheet(htmlfile, lines, "replace")
 }
 
@@ -871,32 +907,37 @@ string colvector function keep_stata_code_lines(string colvector lines)
 
     keep = (usubstr(work, 1, 1) :== ".") :| (usubstr(work, 1, 1) :== ">")
     keep = keep :| (ustrpos(work, "<iframe") :== 1) :| (ustrpos(work, "<img") :== 1)
+    // After display-tag replacement, keep narrative blocks (markers have no . prefix)
+    keep = keep :| (get_textcell_index(work) :> 0)
     return(select(lines, keep))
 }
 
 void function rewrite_md_cleancode(string scalar ofi, string scalar tfi, real scalar replace)
 {
-    // cleancode mode: derive code from the log itself (no separate do-file)
+    // Replace {ishere display ...} from the full log first, then drop output.
     fcon = cat(ofi)
+    fcon = drop_stata_log_header(fcon)
+    fcon = ishererep(fcon)
+    fcon = merge_html_vectorized(fcon)
+    fcon = clean_textcell_content(fcon)
+    fcon = subisheredintxt(fcon)
     fcon = keep_stata_code_lines(fcon)
-    tmp = st_tempfilename()
-    mm_outsheet(tmp, fcon, "replace")
-    rewrite_md(tmp, tfi, replace)
+    rewrite_md_finish(fcon, tfi, replace)
 }
 
 void function rewrite_md(string scalar ofi, string scalar tfi, real scalar replace)
 {
-    // 1. 读取文件
     fcon = cat(ofi)
+    fcon = fence_stata_log_header(fcon)
     fcon = ishererep(fcon)
-
-    // 2. 合并 HTML 行
     fcon = merge_html_vectorized(fcon)
     fcon = clean_textcell_content(fcon)
-    
-    // 2b. 替换文本块中的 ishere display 占位符
     fcon = subisheredintxt(fcon)
-    
+    rewrite_md_finish(fcon, tfi, replace)
+}
+
+void function rewrite_md_finish(string colvector fcon, string scalar tfi, real scalar replace)
+{
     // 3. 移除前缀
     prefixes = (">", "{com}", "{res}", "{txt}")
     fcon = remove_prefix_and_trim(fcon, prefixes)
@@ -939,7 +980,7 @@ void function rewrite_md(string scalar ofi, string scalar tfi, real scalar repla
     flag = selectindex(regexm(fcon, regex))
     fconnew = fcon
     if (sum(flag) > 0) {
-        if (flag[i]<length(fcon)){
+        if (flag[1]<length(fcon)){
             fconnew = fcon[1::(flag[1]-1)]
         }
         else{
@@ -958,8 +999,10 @@ void function rewrite_md(string scalar ofi, string scalar tfi, real scalar repla
     }
     fcon = fconnew
 
+    // Opening Stata code fences: ```  →  ```stata  (keep ```text etc.)
+    fcon = tag_stata_opening_fences(fcon)
+
     // 8. 输出
-    //printf(strofreal(replace))
     if (replace == 0) {
         mm_outsheet(tfi, fcon)
     } else {
@@ -968,12 +1011,11 @@ void function rewrite_md(string scalar ofi, string scalar tfi, real scalar repla
 }
 
 
-
-
 void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar replace)
 {
     // 1. 读取文件
     fcon = cat(ofi)
+    fcon = drop_stata_log_header(fcon)
     fcon = ishererep(fcon)
     // 2. 合并 HTML 行
     fcon = merge_html_vectorized(fcon)
@@ -1079,11 +1121,36 @@ string colvector extractmdtable(string scalar line){
 }
 
 
+real colvector is_md_fence_line(string colvector lines)
+{
+    // ``` or ```lang  (info string after the backticks)
+    t = strtrim(lines)
+    return(usubstr(t, 1, 3) :== "```")
+}
+
+string colvector tag_stata_opening_fences(string colvector lines)
+{
+    // Odd-numbered fences are openings. Bare ``` become ```stata for Typora/GitHub highlighting.
+    // Leave closings and fences that already have an info string (```text, ```stata, ...).
+    n = rows(lines)
+    if (n == 0) return(lines)
+    is_bt = is_md_fence_line(lines)
+    k = 0
+    for (i = 1; i <= n; i++) {
+        if (!is_bt[i]) continue
+        k++
+        if (mod(k, 2) == 0) continue
+        t = strtrim(lines[i])
+        if (t == "```") lines[i] = "```stata"
+    }
+    return(lines)
+}
+
 real colvector char_lengths_including_backticks(string colvector lines)
 {
     n = rows(lines)
     if (n == 0) return(J(0, 1, .))
-    is_bt_start = (strtrim(lines) :== "```") 
+    is_bt_start = is_md_fence_line(lines)
     idx_bt = selectindex(is_bt_start)
 	if (sum(idx_bt)==0) result = J(n, 1, .)
     n_bt = rows(idx_bt)
@@ -1190,7 +1257,7 @@ real colvector cumcount_backtick3(string colvector lines)
     n = rows(lines)
     if (n == 0) return(J(0, 1, .))
     
-    is_bt = (strtrim(lines) :== "```") 
+    is_bt = is_md_fence_line(lines) 
     
     // 累积和：到当前行为止（含）的 ``` 行数
     cumsum = runningsum(is_bt)
@@ -1598,9 +1665,44 @@ void function inject_mathjax(string scalar htmlfile)
     mm_outsheet(htmlfile, lines, "replace")
 }
 
+void function inject_highlightjs(string scalar htmlfile)
+{
+    // Token highlighting for ```stata. Core CDN bundle omits Stata; load it extra.
+    // Run after DOMContentLoaded so <pre><code> exists (scripts sit in <head>).
+    lines = cat(htmlfile)
+    if (rows(lines) == 0) return
+    if (sum(ustrpos(lines, "highlight.min.js") :> 0) > 0) return
+
+    q = char(34)
+    cdn = "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/"
+    script = "<link rel=" + q + "stylesheet" + q + " href=" + q + cdn + "styles/github.min.css" + q + ">"
+    script = script + "<script src=" + q + cdn + "highlight.min.js" + q + "></script>"
+    script = script + "<script src=" + q + cdn + "languages/stata.min.js" + q + "></script>"
+    script = script + "<script>document.addEventListener(" + q + "DOMContentLoaded" + q
+    script = script + ",function(){hljs.highlightAll();});</script>"
+
+    idx = selectindex(ustrpos(lines, "</head>") :> 0)
+    if (rows(idx) > 0) {
+        i = idx[1]
+        if (i > 1) {
+            lines = lines[|1 \ i-1|] \ script \ lines[|i \ rows(lines)|]
+        }
+        else {
+            lines = script \ lines
+        }
+    }
+    else {
+        lines = script \ lines
+    }
+
+    mm_outsheet(htmlfile, lines, "replace")
+}
+
 real scalar content_has_math(string scalar filepath)
 {
-    // Detect TeX delimiters used by inject_mathjax configuration
+    // Detect TeX delimiters used by inject_mathjax configuration.
+    // Do not use "$" in a regex: in .ado files it is a Stata global, and in
+    // ICU regex it is an end-of-string anchor.
     lines = cat(filepath)
     n = rows(lines)
     for (i = 1; i <= n; i++) {
@@ -1608,8 +1710,32 @@ real scalar content_has_math(string scalar filepath)
         if (ustrpos(s, "$$") > 0) return(1)
         if (ustrpos(s, "\\(") > 0) return(1)
         if (ustrpos(s, "\\[") > 0) return(1)
-        // inline $...$ (non-empty)
-        if (ustrregexm(s, "\$[^$\n]+\$")) return(1)
+        if (line_has_inline_math(s)) return(1)
+    }
+    return(0)
+}
+
+real scalar line_has_inline_math(string scalar s)
+{
+    n = ustrlen(s)
+    dollar = char(36)
+    for (i = 1; i <= n; i++) {
+        if (usubstr(s, i, 1) != dollar) continue
+        if (i < n & usubstr(s, i + 1, 1) == dollar) {
+            i = i + 1
+            continue
+        }
+        if (i > 1 & usubstr(s, i - 1, 1) == char(92)) continue
+        for (j = i + 1; j <= n; j++) {
+            if (usubstr(s, j, 1) != dollar) continue
+            if (j < n & usubstr(s, j + 1, 1) == dollar) {
+                j = j + 1
+                continue
+            }
+            if (usubstr(s, j - 1, 1) == char(92)) continue
+            if (j > i + 1) return(1)
+            break
+        }
     }
     return(0)
 }
@@ -1826,6 +1952,142 @@ string scalar normalize_path(string scalar p)
     return(p)
 }
 
+string scalar abs_path_key(string scalar p)
+{
+    string scalar drive, s, piece, out
+    real scalar n, j, i
+    string colvector tok
+
+    p = strtrim(normalize_path(p))
+    if (p == "" | p == ".") p = normalize_path(c("pwd"))
+    else if (!path_is_abs(p)) p = normalize_path(c("pwd") + "/" + p)
+
+    drive = ""
+    if (strlen(p) >= 2 & substr(p, 2, 1) == ":") {
+        drive = usubstr(p, 1, 2)
+        p = usubstr(p, 3, .)
+    }
+    if (usubstr(p, 1, 1) == "/") p = usubstr(p, 2, .)
+
+    tok = J(0, 1, "")
+    s = p
+    while (s != "") {
+        j = ustrpos(s, "/")
+        if (j == 0) {
+            piece = s
+            s = ""
+        }
+        else {
+            piece = usubstr(s, 1, j - 1)
+            s = usubstr(s, j + 1, .)
+        }
+        if (piece == "" | piece == ".") continue
+        if (piece == "..") {
+            n = rows(tok)
+            if (n > 0) tok = (n == 1 ? J(0, 1, "") : tok[|1 \ n-1|])
+            continue
+        }
+        tok = tok \ piece
+    }
+
+    out = drive + "/"
+    for (i = 1; i <= rows(tok); i++) {
+        if (i > 1) out = out + "/"
+        out = out + tok[i]
+    }
+    if (c("os") == "Windows") out = ustrlower(out)
+    return(out)
+}
+
+real scalar paths_are_same(string scalar a, string scalar b)
+{
+    if (strtrim(a) == "" | strtrim(b) == "") return(0)
+    return(abs_path_key(a) == abs_path_key(b))
+}
+
+real rowvector stata_log_header_range(string colvector lines)
+{
+    real scalar n, i, start
+    string scalar tr
+
+    n = rows(lines)
+    if (n == 0) return((0, 0))
+    i = 1
+    while (i <= n & ustrtrim(lines[i]) == "") i++
+    if (i > n) return((0, 0))
+    start = i
+    tr = ustrtrim(lines[i])
+    if (!ustrregexm(tr, "^[-]{10,}$")) return((0, 0))
+    i++
+
+    // name:
+    while (i <= n & ustrtrim(lines[i]) == "") i++
+    if (i > n) return((0, 0))
+    tr = ustrlower(ustrtrim(lines[i]))
+    if (!ustrregexm(tr, "^name:")) return((0, 0))
+    i++
+    while (i <= n & usubstr(ustrltrim(lines[i]), 1, 1) == ">") i++
+
+    // log:  (not "log type:")
+    while (i <= n & ustrtrim(lines[i]) == "") i++
+    if (i > n) return((0, 0))
+    tr = ustrlower(ustrtrim(lines[i]))
+    if (!ustrregexm(tr, "^log:") | ustrregexm(tr, "^log type:")) return((0, 0))
+    i++
+    while (i <= n & usubstr(ustrltrim(lines[i]), 1, 1) == ">") i++
+
+    // log type:
+    while (i <= n & ustrtrim(lines[i]) == "") i++
+    if (i > n) return((0, 0))
+    tr = ustrlower(ustrtrim(lines[i]))
+    if (!ustrregexm(tr, "^log type:")) return((0, 0))
+    i++
+    while (i <= n & usubstr(ustrltrim(lines[i]), 1, 1) == ">") i++
+
+    // opened on:
+    while (i <= n & ustrtrim(lines[i]) == "") i++
+    if (i > n) return((0, 0))
+    tr = ustrlower(ustrtrim(lines[i]))
+    if (!ustrregexm(tr, "^opened on:")) return((0, 0))
+    i++
+    while (i <= n & usubstr(ustrltrim(lines[i]), 1, 1) == ">") i++
+
+    return((start, i - 1))
+}
+
+string colvector fence_stata_log_header(string colvector lines)
+{
+    real rowvector r
+    real scalar a, b, n
+    string colvector left, mid, right
+
+    r = stata_log_header_range(lines)
+    if (r[1] == 0) return(lines)
+    a = r[1]
+    b = r[2]
+    n = rows(lines)
+    left  = (a == 1 ? J(0, 1, "") : lines[|1 \ a-1|])
+    mid   = lines[|a \ b|]
+    right = (b == n ? J(0, 1, "") : lines[|b+1 \ n|])
+    return(left \ "```text" \ mid \ "```" \ right)
+}
+
+string colvector drop_stata_log_header(string colvector lines)
+{
+    real rowvector r
+    real scalar a, b, n
+
+    r = stata_log_header_range(lines)
+    if (r[1] == 0) return(lines)
+    a = r[1]
+    b = r[2]
+    n = rows(lines)
+    if (a == 1 & b == n) return(J(0, 1, ""))
+    if (a == 1) return(lines[|b+1 \ n|])
+    if (b == n) return(lines[|1 \ a-1|])
+    return(lines[|1 \ a-1|] \ lines[|b+1 \ n|])
+}
+
 string colvector function subisheredintxt(string colvector lines)
 {
     n = rows(lines)
@@ -1858,9 +2120,15 @@ string colvector function subisheredintxt(string colvector lines)
     // inshere display only act in the following one textcell.
     
     for (i = 1; i <= n_displays; i++) {
-        //dispcmd[i]
         pattern = "\{\s*ishere\s+display\s*" + dispcmd[i] + "\s*\}"
         if (idx[i] + 1 <= n) {
+            nxt = strtrim(lines[idx[i]+1])
+            // Do not treat the next command or a narrative marker as the displayed value
+            if (nxt == "_ishere_/*" | nxt == "_ishere_*/" |
+                ustrpos(nxt, ".") == 1 | ustrpos(nxt, ">") == 1 |
+                ustrpos(nxt, "/**") == 1) {
+                continue
+            }
             textrow =select(textflag, ((1::n):>idx[i]+1):*textflag)
             if (length(textrow)){
                 text_j =selectindex(textflag:==textrow[1])
