@@ -164,7 +164,9 @@ to that syntax. SVG and other types are left as file links.
 HTML tables referenced by {cmd:<iframe src="file.html">} are read, and the table
 markup is inserted into the Markdown in place of the iframe. Table {cmd:<style>}
 blocks are not written to Markdown (CSS braces break {cmd:markdown}); they are
-injected into the HTML {cmd:<head>} after conversion. Scripts are dropped.
+injected into the HTML {cmd:<head>} after conversion. Companion CSS written by
+{help collect export} (same basename as the table, or a {cmd:<link>} already in
+the table HTML) is inlined the same way. Scripts are dropped.
 Requires {opt html()}.
 You may combine {opt embed} with {opt bundle}/{opt zip()}, but a successful
 {opt embed} already inlines the report CSS plus the usual figure and table files.

@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.6.0  11aug2026}{...}
+{* *! version 1.9.0  21aug2026}{...}
 {vieweralsosee "tohtml" "help tohtml"}{...}
 {vieweralsosee "markdown" "help markdown"}{...}
 {viewerjumpto "Syntax" "ishere##syntax"}{...}
@@ -49,7 +49,7 @@ Insert table
 
 {p 8 16 2}
 {cmd:ishere} {cmd:tab}|{cmd:table} {cmd:using} {it:filename}
-[{cmd:,} {opt height(string)} {opt width(string)}]
+[{cmd:,} {opt height(string)} {opt width(string)} {opt cssfile(filename)}]
 
 
 {marker description}{...}
@@ -91,10 +91,11 @@ Prints content to the log (kept / processed by {help tohtml}):
 
 {pmore2}
 - HTML tables: {cmd:ishere tab using "table1.html"} writes an HTML {cmd:<iframe>} tag
-  (same relative-path rule as figures)
-
-{pmore2}
-- HTML tables: {cmd:ishere tab using "table1.html"} writes an HTML {cmd:<iframe>} tag
+  (same relative-path rule as figures). If {help collect export} wrote a companion
+  CSS file (same basename as the table, or the name given in {cmd:cssfile()}), and
+  the HTML does not already contain a stylesheet {cmd:<link>}, {cmd:ishere} inserts
+  that link so the table keeps its {help table}, {help dtable}, or {help etable}
+  style when shown in an iframe.
 
 {pmore2}
 - Markdown tables: {cmd:ishere tab using "table1.md"} writes a placeholder for inlining
@@ -130,6 +131,11 @@ Options apply only to figure/table emit syntax.
 
 {phang}
 {opt width(string)} iframe width for HTML tables; default {cmd:100%}. Ignored for {cmd:.md}.
+
+{phang}
+{opt cssfile(filename)} stylesheet written by {help collect export} when it is not
+named like the HTML file. The default is the table's basename with a {cmd:.css}
+suffix (e.g. {cmd:table1.html} → {cmd:table1.css}). Ignored for {cmd:.md}.
 
 
 {marker examples}{...}
@@ -169,6 +175,13 @@ Options apply only to figure/table emit syntax.
 
 {phang2}{cmd:. ishere table using "table1.html", height(500px) width(100%)}{p_end}
 
+{phang2}{cmd:. table foreign, statistic(mean price)}{p_end}
+{phang2}{cmd:. collect export "table1.html", tableonly replace}{p_end}
+{phang2}{cmd:. ishere tab using "table1.html"}{p_end}
+
+{phang2}{cmd:. collect export "table1.html", tableonly cssfile("mystyle.css") replace}{p_end}
+{phang2}{cmd:. ishere tab using "table1.html", cssfile("mystyle.css")}{p_end}
+
 {phang2}{cmd:. ishere tab using "table1.md"}{p_end}
 
 {pstd}{bf:Minimal workflow}{p_end}
@@ -200,6 +213,13 @@ that appears after it in the log. To reuse a value in another block, issue anoth
 
 {pstd}
 Backslashes in file paths are converted to forward slashes for cross-platform use.
+
+{pstd}
+{help table}, {help dtable}, and {help etable} export through {help collect export}.
+A complete HTML document already carries its style (inline {cmd:<style>} or a
+{cmd:<link>}). With {cmd:tableonly}, the CSS is a sidecar file and is not linked
+unless you add {opt cssfile()} or let {cmd:ishere} insert the default same-name
+stylesheet link.
 
 
 {title:Author}

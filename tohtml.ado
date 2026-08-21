@@ -1,3 +1,5 @@
+*! version 1.20, 2026-08-21
+*! version 1.19, 2026-08-21
 *! version 1.18, 2026-08-21
 *! version 1.17, 2026-08-21
 *! version 1.16, 2026-08-21
@@ -611,7 +613,7 @@ void function inject_css(string scalar htmlfile, string scalar css_rel)
 
     link = "<link rel=" + char(34) + "stylesheet" + char(34) + " href=" + char(34) + css_rel + char(34) + ">"
     idx = selectindex(ustrpos(lines, "</head>") :> 0)
-    if (rows(idx) > 0) {
+    if (length(idx) > 0) {
         i = idx[1]
         if (i > 1) {
             lines = lines[|1 \ i-1|] \ link \ lines[|i \ rows(lines)|]
@@ -644,7 +646,7 @@ void function inject_css_inline(string scalar htmlfile, string scalar cssfile)
     block = open \ css \ close
 
     idx = selectindex(ustrpos(lines, "</head>") :> 0)
-    if (rows(idx) > 0) {
+    if (length(idx) > 0) {
         i = idx[1]
         if (i > 1) {
             lines = lines[|1 \ i-1|] \ block \ lines[|i \ rows(lines)|]
@@ -982,6 +984,7 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
         if (kind == "tab" & (path_suffix_lower(dest) == ".html" |
             path_suffix_lower(dest) == ".htm")) {
             fix_table_override_css(dest)
+            copy_table_companion_css(resolved, dest)
         }
     }
 
@@ -1419,6 +1422,87 @@ void function collect_embed_style(string scalar st)
     }
 }
 
+string scalar join_lines(string colvector lines)
+{
+    s = ""
+    for (i = 1; i <= rows(lines); i++) {
+        s = s + lines[i] + char(10)
+    }
+    return(s)
+}
+
+string colvector extract_link_css_hrefs(string scalar blob)
+{
+    out = J(0, 1, "")
+    s = blob
+    for (k = 1; k <= 30; k++) {
+        if (ustrregexm(s, "(?is)<link\b[^>]*>")) {
+            tag = ustrregexs(0)
+            s = usubinstr(s, tag, "", 1)
+            tlow = ustrlower(tag)
+            if (ustrpos(tlow, "stylesheet") == 0 & ustrpos(tlow, "text/css") == 0) continue
+            href = ""
+            if (ustrregexm(tag, `"href *= *"([^"]+)""')) href = ustrregexs(1)
+            else if (ustrregexm(tag, `"href *= *'([^']+)'"')) href = ustrregexs(1)
+            if (href != "") out = out \ href
+        }
+        else break
+    }
+    return(out)
+}
+
+string colvector companion_css_files(string scalar htmlfile)
+{
+    out = J(0, 1, "")
+    if (!fileexists(htmlfile)) return(out)
+    dir = pathgetparent(htmlfile)
+    if (dir == "") dir = pwd()
+    blob = join_lines(cat(htmlfile))
+    hrefs = extract_link_css_hrefs(blob)
+    for (i = 1; i <= rows(hrefs); i++) {
+        f = strtrim(hrefs[i])
+        if (f == "" | path_is_remote(f)) continue
+        if (!pathisabs(f)) f = pathresolve(dir, f)
+        if (fileexists(f)) out = out \ f
+    }
+    sib = pathjoin(dir, pathrmsuffix(pathbasename(htmlfile)) + ".css")
+    if (fileexists(sib)) out = out \ sib
+    if (rows(out) > 0) out = uniqrows(out)
+    return(out)
+}
+
+void function collect_embed_css_file(string scalar cssfile)
+{
+    if (!fileexists(cssfile)) return
+    css = cat(cssfile)
+    if (rows(css) == 0) return
+    block = "<style>" + char(10) + join_lines(css) + "</style>"
+    collect_embed_style(block)
+}
+
+void function copy_table_companion_css(string scalar src_html, string scalar dest_html)
+{
+    csss = companion_css_files(src_html)
+    if (rows(csss) == 0) return
+    dest_dir = pathgetparent(dest_html)
+    if (dest_dir == "") dest_dir = pwd()
+    used = J(0, 1, "")
+    dest_lines = cat(dest_html)
+    for (i = 1; i <= rows(csss); i++) {
+        oldbase = pathbasename(csss[i])
+        base = unique_bundle_name(dest_dir, oldbase, used)
+        used = used \ base
+        dest_css = pathjoin(dest_dir, base)
+        if (abs_path_key(csss[i]) != abs_path_key(dest_css)) {
+            stata_copy_file(csss[i], dest_css)
+        }
+        if (oldbase != base) {
+            dest_lines = subinstr(dest_lines, oldbase, base, .)
+        }
+    }
+    mm_outsheet(dest_html, dest_lines, "replace")
+}
+
 string colvector extract_html_table_fragment(string scalar htmlfile)
 {
     // Body markup only. CSS braces in <style> break Stata markdown; styles
@@ -1470,6 +1554,17 @@ string colvector extract_html_table_fragment(string scalar htmlfile)
     }
 
     collect_embed_style(styles)
+    cssfiles = companion_css_files(htmlfile)
+    for (i = 1; i <= rows(cssfiles); i++) {
+        collect_embed_css_file(cssfiles[i])
+    }
+    body = ustrtrim(body)
+    for (k = 1; k <= 20; k++) {
+        if (ustrregexm(body, "(?is)<link\b[^>]*>")) {
+            body = usubinstr(body, ustrregexs(0), "", 1)
+        }
+        else break
+    }
     body = ustrtrim(body)
     if (body == "") return(J(0, 1, ""))
     wrapped = "<div class=" + char(34) + "tohtml-embedded-table" + char(34) + ">" + char(10) + body + char(10) + "</div>"
@@ -1556,7 +1651,7 @@ void function inject_embed_table_styles(string scalar htmlfile)
 
     csslines = split_newlines(tohtml_embed_css)
     idx = selectindex(ustrpos(lines, "</head>") :> 0)
-    if (rows(idx) > 0) {
+    if (length(idx) > 0) {
         i = idx[1]
         if (i > 1) {
             lines = lines[|1 \ i-1|] \ csslines \ lines[|i \ rows(lines)|]
@@ -1602,9 +1697,7 @@ real colvector char_lengths_including_backticks(string colvector lines)
     if (n == 0) return(J(0, 1, .))
     is_bt_start = is_md_fence_line(lines)
     idx_bt = selectindex(is_bt_start)
-	if (sum(idx_bt)==0) result = J(n, 1, .)
-    n_bt = rows(idx_bt)
-    // 2. 初始化结果向量（全为缺失值）
+    n_bt = length(idx_bt)
     lens = strlen(lines)
     result = J(n, 1, .)
     if (n_bt <= 1) return(J(n, 1, .))
@@ -1649,17 +1742,24 @@ string colvector merge_html_vectorized(string colvector f)
     }
     
     // 4. 构造新内容：对要合并的行，拼接处理后的下一行
-    new_f = f  // 先复制
+    // selectindex() on a 1x1 false matrix returns a 1x0 rowvector (rows=1,
+    // length=0). Checking rows()>0 would then call substr() on an empty
+    // rowvector and throw a conformability error (e.g. a one-line Markdown
+    // file with no Stata log header).
+    new_f = f
     to_merge_idx = selectindex(flag_merge)
-    if (rows(to_merge_idx) > 0) {
-        next_lines = f[to_merge_idx :+ 1]               // 下一行内容
-        stripped   = strtrim(substr(next_lines, 2, .))   // 去掉首字符 ">"
+    if (length(to_merge_idx) > 0) {
+        if (rows(to_merge_idx) == 1 & cols(to_merge_idx) > 1) {
+            to_merge_idx = to_merge_idx'
+        }
+        next_lines = f[to_merge_idx :+ 1]
+        stripped   = strtrim(substr(next_lines, 2, .))
         new_f[to_merge_idx] = f[to_merge_idx] :+ stripped
     }
-    
+
     // 5. 标记哪些行应保留：所有行都保留，除了那些是"被合并的下一行"
     is_next_of_merge = J(n, 1, 0)
-    if (rows(to_merge_idx) > 0) {
+    if (length(to_merge_idx) > 0) {
         is_next_of_merge[to_merge_idx :+ 1] = J(length(to_merge_idx), 1, 1)
     }
     keep = (is_next_of_merge :== 0)
@@ -1694,7 +1794,7 @@ string colvector remove_prefix_and_trim(string colvector lines,string rowvector 
         // 找出以 pre 开头的行
         matches = (substr(result, 1, len_pre) :== pre)
         idx = selectindex(matches)
-        if (rows(idx) > 0) {
+        if (length(idx) > 0) {
             result[idx] = ustrtrim(substr(result[idx], len_pre + 1, .))
         }
     }
@@ -1758,8 +1858,8 @@ string colvector insert_backtick_before_hash(string colvector fcon)
         
         // Check for lines starting with _ishere_
         cand_idx = selectindex(usubstr(fcon_trim, 1, lens) :== "_ishere_")
-        if (rows(cand_idx) > 0) {
-            for (k=1; k<=rows(cand_idx); k++) {
+        if (length(cand_idx) > 0) {
+            for (k=1; k<=length(cand_idx); k++) {
                  idx = cand_idx[k]
                  rem = ustrltrim(usubstr(fcon_trim[idx], lens+1, .))
                  if (usubstr(rem, 1, 2) == "/*") {
@@ -2099,7 +2199,7 @@ void function inject_mathjax(string scalar htmlfile)
     script = script + "<script id=" + char(34) + "MathJax-script" + char(34) + " async src=" + char(34) + "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" + char(34) + "></script>"
     
     idx = selectindex(ustrpos(lines, "</head>") :> 0)
-    if (rows(idx) > 0) {
+    if (length(idx) > 0) {
         i = idx[1]
         if (i > 1) {
             lines = lines[|1 \ i-1|] \ script \ lines[|i \ rows(lines)|]
@@ -2132,7 +2232,7 @@ void function inject_highlightjs(string scalar htmlfile)
     script = script + ",function(){hljs.highlightAll();});</script>"
 
     idx = selectindex(ustrpos(lines, "</head>") :> 0)
-    if (rows(idx) > 0) {
+    if (length(idx) > 0) {
         i = idx[1]
         if (i > 1) {
             lines = lines[|1 \ i-1|] \ script \ lines[|i \ rows(lines)|]
