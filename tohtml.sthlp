@@ -38,6 +38,7 @@ Basic usage
 
 {syntab:Portable package options}
 {synopt:{opt bundle}}collect figures/tables into {bf:figures/} and {bf:tables/} under the HTML folder{p_end}
+{synopt:{opt embed}}self-contained HTML: Base64 images via {cmd:markdown, embedimage}; inline HTML tables{p_end}
 {synopt:{opt zip(filename|.)}}create a zip archive of the HTML package (implies {cmd:bundle}); use {cmd:.} for default name{p_end}
 
 {syntab:Cleaning modes}
@@ -154,6 +155,18 @@ where {bf:ROOT} is the directory of {opt html()}, then rewrites links to relativ
 ({cmd:./figures/...}, {cmd:./tables/...}, {cmd:./css/...}). Requires {opt html()}.
 
 {phang}
+{opt embed} writes a self-contained HTML file that does not need sidecar figure or table
+files. Images are passed to {help markdown}'s {opt embedimage} (Base64 data URIs).
+Because {cmd:markdown} only embeds Markdown image links ({cmd:![ ](file.png)}),
+{cmd:tohtml} first rewrites local {cmd:<img src="...">} tags (PNG/JPEG/GIF/TIFF)
+to that syntax. SVG and other types are left as file links.
+HTML tables referenced by {cmd:<iframe src="file.html">} are read, and the table
+markup (body contents plus {cmd:<style>}, scripts dropped) is inserted into the
+Markdown in place of the iframe before conversion. Requires {opt html()}.
+You may combine {opt embed} with {opt bundle}/{opt zip()}, but a successful
+{opt embed} already inlines the usual figure and table files.
+
+{phang}
 {opt zip(filename|.)} first performs {opt bundle}, then creates a zip archive with Stata's
 {help zipfile} command so you can share one file with colleagues. Use {cmd:zip(.)} (or
 {cmd:zip(auto)}) to name the archive after the HTML file (e.g., {bf:report.html} →
@@ -213,6 +226,9 @@ commands together with figures and tables, without lengthy output.
 
 {pstd}Bundle resources into css/figures/tables under the HTML folder{p_end}
 {phang2}{cmd:. tohtml "analysis.log", html("report/report.html") bundle replace}{p_end}
+
+{pstd}Self-contained HTML: Base64 images and inlined HTML tables{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report.html") embed replace}{p_end}
 
 {pstd}Bundle and create a zip archive for sharing{p_end}
 {phang2}{cmd:. tohtml "analysis.log", html("report/report.html") zip(.) replace}{p_end}

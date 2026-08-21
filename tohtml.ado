@@ -1,3 +1,4 @@
+*! version 1.13, 2026-08-21
 *! version 1.12, 2026-08-19
 *! version 1.11, 2026-08-19
 *! version 1.10, 2026-08-19
@@ -16,7 +17,7 @@ cap which pathutil
 if _rc ssc install pathutil, replace
 version 16
     syntax anything ,  [ MD(string) REPlace HTML(string) ///
-                         CSS(string) MATHJAX ///
+                         CSS(string) MATHJAX EMBED ///
                          CLEAN CLEANCODE ///
                          BUNDLE ZIP(string) ///
                          width(string) height(string) zoom(string)]
@@ -100,14 +101,13 @@ version 16
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
-        markdown `outfile', saving(`"`html'"') replace
-        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax'
+        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed'
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
     }
-    else if "`css'" != "" | "`mathjax'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/mathjax/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" {
+        di as error "css()/mathjax/embed/bundle/zip require html()"
         exit 198
     }
 end
@@ -115,7 +115,7 @@ end
 
 program define cleancode
     syntax anything , CLEANCODE [MD(string) REPlace HTML(string) ///
-                                         CSS(string) MATHJAX ///
+                                         CSS(string) MATHJAX EMBED ///
                                          BUNDLE ZIP(string) ///
                                          width(string) height(string) zoom(string)]
 
@@ -162,14 +162,13 @@ program define cleancode
 
     // Optional: regenerate HTML from code markdown
     if "`html'" != "" {
-        markdown `outfile', saving(`"`html'"') replace
-        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax' highlight
+        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed' highlight
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
     }
-    else if "`css'" != "" | "`mathjax'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/mathjax/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" {
+        di as error "css()/mathjax/embed/bundle/zip require html()"
         exit 198
     }
 end
@@ -184,7 +183,7 @@ end
 
 program define mclean
     syntax anything , [MD(string)  REPlace HTML(string) CSS(string) MATHJAX ///
-                       CLEAN CLEANCODE ///
+                       EMBED CLEAN CLEANCODE ///
                        BUNDLE ZIP(string) ///
                        width(string) height(string) zoom(string)]
     // only keep lines that start with #, <iframe, <img
@@ -232,14 +231,13 @@ program define mclean
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
-        markdown `outfile', saving(`"`html'"') replace
-        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax'
+        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed'
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
     }
-    else if "`css'" != "" | "`mathjax'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/mathjax/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" {
+        di as error "css()/mathjax/embed/bundle/zip require html()"
         exit 198
     }
 end
@@ -248,7 +246,7 @@ end
 
 program define mclean2
     syntax [anything] , [MD(string)  REPlace HTML(string) CSS(string) MATHJAX ///
-                       CLEAN CLEANCODE ///
+                       EMBED CLEAN CLEANCODE ///
                        BUNDLE ZIP(string) ///
                        width(string) height(string) zoom(string)]
     // only keep lines that start with #, <iframe, <img
@@ -293,14 +291,13 @@ program define mclean2
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
-        markdown `outfile', saving(`"`html'"') replace
-        tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`outfile'"') `mathjax'
+        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed'
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
     }
-    else if "`css'" != "" | "`mathjax'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/mathjax/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" {
+        di as error "css()/mathjax/embed/bundle/zip require html()"
         exit 198
     }
 end
@@ -401,6 +398,21 @@ program define tohtml_check_md_collision
     }
 end
 
+
+capture program drop tohtml_emit_html
+program define tohtml_emit_html
+    version 16
+    syntax , MD(string) HTML(string) [CSS(string) MATHJAX HIGHLIGHT EMBED]
+
+    if "`embed'" != "" {
+        mata: tohtml_prepare_embed(`"`md'"')
+        markdown `"`md'"', saving(`"`html'"') replace embedimage basedir(`"`c(pwd)'"')
+    }
+    else {
+        markdown `"`md'"', saving(`"`html'"') replace
+    }
+    tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`md'"') `mathjax' `highlight'
+end
 
 capture program drop tohtml_style
 program define tohtml_style
@@ -1120,6 +1132,191 @@ string colvector extractmdtable(string scalar line){
     return(mdtext)
 }
 
+string scalar iframe_bare_path(string scalar line)
+{
+    line2 = usubinstr(line, "<iframe", "", 1)
+    line2 = usubinstr(line2, "</iframe>", "", 1)
+    line2 = strtrim(line2)
+    if (strlen(line2) > 0) {
+        if (substr(line2, strlen(line2), 1) == ">") {
+            line2 = strtrim(substr(line2, 1, strlen(line2)-1))
+        }
+    }
+    return(line2)
+}
+
+real scalar img_ext_embeddable(string scalar src)
+{
+    ext = path_suffix_lower(src)
+    if (ext == ".png" | ext == ".jpg" | ext == ".jpeg") return(1)
+    if (ext == ".gif" | ext == ".tif" | ext == ".tiff") return(1)
+    return(0)
+}
+
+string scalar html_img_to_md_image(string scalar line)
+{
+    out = ""
+    rest = line
+    for (k = 1; k <= 30; k++) {
+        low = ustrlower(rest)
+        p = ustrpos(low, "<img")
+        if (p == 0) {
+            out = out + rest
+            break
+        }
+        out = out + usubstr(rest, 1, p - 1)
+        rest = usubstr(rest, p, .)
+        gt = ustrpos(rest, ">")
+        if (gt == 0) {
+            out = out + rest
+            rest = ""
+            break
+        }
+        tag = usubstr(rest, 1, gt)
+        rest = usubstr(rest, gt + 1, .)
+        srcs = extract_src_attrs(tag)
+        src = ""
+        if (rows(srcs) > 0) src = srcs[1]
+        if (src != "" & img_ext_embeddable(src) & !path_is_remote(src)) {
+            out = out + "![](" + src + ")"
+        }
+        else {
+            out = out + tag
+        }
+    }
+    return(out)
+}
+
+string colvector split_newlines(string scalar s)
+{
+    s = usubinstr(s, char(13) + char(10), char(10), .)
+    s = usubinstr(s, char(13), char(10), .)
+    if (s == "") return(J(0, 1, ""))
+    if (usubstr(s, ustrlen(s), 1) == char(10)) {
+        s = usubstr(s, 1, ustrlen(s) - 1)
+    }
+    if (s == "") return(J(0, 1, ""))
+    nlf = ustrlen(s) - ustrlen(usubinstr(s, char(10), "", .))
+    n = nlf + 1
+    out = J(n, 1, "")
+    rest = s
+    for (i = 1; i <= n; i++) {
+        p = ustrpos(rest, char(10))
+        if (p == 0) {
+            out[i] = rest
+            break
+        }
+        out[i] = usubstr(rest, 1, p - 1)
+        rest = usubstr(rest, p + 1, .)
+    }
+    return(out)
+}
+
+string colvector extract_html_table_fragment(string scalar htmlfile)
+{
+    raw = cat(htmlfile)
+    if (rows(raw) == 0) return(J(0, 1, ""))
+
+    full = ""
+    for (i = 1; i <= rows(raw); i++) {
+        full = full + raw[i] + char(10)
+    }
+
+    for (k = 1; k <= 20; k++) {
+        if (ustrregexm(full, "(?is)<script\b[^>]*>.*?</script>")) {
+            full = usubinstr(full, ustrregexs(0), "", 1)
+        }
+        else break
+    }
+
+    styles = ""
+    work = full
+    for (k = 1; k <= 10; k++) {
+        if (ustrregexm(work, "(?is)<style\b[^>]*>.*?</style>")) {
+            styles = styles + ustrregexs(0) + char(10)
+            work = usubinstr(work, ustrregexs(0), "", 1)
+        }
+        else break
+    }
+
+    body = ""
+    if (ustrregexm(full, "(?is)<body\b[^>]*>(.*)</body>")) {
+        body = ustrtrim(ustrregexs(1))
+    }
+    else {
+        body = ustrtrim(work)
+    }
+
+    return(split_newlines(ustrtrim(styles + body)))
+}
+
+string colvector inline_iframe_tables(string colvector lines, string scalar mdfile)
+{
+    root = path_dir(normalize_path(mdfile))
+    if (root == "") root = pwd()
+    out = J(0, 1, "")
+    infence = 0
+    for (i = 1; i <= rows(lines); i++) {
+        line = lines[i]
+        if (is_md_fence_line(line)) {
+            infence = !infence
+            out = out \ line
+            continue
+        }
+        if (infence) {
+            out = out \ line
+            continue
+        }
+        t = ustrltrim(line)
+        if (usubstr(t, 1, 7) != "<iframe") {
+            out = out \ html_img_to_md_image(line)
+            continue
+        }
+        srcs = extract_src_attrs(line)
+        src = ""
+        if (rows(srcs) > 0) src = srcs[1]
+        else src = iframe_bare_path(line)
+        if (src == "" | path_is_remote(src)) {
+            out = out \ line
+            continue
+        }
+        ext = path_suffix_lower(src)
+        resolved = resolve_local_file(src, root)
+        if (resolved == "") {
+            printf("{txt}note: table file not found, iframe kept: %s\n", src)
+            out = out \ line
+            continue
+        }
+        if (ext == ".md") {
+            frag = cat(resolved)
+        }
+        else if (ext == ".html" | ext == ".htm") {
+            frag = extract_html_table_fragment(resolved)
+        }
+        else {
+            out = out \ line
+            continue
+        }
+        if (rows(frag) == 0) {
+            printf("{txt}note: empty table file, iframe kept: %s\n", src)
+            out = out \ line
+            continue
+        }
+        out = out \ frag
+    }
+    return(out)
+}
+
+void function tohtml_prepare_embed(string scalar mdfile)
+{
+    if (!fileexists(mdfile)) {
+        errprintf("tohtml embed: Markdown file not found: %s\n", mdfile)
+        exit(601)
+    }
+    lines = cat(mdfile)
+    lines = inline_iframe_tables(lines, mdfile)
+    mm_outsheet(mdfile, lines, "replace")
+}
 
 real colvector is_md_fence_line(string colvector lines)
 {
