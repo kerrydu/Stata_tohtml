@@ -1,3 +1,4 @@
+*! version 1.15, 2026-08-21
 *! version 1.14, 2026-08-21
 *! version 1.13, 2026-08-21
 *! version 1.12, 2026-08-19
@@ -412,7 +413,7 @@ program define tohtml_emit_html
     else {
         markdown `"`md'"', saving(`"`html'"') replace
     }
-    tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`md'"') `mathjax' `highlight'
+    tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`md'"') `mathjax' `highlight' `embed'
     if "`embed'" != "" {
         mata: inject_embed_table_styles(`"`html'"')
     }
@@ -421,7 +422,7 @@ end
 capture program drop tohtml_style
 program define tohtml_style
     version 16
-    syntax , HTML(string) [CSS(string) MATHJAX HIGHLIGHT MD(string)]
+    syntax , HTML(string) [CSS(string) MATHJAX HIGHLIGHT EMBED MD(string)]
 
     // Resolve CSS source: default / githubstyle / tohtml → package resource tohtml.css
     local css_l = ustrlower(strtrim(`"`css'"'))
@@ -440,18 +441,23 @@ program define tohtml_style
         mata: st_local("css_base", path_base(normalize_path(st_local("css_src"))))
     }
 
-    mata: st_local("html_dir", path_dir(`"`html'"'))
-    if "`html_dir'" == "" local html_dir "."
-    cap mkdir "`html_dir'/css"
-    local css_dest "`html_dir'/css/`css_base'"
-
-    mata: st_local("css_norm", normalize_path(`"`css_src'"'))
-    mata: st_local("css_dest_norm", normalize_path(`"`css_dest'"'))
-    if `"`css_norm'"' != `"`css_dest_norm'"' {
-        copy `"`css_src'"' `"`css_dest'"', replace
-        copy `"`css_src'"' "`html_dir'/css/table-override.css", replace
+    if "`embed'" != "" {
+        mata: inject_css_inline(`"`html'"', `"`css_src'"')
     }
-    mata: inject_css(`"`html'"', "./css/`css_base'")
+    else {
+        mata: st_local("html_dir", path_dir(`"`html'"'))
+        if "`html_dir'" == "" local html_dir "."
+        cap mkdir "`html_dir'/css"
+        local css_dest "`html_dir'/css/`css_base'"
+
+        mata: st_local("css_norm", normalize_path(`"`css_src'"'))
+        mata: st_local("css_dest_norm", normalize_path(`"`css_dest'"'))
+        if `"`css_norm'"' != `"`css_dest_norm'"' {
+            copy `"`css_src'"' `"`css_dest'"', replace
+            copy `"`css_src'"' "`html_dir'/css/table-override.css", replace
+        }
+        mata: inject_css(`"`html'"', "./css/`css_base'")
+    }
     mata: normalize_stata_code_class(`"`html'"')
 
     // cleancode HTML: syntax-highlight ```stata blocks (CDN; no user option)
@@ -614,6 +620,39 @@ void function inject_css(string scalar htmlfile, string scalar css_rel)
     }
     else {
         lines = link \ lines
+    }
+
+    mm_outsheet(htmlfile, lines, "replace")
+}
+
+void function inject_css_inline(string scalar htmlfile, string scalar cssfile)
+{
+    // embed: put report CSS in <style> so HTML does not need ./css/tohtml.css
+    if (!fileexists(cssfile)) return
+    css = cat(cssfile)
+    if (rows(css) == 0) return
+
+    lines = cat(htmlfile)
+    if (rows(lines) == 0) return
+    if (sum(ustrpos(lines, "tohtml-inline-css") :> 0) > 0) return
+
+    q = char(34)
+    open = "<style id=" + q + "tohtml-inline-css" + q + ">"
+    close = "</style>"
+    block = open \ css \ close
+
+    idx = selectindex(ustrpos(lines, "</head>") :> 0)
+    if (rows(idx) > 0) {
+        i = idx[1]
+        if (i > 1) {
+            lines = lines[|1 \ i-1|] \ block \ lines[|i \ rows(lines)|]
+        }
+        else {
+            lines = block \ lines
+        }
+    }
+    else {
+        lines = block \ lines
     }
 
     mm_outsheet(htmlfile, lines, "replace")
