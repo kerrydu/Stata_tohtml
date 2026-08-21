@@ -1,3 +1,5 @@
+*! version 1.18, 2026-08-21
+*! version 1.17, 2026-08-21
 *! version 1.16, 2026-08-21
 *! version 1.15, 2026-08-21
 *! version 1.14, 2026-08-21
@@ -63,6 +65,7 @@ version 16
     }
 
     local src_orig `anything'
+    mata: tohtml_init_resource_root(`"`src_orig'"')
     // SMCL → text log (tempfile owned here so it survives until this program ends)
     tempfile _tohtml_smcltxt
     tohtml_ensure_textlog, from(`"`anything'"') dest(`"`_tohtml_smcltxt'.log"')
@@ -127,6 +130,7 @@ program define cleancode
     local anything = subinstr(`"`anything'"', "\", "/", .)
     confirm file `"`anything'"'
     local src_orig `anything'
+    mata: tohtml_init_resource_root(`"`src_orig'"')
     tempfile _tohtml_smcltxt
     tohtml_ensure_textlog, from(`"`anything'"') dest(`"`_tohtml_smcltxt'.log"')
     local anything `r(file)'
@@ -196,6 +200,7 @@ program define mclean
     local anything = subinstr(`"`anything'"', "\", "/", .)
     confirm file `"`anything'"'
     local src_orig `anything'
+    mata: tohtml_init_resource_root(`"`src_orig'"')
     tempfile _tohtml_smcltxt
     tohtml_ensure_textlog, from(`"`anything'"') dest(`"`_tohtml_smcltxt'.log"')
     local anything `r(file)'
@@ -409,7 +414,8 @@ program define tohtml_emit_html
 
     if "`embed'" != "" {
         mata: tohtml_prepare_embed(`"`md'"')
-        markdown `"`md'"', saving(`"`html'"') replace embedimage basedir(`"`c(pwd)'"')
+        mata: st_local("embase", tohtml_get_resource_root())
+        markdown `"`md'"', saving(`"`html'"') replace embedimage basedir(`"`embase'"')
     }
     else {
         markdown `"`md'"', saving(`"`html'"') replace
@@ -584,18 +590,13 @@ mata:
 
 string scalar path_dir(string scalar p)
 {
-    p = normalize_path(p)
-    i = lastpos(p, "/")
-    if (i <= 1) return("")
-    return(substr(p, 1, i - 1))
+    if (strtrim(p) == "") return("")
+    return(pathgetparent(p))
 }
 
 string scalar path_base(string scalar p)
 {
-    p = normalize_path(p)
-    i = lastpos(p, "/")
-    if (i == 0) return(p)
-    return(substr(p, i + 1, .))
+    return(pathbasename(p))
 }
 
 
@@ -673,19 +674,12 @@ void function normalize_stata_code_class(string scalar htmlfile)
 
 real scalar path_is_abs(string scalar p)
 {
-    p = normalize_path(p)
-    if (p == "") return(0)
-    if (substr(p, 1, 1) == "/") return(1)
-    if (strlen(p) >= 2 & substr(p, 2, 1) == ":") return(1)
-    return(0)
+    return(pathisabs(p))
 }
 
 string scalar path_suffix_lower(string scalar p)
 {
-    b = path_base(p)
-    i = lastpos(b, ".")
-    if (i == 0) return("")
-    return(ustrlower(substr(b, i, .)))
+    return(ustrlower(pathsuffix(p)))
 }
 
 string scalar embed_kind(string scalar path)
@@ -699,47 +693,112 @@ string scalar embed_kind(string scalar path)
 
 real scalar path_is_remote(string scalar p)
 {
-    pl = ustrlower(strtrim(p))
+    pl = strtrim(p)
     if (pl == "") return(1)
-    if (ustrpos(pl, "http://") == 1) return(1)
-    if (ustrpos(pl, "https://") == 1) return(1)
-    if (ustrpos(pl, "data:") == 1) return(1)
+    if (ustrpos(ustrlower(pl), "data:") == 1) return(1)
     if (pathisurl(pl)) return(1)
     return(0)
+}
+
+string colvector path_ancestors(string scalar d)
+{
+    out = J(0, 1, "")
+    d = strtrim(d)
+    if (d == "") d = pwd()
+    if (!pathisabs(d)) d = pathresolve(pwd(), d)
+    for (k = 1; k <= 8; k++) {
+        if (d == "") break
+        if (rows(out) > 0) {
+            if (sum(out :== d) > 0) break
+        }
+        out = out \ d
+        p = pathgetparent(d)
+        if (p == "" | p == d) break
+        d = p
+    }
+    return(out)
+}
+
+string colvector unique_keep_order(string colvector v)
+{
+    out = J(0, 1, "")
+    for (i = 1; i <= rows(v); i++) {
+        if (v[i] == "") continue
+        if (rows(out) > 0) {
+            if (sum(out :== v[i]) > 0) continue
+        }
+        out = out \ v[i]
+    }
+    return(out)
+}
+
+void function tohtml_init_resource_root(string scalar logfile)
+{
+    external string scalar tohtml_resource_root
+    d = pathgetparent(logfile)
+    if (d == "") d = pwd()
+    if (!pathisabs(d)) d = pathresolve(pwd(), d)
+    tohtml_resource_root = d
+}
+
+string scalar tohtml_get_resource_root()
+{
+    external string scalar tohtml_resource_root
+    if (tohtml_resource_root == "") return(pwd())
+    return(tohtml_resource_root)
+}
+
+void function tohtml_note_resource_base(string scalar base)
+{
+    external string scalar tohtml_resource_root
+    if (base == "") return
+    tohtml_resource_root = base
+}
+
+string scalar path_rel_to_base(string scalar absfile, string scalar base)
+{
+    a = normalize_path(absfile)
+    b = normalize_path(base)
+    if (a == "" | b == "") return("")
+    pref = ustrlower(b) + "/"
+    if (ustrpos(ustrlower(a), pref) != 1) return("")
+    return(substr(a, strlen(b) + 2, .))
 }
 
 string scalar resolve_local_file(string scalar src, string scalar root)
 {
     src0 = strtrim(src)
     if (path_is_remote(src0)) return("")
-    srcn = normalize_path(src0)
 
-    cands = J(0, 1, "")
-    cands = cands \ srcn
-    if (!path_is_abs(srcn)) {
-        cands = cands \ normalize_path(pwd() + "/" + srcn)
-        cands = cands \ normalize_path(root + "/" + srcn)
+    if (pathisabs(src0)) {
+        if (fileexists(src0)) return(src0)
+        return("")
     }
-    for (i = 1; i <= rows(cands); i++) {
-        if (fileexists(cands[i])) return(cands[i])
+
+    bases = unique_keep_order(path_ancestors(tohtml_get_resource_root()) \ path_ancestors(root) \ path_ancestors(pwd()))
+    for (j = 1; j <= rows(bases); j++) {
+        cand = pathresolve(bases[j], src0)
+        if (fileexists(cand)) {
+            tohtml_note_resource_base(bases[j])
+            return(cand)
+        }
+    }
+    if (fileexists(src0)) {
+        tohtml_note_resource_base(pwd())
+        return(pathresolve(pwd(), src0))
     }
     return("")
 }
 
 string scalar unique_bundle_name(string scalar destdir, string scalar base, string colvector used)
 {
-    if (sum(used :== base) == 0 & !fileexists(destdir + "/" + base)) return(base)
+    if (sum(used :== base) == 0 & !fileexists(pathjoin(destdir, base))) return(base)
 
-    suf = path_suffix_lower(base)
-    if (suf == "") {
-        stem = base
-    }
-    else {
-        stem = substr(base, 1, strlen(base) - strlen(suf))
-    }
+    suf = pathsuffix(base)
+    stem = pathrmsuffix(base)
     for (k = 2; k <= 9999; k++) {
         cand = stem + "_" + strofreal(k) + suf
-        if (sum(used :== cand) == 0 & !fileexists(destdir + "/" + cand)) return(cand)
+        if (sum(used :== cand) == 0 & !fileexists(pathjoin(destdir, cand))) return(cand)
     }
     return(stem + "_x" + suf)
 }
@@ -822,11 +881,11 @@ void function stata_copy_file(string scalar src, string scalar dest)
 void function bundle_report(string scalar htmlfile, string scalar mdfile)
 {
     htmlfile = normalize_path(htmlfile)
-    root = path_dir(htmlfile)
+    root = pathgetparent(htmlfile)
     if (root == "") root = "."
 
-    figdir = root + "/figures"
-    tabdir = root + "/tables"
+    figdir = pathjoin(root, "figures")
+    tabdir = pathjoin(root, "tables")
     stata("cap mkdir " + char(34) + figdir + char(34), 1)
     stata("cap mkdir " + char(34) + tabdir + char(34), 1)
 
@@ -881,13 +940,13 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
         figdir_n = normalize_path(figdir)
         tabdir_n = normalize_path(tabdir)
         if (ustrpos(resolved_n, figdir_n + "/") == 1) {
-            newref = "./figures/" + path_base(resolved_n)
+            newref = "./figures/" + pathbasename(resolved_n)
             html = replace_path_refs(html, src, newref)
             if (hasmd) md = replace_path_refs(md, src, newref)
             continue
         }
         if (ustrpos(resolved_n, tabdir_n + "/") == 1) {
-            newref = "./tables/" + path_base(resolved_n)
+            newref = "./tables/" + pathbasename(resolved_n)
             html = replace_path_refs(html, src, newref)
             if (hasmd) md = replace_path_refs(md, src, newref)
             if (path_suffix_lower(resolved_n) == ".html" | path_suffix_lower(resolved_n) == ".htm") {
@@ -896,7 +955,7 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
             continue
         }
 
-        base = path_base(resolved)
+        base = pathbasename(resolved)
         if (kind == "fig") {
             dest_dir = figdir
             relprefix = "./figures/"
@@ -909,8 +968,8 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
             base = unique_bundle_name(dest_dir, base, used_tab)
             used_tab = used_tab \ base
         }
-        dest = normalize_path(dest_dir + "/" + base)
-        if (normalize_path(resolved) != dest) {
+        dest = pathjoin(dest_dir, base)
+        if (normalize_path(resolved) != normalize_path(dest)) {
             stata_copy_file(resolved, dest)
         }
         newref = relprefix + base
@@ -1199,21 +1258,15 @@ real scalar img_ext_embeddable(string scalar src)
 
 string scalar to_project_rel_src(string scalar src)
 {
-    // Rewrite local files under pwd as project-relative paths.
+    // Relative to the folder where the log-relative file was found.
     src0 = subinstr(strtrim(src), "\", "/", .)
     if (src0 == "") return(src0)
     if (path_is_remote(src0)) return(src0)
-    resolved = resolve_local_file(src0, pwd())
-    if (resolved == "") resolved = src0
-    resolved = subinstr(normalize_path(resolved), "\", "/", .)
-    pw = subinstr(normalize_path(pwd()), "\", "/", .)
-    prefix = ustrlower(pw) + "/"
-    if (ustrpos(ustrlower(resolved), prefix) == 1) {
-        return(substr(resolved, strlen(pw) + 2, .))
-    }
-    if (ustrpos(ustrlower(src0), prefix) == 1) {
-        return(substr(src0, strlen(pw) + 2, .))
-    }
+    extra = tohtml_get_resource_root()
+    resolved = resolve_local_file(src0, extra)
+    if (resolved == "") return(src0)
+    rel = path_rel_to_base(resolved, tohtml_get_resource_root())
+    if (rel != "") return(rel)
     return(src0)
 }
 
@@ -1425,7 +1478,7 @@ string colvector extract_html_table_fragment(string scalar htmlfile)
 
 string colvector inline_iframe_tables(string colvector lines, string scalar mdfile)
 {
-    root = path_dir(normalize_path(mdfile))
+    root = pathgetparent(mdfile)
     if (root == "") root = pwd()
     out = J(0, 1, "")
     infence = 0
@@ -2328,21 +2381,11 @@ string colvector function check_isheretxt_closed(string colvector lines)
     return(lines)
 }
 
-real scalar lastpos(string scalar s, string scalar ch)
-{
-    i = strlen(s)
-    while (i >= 1) {
-        if (substr(s, i, 1) == ch) return(i)
-        i = i - 1
-    }
-    return(0)
-}
 string scalar normalize_path(string scalar p)
 {
-    // handle Windows backslashes (single or doubled)
+    // Slash-fold for HTML/MD and prefix compares. Joining uses pathjoin/pathresolve.
     p = subinstr(p, "\\", "/", .)
     p = subinstr(p, "\", "/", .)
-    // remove trailing slash
     while (strlen(p) > 1 & substr(p, strlen(p), 1) == "/") {
         p = substr(p, 1, strlen(p) - 1)
     }
@@ -2355,9 +2398,10 @@ string scalar abs_path_key(string scalar p)
     real scalar n, j, i
     string colvector tok
 
-    p = strtrim(normalize_path(p))
-    if (p == "" | p == ".") p = normalize_path(c("pwd"))
-    else if (!path_is_abs(p)) p = normalize_path(c("pwd") + "/" + p)
+    p = strtrim(p)
+    if (p == "" | p == ".") p = pwd()
+    else if (!pathisabs(p)) p = pathresolve(pwd(), p)
+    p = normalize_path(p)
 
     drive = ""
     if (strlen(p) >= 2 & substr(p, 2, 1) == ":") {

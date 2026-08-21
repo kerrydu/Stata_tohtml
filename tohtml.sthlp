@@ -325,9 +325,12 @@ converted automatically via {cmd:translate ..., translator(smcl2log)}.
 
 {pstd}
 {bf:File paths}: Backslashes are converted to forward slashes. Figure and table
-paths under the current working directory (the project folder) are stored as
-relative paths, which keeps Markdown/HTML portable and avoids Windows
-{cmd:D:/...} paths breaking {cmd:markdown, embedimage}.
+paths under the project folder are stored as relative paths.
+{cmd:tohtml} locates those files from the input log's directory (walking up
+parent folders), so you do not need to {cmd:cd} to the log folder or the
+project root before calling {cmd:tohtml}. Windows {cmd:D:/...} paths are
+rewritten so {cmd:markdown, embedimage} does not treat the drive letter as a
+URL scheme.
 
 {pstd}
 {bf:Processing directories}: When the input argument is a directory rather than a file, {cmd:tohtml} automatically

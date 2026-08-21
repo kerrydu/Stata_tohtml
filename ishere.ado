@@ -1,3 +1,4 @@
+*! version 1.8, 2026-08-21
 *! version 1.7, 2026-08-21
 *! version 1.6, 2026-08-11
 program define ishere
@@ -115,22 +116,28 @@ end
 mata:
 string scalar ishere_project_rel(string scalar src)
 {
-    // Paths under c(pwd) (the project folder) are written relative to it.
-    src = subinstr(strtrim(src), "\", "/", .)
+    // Paths under c(pwd) are written with forward slashes, relative to the project.
+    src = strtrim(src)
     if (src == "") return(src)
-    pw = subinstr(pwd(), "\", "/", .)
-    while (strlen(pw) > 1 & substr(pw, strlen(pw), 1) == "/") {
-        pw = substr(pw, 1, strlen(pw) - 1)
-    }
+    if (pathisurl(src)) return(src)
+
+    pw = pwd()
     resolved = src
-    if (!fileexists(resolved) & fileexists(pw + "/" + src)) {
-        resolved = pw + "/" + src
+    if (!fileexists(resolved)) {
+        cand = pathjoin(pw, src)
+        if (fileexists(cand)) resolved = cand
     }
-    resolved = subinstr(resolved, "\", "/", .)
-    prefix = ustrlower(pw) + "/"
-    if (ustrpos(ustrlower(resolved), prefix) == 1) {
-        return(substr(resolved, strlen(pw) + 2, .))
+    if (!pathisabs(resolved)) resolved = pathresolve(pw, resolved)
+
+    a = subinstr(resolved, "\", "/", .)
+    b = subinstr(pw, "\", "/", .)
+    while (strlen(b) > 1 & substr(b, strlen(b), 1) == "/") {
+        b = substr(b, 1, strlen(b) - 1)
     }
-    return(src)
+    pref = ustrlower(b) + "/"
+    if (ustrpos(ustrlower(a), pref) == 1) {
+        return(substr(a, strlen(b) + 2, .))
+    }
+    return(subinstr(src, "\", "/", .))
 }
 end
