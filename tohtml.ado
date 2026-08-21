@@ -1,3 +1,4 @@
+*! version 1.14, 2026-08-21
 *! version 1.13, 2026-08-21
 *! version 1.12, 2026-08-19
 *! version 1.11, 2026-08-19
@@ -412,6 +413,9 @@ program define tohtml_emit_html
         markdown `"`md'"', saving(`"`html'"') replace
     }
     tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`md'"') `mathjax' `highlight'
+    if "`embed'" != "" {
+        mata: inject_embed_table_styles(`"`html'"')
+    }
 end
 
 capture program drop tohtml_style
@@ -569,8 +573,6 @@ end
 
 
 mata:
-
-
 
 
 string scalar path_dir(string scalar p)
@@ -1212,8 +1214,24 @@ string colvector split_newlines(string scalar s)
     return(out)
 }
 
+void function collect_embed_style(string scalar st)
+{
+    external string scalar tohtml_embed_css
+    st = ustrtrim(st)
+    if (st == "") return
+    if (tohtml_embed_css == "") {
+        tohtml_embed_css = st
+        return
+    }
+    if (ustrpos(tohtml_embed_css, st) == 0) {
+        tohtml_embed_css = tohtml_embed_css + char(10) + st
+    }
+}
+
 string colvector extract_html_table_fragment(string scalar htmlfile)
 {
+    // Body markup only. CSS braces in <style> break Stata markdown; styles
+    // are collected and injected into the HTML <head> after conversion.
     raw = cat(htmlfile)
     if (rows(raw) == 0) return(J(0, 1, ""))
 
@@ -1231,7 +1249,7 @@ string colvector extract_html_table_fragment(string scalar htmlfile)
 
     styles = ""
     work = full
-    for (k = 1; k <= 10; k++) {
+    for (k = 1; k <= 20; k++) {
         if (ustrregexm(work, "(?is)<style\b[^>]*>.*?</style>")) {
             styles = styles + ustrregexs(0) + char(10)
             work = usubinstr(work, ustrregexs(0), "", 1)
@@ -1241,13 +1259,30 @@ string colvector extract_html_table_fragment(string scalar htmlfile)
 
     body = ""
     if (ustrregexm(full, "(?is)<body\b[^>]*>(.*)</body>")) {
-        body = ustrtrim(ustrregexs(1))
+        body = ustrregexs(1)
+        for (k = 1; k <= 20; k++) {
+            if (ustrregexm(body, "(?is)<style\b[^>]*>.*?</style>")) {
+                styles = styles + ustrregexs(0) + char(10)
+                body = usubinstr(body, ustrregexs(0), "", 1)
+            }
+            else break
+        }
+        for (k = 1; k <= 20; k++) {
+            if (ustrregexm(body, "(?is)<script\b[^>]*>.*?</script>")) {
+                body = usubinstr(body, ustrregexs(0), "", 1)
+            }
+            else break
+        }
     }
     else {
-        body = ustrtrim(work)
+        body = work
     }
 
-    return(split_newlines(ustrtrim(styles + body)))
+    collect_embed_style(styles)
+    body = ustrtrim(body)
+    if (body == "") return(J(0, 1, ""))
+    wrapped = "<div class=" + char(34) + "tohtml-embedded-table" + char(34) + ">" + char(10) + body + char(10) + "</div>"
+    return(split_newlines(wrapped))
 }
 
 string colvector inline_iframe_tables(string colvector lines, string scalar mdfile)
@@ -1309,13 +1344,39 @@ string colvector inline_iframe_tables(string colvector lines, string scalar mdfi
 
 void function tohtml_prepare_embed(string scalar mdfile)
 {
+    external string scalar tohtml_embed_css
     if (!fileexists(mdfile)) {
         errprintf("tohtml embed: Markdown file not found: %s\n", mdfile)
         exit(601)
     }
+    tohtml_embed_css = ""
     lines = cat(mdfile)
     lines = inline_iframe_tables(lines, mdfile)
     mm_outsheet(mdfile, lines, "replace")
+}
+
+void function inject_embed_table_styles(string scalar htmlfile)
+{
+    external string scalar tohtml_embed_css
+    if (tohtml_embed_css == "") return
+    lines = cat(htmlfile)
+    if (rows(lines) == 0) return
+
+    csslines = split_newlines(tohtml_embed_css)
+    idx = selectindex(ustrpos(lines, "</head>") :> 0)
+    if (rows(idx) > 0) {
+        i = idx[1]
+        if (i > 1) {
+            lines = lines[|1 \ i-1|] \ csslines \ lines[|i \ rows(lines)|]
+        }
+        else {
+            lines = csslines \ lines
+        }
+    }
+    else {
+        lines = csslines \ lines
+    }
+    mm_outsheet(htmlfile, lines, "replace")
 }
 
 real colvector is_md_fence_line(string colvector lines)

@@ -161,8 +161,10 @@ Because {cmd:markdown} only embeds Markdown image links ({cmd:![ ](file.png)}),
 {cmd:tohtml} first rewrites local {cmd:<img src="...">} tags (PNG/JPEG/GIF/TIFF)
 to that syntax. SVG and other types are left as file links.
 HTML tables referenced by {cmd:<iframe src="file.html">} are read, and the table
-markup (body contents plus {cmd:<style>}, scripts dropped) is inserted into the
-Markdown in place of the iframe before conversion. Requires {opt html()}.
+markup is inserted into the Markdown in place of the iframe. Table {cmd:<style>}
+blocks are not written to Markdown (CSS braces break {cmd:markdown}); they are
+injected into the HTML {cmd:<head>} after conversion. Scripts are dropped.
+Requires {opt html()}.
 You may combine {opt embed} with {opt bundle}/{opt zip()}, but a successful
 {opt embed} already inlines the usual figure and table files.
 
