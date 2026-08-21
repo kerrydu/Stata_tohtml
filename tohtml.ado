@@ -1,3 +1,7 @@
+*! version 1.24, 2026-08-21
+*! version 1.23, 2026-08-21
+*! version 1.22, 2026-08-21
+*! version 1.21, 2026-08-21
 *! version 1.20, 2026-08-21
 *! version 1.19, 2026-08-21
 *! version 1.18, 2026-08-21
@@ -420,11 +424,17 @@ program define tohtml_emit_html
         markdown `"`md'"', saving(`"`html'"') replace embedimage basedir(`"`embase'"')
     }
     else {
+        mata: st_local("html_dir", path_dir(`"`html'"'))
+        if "`html_dir'" == "" local html_dir "."
+        mata: tohtml_fix_default_refs(`"`md'"', `"`html_dir'"')
         markdown `"`md'"', saving(`"`html'"') replace
     }
     tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`md'"') `mathjax' `highlight' `embed'
     if "`embed'" != "" {
         mata: inject_embed_table_styles(`"`html'"')
+    }
+    else {
+        mata: tohtml_finish_default_refs(`"`html'"')
     }
 end
 
@@ -702,10 +712,10 @@ real scalar path_is_remote(string scalar p)
     return(0)
 }
 
-string colvector path_ancestors(string scalar d)
+string colvector path_ancestors(string scalar din)
 {
     out = J(0, 1, "")
-    d = strtrim(d)
+    d = strtrim(din)
     if (d == "") d = pwd()
     if (!pathisabs(d)) d = pathresolve(pwd(), d)
     for (k = 1; k <= 8; k++) {
@@ -767,9 +777,31 @@ string scalar path_rel_to_base(string scalar absfile, string scalar base)
     return(substr(a, strlen(b) + 2, .))
 }
 
+string scalar path_rel_to_dir(string scalar absfile, string scalar dir)
+{
+    // Relative path from dir to file, using ../ when file is not inside dir.
+    d = normalize_path(dir)
+    if (d != "" & !pathisabs(d)) d = pathresolve(pwd(), d)
+    a = normalize_path(absfile)
+    if (a != "" & !pathisabs(a)) a = pathresolve(pwd(), a)
+    rel = path_rel_to_base(a, d)
+    if (rel != "") return(subinstr(rel, "\", "/", .))
+    prefix = ""
+    for (k = 1; k <= 8; k++) {
+        p = pathgetparent(d)
+        if (p == "" | p == d) break
+        prefix = prefix + "../"
+        rel = path_rel_to_base(a, p)
+        if (rel != "") return(prefix + subinstr(rel, "\", "/", .))
+        d = p
+    }
+    return("")
+}
+
 string scalar resolve_local_file(string scalar src, string scalar root)
 {
     src0 = strtrim(src)
+    root0 = root
     if (path_is_remote(src0)) return("")
 
     if (pathisabs(src0)) {
@@ -777,7 +809,7 @@ string scalar resolve_local_file(string scalar src, string scalar root)
         return("")
     }
 
-    bases = unique_keep_order(path_ancestors(tohtml_get_resource_root()) \ path_ancestors(root) \ path_ancestors(pwd()))
+    bases = unique_keep_order(path_ancestors(tohtml_get_resource_root()) \ path_ancestors(root0) \ path_ancestors(pwd()))
     for (j = 1; j <= rows(bases); j++) {
         cand = pathresolve(bases[j], src0)
         if (fileexists(cand)) {
@@ -850,12 +882,33 @@ string colvector extract_md_images(string colvector lines)
 
 string colvector replace_path_refs(string colvector lines, string scalar oldp, string scalar newref)
 {
-    if (oldp == "" | newref == "") return(lines)
-    old1 = normalize_path(oldp)
-    old2 = subinstr(old1, "/", "\", .)
-    lines = subinstr(lines, oldp, newref, .)
-    if (old1 != oldp) lines = subinstr(lines, old1, newref, .)
-    if (old2 != oldp & old2 != old1) lines = subinstr(lines, old2, newref, .)
+    // Replace a file path only where it is a complete src / markdown target,
+    // not as a substring of a longer path.
+    if (oldp == "" | newref == "" | oldp == newref) return(lines)
+    dq = char(34)
+    sq = char(39)
+    olds = (oldp \ slash_norm_src(oldp) \ normalize_path(oldp))
+    olds = olds \ subinstr(normalize_path(oldp), "/", char(92), .)
+    olds = uniqrows(select(olds, olds :!= ""))
+    infence = 0
+    for (i = 1; i <= rows(lines); i++) {
+        line = lines[i]
+        if (is_md_fence_line(line)) {
+            infence = !infence
+            continue
+        }
+        if (infence) continue
+        for (j = 1; j <= rows(olds); j++) {
+            op = olds[j]
+            if (op == "" | op == newref) continue
+            line = usubinstr(line, "src=" + dq + op + dq, "src=" + dq + newref + dq, .)
+            line = usubinstr(line, "src=" + sq + op + sq, "src=" + sq + newref + sq, .)
+            line = usubinstr(line, "href=" + dq + op + dq, "href=" + dq + newref + dq, .)
+            line = usubinstr(line, "href=" + sq + op + sq, "href=" + sq + newref + sq, .)
+            line = usubinstr(line, "](" + op + ")", "](" + newref + ")", .)
+        }
+        lines[i] = line
+    }
     return(lines)
 }
 
@@ -906,23 +959,27 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
     if (hasmd) srcs = srcs \ extract_embed_srcs(md) \ extract_md_images(md)
     srcs = select(srcs, srcs :!= "")
     if (rows(srcs) > 0) srcs = uniqrows(srcs)
+    if (rows(srcs) > 1) srcs = srcs[order(-strlen(srcs), 1)]
 
     used_fig = J(0, 1, "")
     used_tab = J(0, 1, "")
+    copied_from = J(0, 1, "")
+    copied_ref = J(0, 1, "")
 
     for (i = 1; i <= rows(srcs); i++) {
         src = strtrim(srcs[i])
         if (path_is_remote(src)) continue
 
-        sn = normalize_path(src)
-        already_fig = (ustrpos(sn, "figures/") == 1) | (ustrpos(sn, "./figures/") == 1)
-        already_tab = (ustrpos(sn, "tables/") == 1) | (ustrpos(sn, "./tables/") == 1)
+        sn = slash_norm_src(src)
+        already_fig = (ustrpos(sn, "./figures/") == 1)
+        already_tab = (ustrpos(sn, "./tables/") == 1)
         if (already_fig) continue
         if (already_tab) {
             resolved0 = resolve_local_file(src, root)
             if (resolved0 != "" & (path_suffix_lower(resolved0) == ".html" |
                 path_suffix_lower(resolved0) == ".htm")) {
                 fix_table_override_css(resolved0)
+                copy_table_companion_css(resolved0, resolved0)
             }
             continue
         }
@@ -939,12 +996,23 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
         }
 
         resolved_n = normalize_path(resolved)
+        if (rows(copied_from) > 0) {
+            hit = selectindex(copied_from :== resolved_n)
+            if (length(hit) > 0) {
+                newref = copied_ref[hit[1]]
+                html = replace_path_refs(html, src, newref)
+                if (hasmd) md = replace_path_refs(md, src, newref)
+                continue
+            }
+        }
         figdir_n = normalize_path(figdir)
         tabdir_n = normalize_path(tabdir)
         if (ustrpos(resolved_n, figdir_n + "/") == 1) {
             newref = "./figures/" + pathbasename(resolved_n)
             html = replace_path_refs(html, src, newref)
             if (hasmd) md = replace_path_refs(md, src, newref)
+            copied_from = copied_from \ resolved_n
+            copied_ref = copied_ref \ newref
             continue
         }
         if (ustrpos(resolved_n, tabdir_n + "/") == 1) {
@@ -953,7 +1021,10 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
             if (hasmd) md = replace_path_refs(md, src, newref)
             if (path_suffix_lower(resolved_n) == ".html" | path_suffix_lower(resolved_n) == ".htm") {
                 fix_table_override_css(resolved_n)
+                copy_table_companion_css(resolved_n, resolved_n)
             }
+            copied_from = copied_from \ resolved_n
+            copied_ref = copied_ref \ newref
             continue
         }
 
@@ -975,6 +1046,8 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
             stata_copy_file(resolved, dest)
         }
         newref = relprefix + base
+        copied_from = copied_from \ resolved_n
+        copied_ref = copied_ref \ newref
         html = replace_path_refs(html, src, newref)
         if (hasmd) md = replace_path_refs(md, src, newref)
         if (normalize_path(resolved) != normalize_path(src)) {
@@ -1117,7 +1190,7 @@ void function rewrite_md_finish(string colvector fcon, string scalar tfi, real s
 
     // Opening Stata code fences: ```  →  ```stata  (keep ```text etc.)
     fcon = tag_stata_opening_fences(fcon)
-    fcon = relativize_embed_paths(fcon)
+    fcon = slash_normalize_embed_paths(fcon)
 
     // 8. 输出
     if (replace == 0) {
@@ -1195,7 +1268,7 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
     fcon = fconnew
     
     
-    fcon = relativize_embed_paths(fcon)
+    fcon = slash_normalize_embed_paths(fcon)
     // 8. 输出
     if (replace == 0) {
         mm_outsheet(tfi, fcon)
@@ -1205,18 +1278,13 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
 }
 
 string colvector extractmdtable(string scalar line){
-    line2 = usubinstr(line, "<iframe", "", 1)
-    line2 = usubinstr(line2, "</iframe>", "", 1)
-    line2 = strtrim(line2)
-    // 去掉 iframe 开标签的关闭符 ">"，格式为 <iframe filepath >
-    if (substr(line2, strlen(line2), 1) == ">") {
-        line2 = strtrim(substr(line2, 1, strlen(line2)-1))
-    }
-    if (!fileexists(line2)) {
-        printf("{err}extractmdtable: file not exist: %s\n", line2)
+    src = iframe_bare_path(line)
+    resolved = resolve_local_file(src, tohtml_get_resource_root())
+    if (resolved == "") {
+        printf("{err}extractmdtable: file not exist: %s\n", src)
         return(J(0, 1, ""))
     }
-    mdtext = cat(line2)
+    mdtext = cat(resolved)
     flag = 1
     pos = 1
     maxn = length(mdtext)
@@ -1259,31 +1327,29 @@ real scalar img_ext_embeddable(string scalar src)
     return(0)
 }
 
-string scalar to_project_rel_src(string scalar src)
+string scalar slash_norm_src(string scalar src)
 {
-    // Relative to the folder where the log-relative file was found.
-    src0 = subinstr(strtrim(src), "\", "/", .)
-    if (src0 == "") return(src0)
-    if (path_is_remote(src0)) return(src0)
-    extra = tohtml_get_resource_root()
-    resolved = resolve_local_file(src0, extra)
-    if (resolved == "") return(src0)
-    rel = path_rel_to_base(resolved, tohtml_get_resource_root())
-    if (rel != "") return(rel)
+    return(subinstr(strtrim(src), "\", "/", .))
+}
+
+string scalar src_for_default(string scalar src, string scalar basedir)
+{
+    // Keep absolute paths. Keep relative paths if they resolve from basedir
+    // (the report HTML folder). Otherwise use the file's absolute path.
+    src0 = slash_norm_src(src)
+    basedir0 = basedir
+    if (src0 == "" | path_is_remote(src0)) return(src0)
+    resolved = resolve_local_file(src0, basedir0)
+    if (pathisabs(src0)) return(src0)
+    if (basedir0 == "") basedir0 = pwd()
+    if (!pathisabs(basedir0)) basedir0 = pathresolve(pwd(), basedir0)
+    cand = pathresolve(basedir0, src0)
+    if (fileexists(cand)) return(src0)
+    if (resolved != "") return(slash_norm_src(resolved))
     return(src0)
 }
 
-string scalar to_embed_image_src(string scalar src)
-{
-    // markdown, embedimage treats "D:/file.png" as scheme D: and fails on Windows.
-    rel = to_project_rel_src(src)
-    if (strlen(rel) >= 2 & substr(rel, 2, 1) == ":") {
-        return("file:///" + subinstr(rel, "\", "/", .))
-    }
-    return(rel)
-}
-
-string colvector relativize_embed_paths(string colvector lines)
+string colvector slash_normalize_embed_paths(string colvector lines)
 {
     infence = 0
     for (i = 1; i <= rows(lines); i++) {
@@ -1298,7 +1364,7 @@ string colvector relativize_embed_paths(string colvector lines)
             for (j = 1; j <= rows(srcs); j++) {
                 src = srcs[j]
                 if (src == "" | path_is_remote(src)) continue
-                news = to_project_rel_src(src)
+                news = slash_norm_src(src)
                 if (news != src) line = subinstr(line, src, news, .)
             }
         }
@@ -1307,10 +1373,17 @@ string colvector relativize_embed_paths(string colvector lines)
             if (usubstr(t, 1, 7) == "<iframe") {
                 bp = iframe_bare_path(line)
                 if (bp != "" & !path_is_remote(bp)) {
-                    news = to_project_rel_src(bp)
+                    news = slash_norm_src(bp)
                     if (news != bp) line = subinstr(line, bp, news, 1)
                 }
             }
+        }
+        mdsrcs = extract_md_images((line \ J(0, 1, "")))
+        for (j = 1; j <= rows(mdsrcs); j++) {
+            src = mdsrcs[j]
+            if (src == "" | path_is_remote(src)) continue
+            news = slash_norm_src(src)
+            if (news != src) line = subinstr(line, src, news, .)
         }
         lines[i] = line
     }
@@ -1320,7 +1393,8 @@ string colvector relativize_embed_paths(string colvector lines)
 string scalar rewrite_md_bang_images(string scalar line)
 {
     // Remote ![](http...) must not go through embedimage (fetch can fail).
-    // Local Windows drive paths are rewritten by to_embed_image_src().
+    // Local paths are left as written (absolute or relative); Windows
+    // absolute paths convert to Base64 under markdown, embedimage.
     s = line
     out = ""
     for (k = 1; k <= 40; k++) {
@@ -1339,7 +1413,7 @@ string scalar rewrite_md_bang_images(string scalar line)
             out = out + "<img src=" + q + src + q + ">"
         }
         else if (img_ext_embeddable(src)) {
-            out = out + open + to_embed_image_src(src) + close
+            out = out + open + slash_norm_src(src) + close
         }
         else {
             out = out + open + src + close
@@ -1374,7 +1448,7 @@ string scalar html_img_to_md_image(string scalar line)
         src = ""
         if (rows(srcs) > 0) src = srcs[1]
         if (src != "" & img_ext_embeddable(src) & !path_is_remote(src)) {
-            out = out + "![](" + to_embed_image_src(src) + ")"
+            out = out + "![](" + slash_norm_src(src) + ")"
         }
         else {
             out = out + tag
@@ -1483,11 +1557,10 @@ void function collect_embed_css_file(string scalar cssfile)
 void function copy_table_companion_css(string scalar src_html, string scalar dest_html)
 {
     csss = companion_css_files(src_html)
-    if (rows(csss) == 0) return
     dest_dir = pathgetparent(dest_html)
     if (dest_dir == "") dest_dir = pwd()
-    used = J(0, 1, "")
     dest_lines = cat(dest_html)
+    used = J(0, 1, "")
     for (i = 1; i <= rows(csss); i++) {
         oldbase = pathbasename(csss[i])
         base = unique_bundle_name(dest_dir, oldbase, used)
@@ -1496,11 +1569,109 @@ void function copy_table_companion_css(string scalar src_html, string scalar des
         if (abs_path_key(csss[i]) != abs_path_key(dest_css)) {
             stata_copy_file(csss[i], dest_css)
         }
+        dest_lines = replace_path_refs(dest_lines, csss[i], base)
+        dest_lines = replace_path_refs(dest_lines, slash_norm_src(csss[i]), base)
         if (oldbase != base) {
-            dest_lines = subinstr(dest_lines, oldbase, base, .)
+            dest_lines = replace_path_refs(dest_lines, oldbase, base)
         }
     }
     mm_outsheet(dest_html, dest_lines, "replace")
+    ensure_table_css_link(dest_html)
+}
+
+string scalar table_css_link_tag(string scalar href)
+{
+    q = char(34)
+    return("<link rel=" + q + "stylesheet" + q + " type=" + q + "text/css" + q + " href=" + q + href + q + ">")
+}
+
+real scalar is_stylesheet_link_line(string scalar line)
+{
+    t = ustrlower(ustrtrim(line))
+    if (ustrpos(t, "<link") != 1) return(0)
+    if (ustrpos(t, "stylesheet") > 0) return(1)
+    if (ustrpos(t, "text/css") > 0) return(1)
+    return(0)
+}
+
+string colvector drop_stylesheet_link_lines(string colvector lines)
+{
+    if (rows(lines) == 0) return(lines)
+    keep = J(rows(lines), 1, 1)
+    for (i = 1; i <= rows(lines); i++) {
+        if (is_stylesheet_link_line(lines[i])) keep[i] = 0
+    }
+    if (sum(keep) == 0) return(J(0, 1, ""))
+    return(select(lines, keep))
+}
+
+real scalar lines_already_link_css(string colvector lines, string scalar cssbase)
+{
+    hrefs = extract_link_css_hrefs(join_lines(lines))
+    want = ustrlower(subinstr(cssbase, "\", "/", .))
+    for (i = 1; i <= rows(hrefs); i++) {
+        got = ustrlower(subinstr(pathbasename(hrefs[i]), "\", "/", .))
+        if (got == want) return(1)
+    }
+    return(0)
+}
+
+string colvector attach_table_css_link(string colvector lines, string scalar href)
+{
+    blob = ustrlower(join_lines(lines))
+    link = table_css_link_tag(href)
+    has_html = ustrpos(blob, "<html") > 0
+    has_head_close = ustrpos(blob, "</head>") > 0
+
+    if (has_head_close) {
+        for (i = 1; i <= rows(lines); i++) {
+            if (ustrpos(ustrlower(lines[i]), "</head>") > 0) {
+                if (i == 1) return(link \ lines)
+                return(lines[|1 \ i-1|] \ link \ lines[|i \ rows(lines)|])
+            }
+        }
+    }
+    if (has_html) {
+        return(lines \ link)
+    }
+
+    q = char(34)
+    lines = drop_stylesheet_link_lines(lines)
+    open = "<!DOCTYPE html>" \ "<html>" \ "<head>" \
+        "<meta charset=" + q + "utf-8" + q + ">" \ link \ "</head>" \ "<body>"
+    return(open \ lines \ "</body>" \ "</html>")
+}
+
+void function ensure_table_css_link(string scalar htmlfile)
+{
+    // collect export, tableonly writes a <table> fragment plus basename.css
+    // and no <link>. Wrap the fragment and put the stylesheet in <head>
+    // so an iframe (default / zip) can apply the style.
+    if (!fileexists(htmlfile)) return
+    csss = companion_css_files(htmlfile)
+    if (rows(csss) == 0) return
+
+    lines = cat(htmlfile)
+    hdir = pathgetparent(htmlfile)
+    if (hdir == "") hdir = pwd()
+    sib = pathjoin(hdir, pathrmsuffix(pathbasename(htmlfile)) + ".css")
+    csspath = csss[1]
+    for (i = 1; i <= rows(csss); i++) {
+        if (abs_path_key(csss[i]) == abs_path_key(sib)) {
+            csspath = csss[i]
+            break
+        }
+    }
+
+    href = path_rel_to_dir(csspath, hdir)
+    if (href == "") href = pathbasename(csspath)
+
+    blob = ustrlower(join_lines(lines))
+    already = lines_already_link_css(lines, pathbasename(csspath))
+    if (already & (ustrpos(blob, "<html") > 0 | ustrpos(blob, "</head>") > 0)) return
+
+    lines = attach_table_css_link(lines, href)
+    mm_outsheet(htmlfile, lines, "replace")
 }
 
 string colvector extract_html_table_fragment(string scalar htmlfile)
@@ -1664,6 +1835,53 @@ void function inject_embed_table_styles(string scalar htmlfile)
         lines = csslines \ lines
     }
     mm_outsheet(htmlfile, lines, "replace")
+}
+
+void function tohtml_fix_default_refs(string scalar reportfile, string scalar basedir)
+{
+    // Default (non-embed, non-zip) insertion: keep absolute or relative src
+    // as written when it works from the report HTML folder. If a relative
+    // iframe/img path does not resolve there, rewrite it to the file's
+    // absolute path. Attach collect-export CSS on table HTML files.
+    if (!fileexists(reportfile)) {
+        cand = pathjoin(pwd(), reportfile)
+        if (fileexists(cand)) reportfile = cand
+    }
+    if (!fileexists(reportfile)) return
+    if (!pathisabs(reportfile)) reportfile = pathresolve(pwd(), reportfile)
+    if (basedir == "") basedir = pathgetparent(reportfile)
+    if (basedir == "") basedir = pwd()
+    if (!pathisabs(basedir)) basedir = pathresolve(pwd(), basedir)
+    lines = cat(reportfile)
+    if (rows(lines) == 0) return
+    srcs = extract_embed_srcs(lines) \ extract_md_images(lines)
+    srcs = select(srcs, srcs :!= "")
+    if (rows(srcs) == 0) {
+        return
+    }
+    srcs = uniqrows(srcs)
+    if (rows(srcs) > 1) srcs = srcs[order(-strlen(srcs), 1)]
+    changed = 0
+
+    for (i = 1; i <= rows(srcs); i++) {
+        src = strtrim(srcs[i])
+        if (src == "" | path_is_remote(src)) continue
+        ext = path_suffix_lower(src)
+        resolved = resolve_local_file(src, basedir)
+        if (ext == ".html" | ext == ".htm") {
+            if (resolved != "") ensure_table_css_link(resolved)
+        }
+        news = src_for_default(src, basedir)
+        if (news == "" | news == src) continue
+        lines = replace_path_refs(lines, src, news)
+        changed = 1
+    }
+    if (changed) mm_outsheet(reportfile, lines, "replace")
+}
+
+void function tohtml_finish_default_refs(string scalar htmlfile)
+{
+    tohtml_fix_default_refs(htmlfile, pathgetparent(htmlfile))
 }
 
 real colvector is_md_fence_line(string colvector lines)
@@ -2481,9 +2699,10 @@ string colvector function check_isheretxt_closed(string colvector lines)
     return(lines)
 }
 
-string scalar normalize_path(string scalar p)
+string scalar normalize_path(string scalar pin)
 {
     // Slash-fold for HTML/MD and prefix compares. Joining uses pathjoin/pathresolve.
+    p = pin
     p = subinstr(p, "\\", "/", .)
     p = subinstr(p, "\", "/", .)
     while (strlen(p) > 1 & substr(p, strlen(p), 1) == "/") {
@@ -2492,13 +2711,13 @@ string scalar normalize_path(string scalar p)
     return(p)
 }
 
-string scalar abs_path_key(string scalar p)
+string scalar abs_path_key(string scalar pin)
 {
-    string scalar drive, s, piece, out
+    string scalar drive, s, piece, out, p
     real scalar n, j, i
     string colvector tok
 
-    p = strtrim(p)
+    p = strtrim(pin)
     if (p == "" | p == ".") p = pwd()
     else if (!pathisabs(p)) p = pathresolve(pwd(), p)
     p = normalize_path(p)

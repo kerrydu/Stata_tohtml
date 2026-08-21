@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.9.0  21aug2026}{...}
+{* *! version 1.11.0  21aug2026}{...}
 {vieweralsosee "tohtml" "help tohtml"}{...}
 {vieweralsosee "markdown" "help markdown"}{...}
 {viewerjumpto "Syntax" "ishere##syntax"}{...}
@@ -85,13 +85,14 @@ Prints content to the log (kept / processed by {help tohtml}):
 
 {pmore2}
 - Figures: {cmd:ishere fig using "figure1.png"} writes an HTML {cmd:<img>} tag.
-  If the file sits under the current working directory (the project folder),
-  the path is stored relative to that folder (e.g. {cmd:results/figures/fig.png}),
-  not as an absolute {cmd:D:/...} or {cmd:/Users/...} path.
+  The path is stored as given (absolute or relative); backslashes become
+  forward slashes. {help tohtml} later keeps that form in the default HTML
+  report, inlines it with {opt embed}, or rewrites it to a package-relative
+  path with {opt zip()}.
 
 {pmore2}
 - HTML tables: {cmd:ishere tab using "table1.html"} writes an HTML {cmd:<iframe>} tag
-  (same relative-path rule as figures). If {help collect export} wrote a companion
+  (same path rule as figures). If {help collect export} wrote a companion
   CSS file (same basename as the table, or the name given in {cmd:cssfile()}), and
   the HTML does not already contain a stylesheet {cmd:<link>}, {cmd:ishere} inserts
   that link so the table keeps its {help table}, {help dtable}, or {help etable}
@@ -217,9 +218,12 @@ Backslashes in file paths are converted to forward slashes for cross-platform us
 {pstd}
 {help table}, {help dtable}, and {help etable} export through {help collect export}.
 A complete HTML document already carries its style (inline {cmd:<style>} or a
-{cmd:<link>}). With {cmd:tableonly}, the CSS is a sidecar file and is not linked
-unless you add {opt cssfile()} or let {cmd:ishere} insert the default same-name
-stylesheet link.
+{cmd:<link>}). With {cmd:tableonly}, the CSS is a sidecar file and is not linked.
+{cmd:ishere} wraps that fragment in a small HTML document and puts a stylesheet
+{cmd:<link>} in {cmd:<head>} (same basename as the table, or {opt cssfile()}),
+after checking that the link is not there already. {help tohtml} does the same
+for default and {opt zip()} reports so the table keeps its style inside an
+{cmd:iframe}. {opt embed} inlines the companion CSS into the report instead.
 
 
 {title:Author}

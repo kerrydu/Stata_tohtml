@@ -1,3 +1,5 @@
+*! version 1.11, 2026-08-21
+*! version 1.10, 2026-08-21
 *! version 1.9, 2026-08-21
 *! version 1.8, 2026-08-21
 *! version 1.7, 2026-08-21
@@ -39,7 +41,6 @@ program define ishere
             di as error "filename must have an extension"
             exit 198
         }
-        mata: st_local("filepath", ishere_project_rel(st_local("filepath")))
         mata: st_local("extension", pathsuffix("`filepath'"))
         local extension = lower("`extension'")
 
@@ -174,6 +175,81 @@ string scalar ishere_css_href(string scalar htmlfile, string scalar cssfile)
     return(pathbasename(cssfile))
 }
 
+string scalar ishere_stylesheet_link(string scalar href)
+{
+    q = char(34)
+    return("<link rel=" + q + "stylesheet" + q + " type=" + q + "text/css" + q + " href=" + q + href + q + ">")
+}
+
+real scalar ishere_is_stylesheet_line(string scalar line)
+{
+    t = ustrlower(ustrtrim(line))
+    if (ustrpos(t, "<link") != 1) return(0)
+    if (ustrpos(t, "stylesheet") > 0) return(1)
+    if (ustrpos(t, "text/css") > 0) return(1)
+    return(0)
+}
+
+string colvector ishere_drop_stylesheet_lines(string colvector lines)
+{
+    if (rows(lines) == 0) return(lines)
+    keep = J(rows(lines), 1, 1)
+    for (i = 1; i <= rows(lines); i++) {
+        if (ishere_is_stylesheet_line(lines[i])) keep[i] = 0
+    }
+    if (sum(keep) == 0) return(J(0, 1, ""))
+    return(select(lines, keep))
+}
+
+real scalar ishere_already_links_css(string colvector lines, string scalar cssbase)
+{
+    hrefs = ishere_link_css_hrefs(ishere_join_lines(lines))
+    want = ustrlower(subinstr(cssbase, "\", "/", .))
+    for (i = 1; i <= rows(hrefs); i++) {
+        got = ustrlower(subinstr(pathbasename(hrefs[i]), "\", "/", .))
+        if (got == want) return(1)
+    }
+    return(0)
+}
+
+string colvector ishere_attach_css_link(string colvector lines, string scalar href)
+{
+    blob = ustrlower(ishere_join_lines(lines))
+    link = ishere_stylesheet_link(href)
+    has_html = ustrpos(blob, "<html") > 0
+    has_head_close = ustrpos(blob, "</head>") > 0
+
+    if (has_head_close) {
+        for (i = 1; i <= rows(lines); i++) {
+            if (ustrpos(ustrlower(lines[i]), "</head>") > 0) {
+                if (i == 1) return(link \ lines)
+                return(lines[|1 \ i-1|] \ link \ lines[|i \ rows(lines)|])
+            }
+        }
+    }
+    if (has_html) {
+        return(lines \ link)
+    }
+
+    // collect export, tableonly writes a <table> fragment. Put the
+    // stylesheet in <head> so an iframe can apply it.
+    q = char(34)
+    lines = ishere_drop_stylesheet_lines(lines)
+    open = "<!DOCTYPE html>" \ "<html>" \ "<head>" \
+        "<meta charset=" + q + "utf-8" + q + ">" \ link \ "</head>" \ "<body>"
+    return(open \ lines \ "</body>" \ "</html>")
+}
+
+void function ishere_write_lines(string scalar path, string colvector lines)
+{
+    unlink(path)
+    fh = fopen(path, "w")
+    for (i = 1; i <= rows(lines); i++) {
+        fput(fh, lines[i])
+    }
+    fclose(fh)
+}
+
 void function ishere_ensure_table_css(string scalar htmlfile, string scalar cssopt)
 {
     htmlfile = strtrim(htmlfile)
@@ -205,64 +281,16 @@ void function ishere_ensure_table_css(string scalar htmlfile, string scalar csso
         csspath = pathjoin(hdir, pathrmsuffix(pathbasename(htmlpath)) + ".css")
     }
     if (!fileexists(csspath)) return
+    if (!pathisabs(csspath)) csspath = pathresolve(pwd(), csspath)
 
     lines = cat(htmlpath)
-    blob = ishere_join_lines(lines)
-    hrefs = ishere_link_css_hrefs(blob)
-    want = ustrlower(subinstr(pathbasename(csspath), "\", "/", .))
-    for (i = 1; i <= rows(hrefs); i++) {
-        got = ustrlower(subinstr(pathbasename(hrefs[i]), "\", "/", .))
-        if (got == want) return
-    }
-    if (rows(hrefs) > 0) return
-
     href = ishere_css_href(htmlpath, csspath)
-    q = char(34)
-    link = "<link rel=" + q + "stylesheet" + q + " type=" + q + "text/css" + q + " href=" + q + href + q + ">"
-
-    placed = 0
-    for (i = 1; i <= rows(lines); i++) {
-        if (ustrpos(ustrlower(lines[i]), "</head>") > 0) {
-            if (i == 1) lines = link \ lines
-            else lines = lines[|1 \ i-1|] \ link \ lines[|i \ rows(lines)|]
-            placed = 1
-            break
-        }
+    if (ishere_already_links_css(lines, pathbasename(csspath))) {
+        blob = ustrlower(ishere_join_lines(lines))
+        if (ustrpos(blob, "<html") > 0 | ustrpos(blob, "</head>") > 0) return
     }
-    if (!placed) lines = lines \ link
 
-    unlink(htmlpath)
-    fh = fopen(htmlpath, "w")
-    for (i = 1; i <= rows(lines); i++) {
-        fput(fh, lines[i])
-    }
-    fclose(fh)
-}
-
-string scalar ishere_project_rel(string scalar src)
-{
-    // Paths under c(pwd) are written with forward slashes, relative to the project.
-    src = strtrim(src)
-    if (src == "") return(src)
-    if (pathisurl(src)) return(src)
-
-    pw = pwd()
-    resolved = src
-    if (!fileexists(resolved)) {
-        cand = pathjoin(pw, src)
-        if (fileexists(cand)) resolved = cand
-    }
-    if (!pathisabs(resolved)) resolved = pathresolve(pw, resolved)
-
-    a = subinstr(resolved, "\", "/", .)
-    b = subinstr(pw, "\", "/", .)
-    while (strlen(b) > 1 & substr(b, strlen(b), 1) == "/") {
-        b = substr(b, 1, strlen(b) - 1)
-    }
-    pref = ustrlower(b) + "/"
-    if (ustrpos(ustrlower(a), pref) == 1) {
-        return(substr(a, strlen(b) + 2, .))
-    }
-    return(subinstr(src, "\", "/", .))
+    lines = ishere_attach_css_link(lines, href)
+    ishere_write_lines(htmlpath, lines)
 }
 end

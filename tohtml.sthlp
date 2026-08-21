@@ -167,7 +167,21 @@ blocks are not written to Markdown (CSS braces break {cmd:markdown}); they are
 injected into the HTML {cmd:<head>} after conversion. Companion CSS written by
 {help collect export} (same basename as the table, or a {cmd:<link>} already in
 the table HTML) is inlined the same way. Scripts are dropped.
+Table and CSS files may be given as absolute or relative paths; they only need
+to exist (they are not rewritten). Image paths in {cmd:![ ](...)} and
+{cmd:<img>} tags are likewise left as written; {cmd:markdown, embedimage}
+accepts Windows absolute paths (e.g. {cmd:D:/...}) and encodes them as Base64.
 Requires {opt html()}.
+Without {opt embed}, tables remain iframes. {cmd:tohtml} attaches the
+companion stylesheet from {help collect export} ({cmd:tableonly} writes
+{it:name}{bf:.css} next to {it:name}{bf:.html}) by wrapping a table fragment
+in a small HTML document and placing a {cmd:<link>} in {cmd:<head>}.
+{opt zip()} / {opt bundle} copy that CSS next to the table under {bf:tables/}
+and keep the {cmd:<link>} as a same-folder relative path. Figure and table
+{cmd:src} attributes keep the path as written when it is absolute, or when a
+relative path resolves from the report HTML folder. If a relative
+{cmd:<iframe>} / {cmd:<img>} path would not work from that folder, it is
+replaced by the file's absolute path so the browser can load it.
 You may combine {opt embed} with {opt bundle}/{opt zip()}, but a successful
 {opt embed} already inlines the report CSS plus the usual figure and table files.
 
@@ -327,12 +341,16 @@ converted automatically via {cmd:translate ..., translator(smcl2log)}.
 
 {pstd}
 {bf:File paths}: Backslashes are converted to forward slashes. Figure and table
-paths under the project folder are stored as relative paths.
+paths are kept as written (absolute or relative).
 {cmd:tohtml} locates those files from the input log's directory (walking up
 parent folders), so you do not need to {cmd:cd} to the log folder or the
-project root before calling {cmd:tohtml}. Windows {cmd:D:/...} paths are
-rewritten so {cmd:markdown, embedimage} does not treat the drive letter as a
-URL scheme.
+project root before calling {cmd:tohtml}.
+In the default HTML report, a relative {cmd:<iframe>} / {cmd:<img>} path is
+kept when it resolves from the HTML folder; otherwise it is replaced by the
+file's absolute path. {opt embed} does not rewrite image, table, or CSS paths
+(Windows absolute image paths are passed through to {cmd:markdown, embedimage}).
+{opt zip()} / {opt bundle} copy resources into {bf:css/}, {bf:figures/}, and
+{bf:tables/} and rewrite every local link to a package-relative path.
 
 {pstd}
 {bf:Processing directories}: When the input argument is a directory rather than a file, {cmd:tohtml} automatically
