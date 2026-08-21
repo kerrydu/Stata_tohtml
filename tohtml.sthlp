@@ -324,7 +324,10 @@ drop the header.
 converted automatically via {cmd:translate ..., translator(smcl2log)}.
 
 {pstd}
-{bf:File paths}: All backslashes in file paths are automatically converted to forward slashes for cross-platform compatibility.
+{bf:File paths}: Backslashes are converted to forward slashes. Figure and table
+paths under the current working directory (the project folder) are stored as
+relative paths, which keeps Markdown/HTML portable and avoids Windows
+{cmd:D:/...} paths breaking {cmd:markdown, embedimage}.
 
 {pstd}
 {bf:Processing directories}: When the input argument is a directory rather than a file, {cmd:tohtml} automatically

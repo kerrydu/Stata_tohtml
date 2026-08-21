@@ -1,3 +1,4 @@
+*! version 1.16, 2026-08-21
 *! version 1.15, 2026-08-21
 *! version 1.14, 2026-08-21
 *! version 1.13, 2026-08-21
@@ -1054,6 +1055,7 @@ void function rewrite_md_finish(string colvector fcon, string scalar tfi, real s
 
     // Opening Stata code fences: ```  →  ```stata  (keep ```text etc.)
     fcon = tag_stata_opening_fences(fcon)
+    fcon = relativize_embed_paths(fcon)
 
     // 8. 输出
     if (replace == 0) {
@@ -1131,6 +1133,7 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
     fcon = fconnew
     
     
+    fcon = relativize_embed_paths(fcon)
     // 8. 输出
     if (replace == 0) {
         mm_outsheet(tfi, fcon)
@@ -1194,6 +1197,102 @@ real scalar img_ext_embeddable(string scalar src)
     return(0)
 }
 
+string scalar to_project_rel_src(string scalar src)
+{
+    // Rewrite local files under pwd as project-relative paths.
+    src0 = subinstr(strtrim(src), "\", "/", .)
+    if (src0 == "") return(src0)
+    if (path_is_remote(src0)) return(src0)
+    resolved = resolve_local_file(src0, pwd())
+    if (resolved == "") resolved = src0
+    resolved = subinstr(normalize_path(resolved), "\", "/", .)
+    pw = subinstr(normalize_path(pwd()), "\", "/", .)
+    prefix = ustrlower(pw) + "/"
+    if (ustrpos(ustrlower(resolved), prefix) == 1) {
+        return(substr(resolved, strlen(pw) + 2, .))
+    }
+    if (ustrpos(ustrlower(src0), prefix) == 1) {
+        return(substr(src0, strlen(pw) + 2, .))
+    }
+    return(src0)
+}
+
+string scalar to_embed_image_src(string scalar src)
+{
+    // markdown, embedimage treats "D:/file.png" as scheme D: and fails on Windows.
+    rel = to_project_rel_src(src)
+    if (strlen(rel) >= 2 & substr(rel, 2, 1) == ":") {
+        return("file:///" + subinstr(rel, "\", "/", .))
+    }
+    return(rel)
+}
+
+string colvector relativize_embed_paths(string colvector lines)
+{
+    infence = 0
+    for (i = 1; i <= rows(lines); i++) {
+        line = lines[i]
+        if (is_md_fence_line(line)) {
+            infence = !infence
+            continue
+        }
+        if (infence) continue
+        srcs = extract_src_attrs(line)
+        if (rows(srcs) > 0) {
+            for (j = 1; j <= rows(srcs); j++) {
+                src = srcs[j]
+                if (src == "" | path_is_remote(src)) continue
+                news = to_project_rel_src(src)
+                if (news != src) line = subinstr(line, src, news, .)
+            }
+        }
+        else {
+            t = ustrltrim(line)
+            if (usubstr(t, 1, 7) == "<iframe") {
+                bp = iframe_bare_path(line)
+                if (bp != "" & !path_is_remote(bp)) {
+                    news = to_project_rel_src(bp)
+                    if (news != bp) line = subinstr(line, bp, news, 1)
+                }
+            }
+        }
+        lines[i] = line
+    }
+    return(lines)
+}
+
+string scalar rewrite_md_bang_images(string scalar line)
+{
+    // Remote ![](http...) must not go through embedimage (fetch can fail).
+    // Local Windows drive paths are rewritten by to_embed_image_src().
+    s = line
+    out = ""
+    for (k = 1; k <= 40; k++) {
+        if (!ustrregexm(s, `"^(.*?)(!\[[^\]]*\]\()([^)]+)(\))(.*)"')) {
+            out = out + s
+            break
+        }
+        pre = ustrregexs(1)
+        open = ustrregexs(2)
+        src = ustrregexs(3)
+        close = ustrregexs(4)
+        post = ustrregexs(5)
+        out = out + pre
+        if (path_is_remote(src)) {
+            q = char(34)
+            out = out + "<img src=" + q + src + q + ">"
+        }
+        else if (img_ext_embeddable(src)) {
+            out = out + open + to_embed_image_src(src) + close
+        }
+        else {
+            out = out + open + src + close
+        }
+        s = post
+    }
+    return(out)
+}
+
 string scalar html_img_to_md_image(string scalar line)
 {
     out = ""
@@ -1219,7 +1318,7 @@ string scalar html_img_to_md_image(string scalar line)
         src = ""
         if (rows(srcs) > 0) src = srcs[1]
         if (src != "" & img_ext_embeddable(src) & !path_is_remote(src)) {
-            out = out + "![](" + src + ")"
+            out = out + "![](" + to_embed_image_src(src) + ")"
         }
         else {
             out = out + tag
@@ -1343,7 +1442,7 @@ string colvector inline_iframe_tables(string colvector lines, string scalar mdfi
         }
         t = ustrltrim(line)
         if (usubstr(t, 1, 7) != "<iframe") {
-            out = out \ html_img_to_md_image(line)
+            out = out \ rewrite_md_bang_images(html_img_to_md_image(line))
             continue
         }
         srcs = extract_src_attrs(line)
@@ -1376,7 +1475,8 @@ string colvector inline_iframe_tables(string colvector lines, string scalar mdfi
             out = out \ line
             continue
         }
-        out = out \ frag
+        frag = select(frag, strtrim(frag) :!= "")
+        out = out \ "" \ frag \ ""
     }
     return(out)
 }

@@ -1,3 +1,4 @@
+*! version 1.7, 2026-08-21
 *! version 1.6, 2026-08-11
 program define ishere
     version 14
@@ -36,6 +37,7 @@ program define ishere
             di as error "filename must have an extension"
             exit 198
         }
+        mata: st_local("filepath", ishere_project_rel(st_local("filepath")))
         mata: st_local("extension", pathsuffix("`filepath'"))
         local extension = lower("`extension'")
 
@@ -108,4 +110,27 @@ program define removequotes, rclass
     version 14
     syntax, [t(string)]
     return local s `t'
+end
+
+mata:
+string scalar ishere_project_rel(string scalar src)
+{
+    // Paths under c(pwd) (the project folder) are written relative to it.
+    src = subinstr(strtrim(src), "\", "/", .)
+    if (src == "") return(src)
+    pw = subinstr(pwd(), "\", "/", .)
+    while (strlen(pw) > 1 & substr(pw, strlen(pw), 1) == "/") {
+        pw = substr(pw, 1, strlen(pw) - 1)
+    }
+    resolved = src
+    if (!fileexists(resolved) & fileexists(pw + "/" + src)) {
+        resolved = pw + "/" + src
+    }
+    resolved = subinstr(resolved, "\", "/", .)
+    prefix = ustrlower(pw) + "/"
+    if (ustrpos(ustrlower(resolved), prefix) == 1) {
+        return(substr(resolved, strlen(pw) + 2, .))
+    }
+    return(src)
+}
 end

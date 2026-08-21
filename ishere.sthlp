@@ -84,7 +84,14 @@ Prints content to the log (kept / processed by {help tohtml}):
   printed value in the first narrative block that follows the command.
 
 {pmore2}
-- Figures: {cmd:ishere fig using "figure1.png"} writes an HTML {cmd:<img>} tag
+- Figures: {cmd:ishere fig using "figure1.png"} writes an HTML {cmd:<img>} tag.
+  If the file sits under the current working directory (the project folder),
+  the path is stored relative to that folder (e.g. {cmd:results/figures/fig.png}),
+  not as an absolute {cmd:D:/...} or {cmd:/Users/...} path.
+
+{pmore2}
+- HTML tables: {cmd:ishere tab using "table1.html"} writes an HTML {cmd:<iframe>} tag
+  (same relative-path rule as figures)
 
 {pmore2}
 - HTML tables: {cmd:ishere tab using "table1.html"} writes an HTML {cmd:<iframe>} tag
