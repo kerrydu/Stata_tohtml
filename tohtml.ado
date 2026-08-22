@@ -2219,7 +2219,10 @@ real scalar next_nonempty_is_md_fence(string colvector fcon, real scalar i)
 {
     n = rows(fcon)
     j = i + 1
-    while (j <= n & ustrtrim(fcon[j]) == "") j++
+    while (j <= n) {
+        if (ustrtrim(fcon[j]) != "") break
+        j++
+    }
     if (j > n) return(0)
     return(line_is_md_fence(fcon[j]))
 }
@@ -2233,7 +2236,10 @@ string colvector ensure_stata_fence_open(string colvector lines)
     if (n == 0) return(lines)
 
     k = 1
-    while (k <= n & ustrtrim(lines[k]) == "") k++
+    while (k <= n) {
+        if (ustrtrim(lines[k]) != "") break
+        k++
+    }
     if (k > n) return(lines)
 
     insert_at = 0
@@ -2254,7 +2260,10 @@ string colvector ensure_stata_fence_open(string colvector lines)
     }
 
     m = insert_at + 1
-    while (m <= n & ustrtrim(lines[m]) == "") m++
+    while (m <= n) {
+        if (ustrtrim(lines[m]) != "") break
+        m++
+    }
     if (m > n) return(lines)
     if (line_is_md_fence(lines[m])) return(lines)
 

@@ -1,0 +1,34 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\from_html\test_fe
+> nce_run.log
+  log type:  text
+ opened on:  23 Aug 2026, 00:29:55
+
+. 
+. capture which pathutil
+
+. if _rc {
+.     di as error "pathutil not found"
+.     exit 111
+. }
+
+. 
+. tohtml "example_from_html.log", md("example_from_html.md") html("example_from
+> _html.html") css(githubstyle) replace
+% markdown written to example_from_html.md
+successfully converted "C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/from_h
+> tml/example_from_html.html"
+(file ./css/tohtml.css not found)
+(file ./css/table-override.css not found)
+
+. di as result "DONE"
+DONE
+
+. log close
+      name:  <unnamed>
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\from_html\test_fe
+> nce_run.log
+  log type:  text
+ closed on:  23 Aug 2026, 00:29:56
+-------------------------------------------------------------------------------
