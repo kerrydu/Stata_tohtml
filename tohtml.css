@@ -147,6 +147,15 @@ img {
     box-sizing: border-box;
 }
 
+/* Tables inserted via iframe (collect / outreg HTML) */
+iframe {
+    border: 0;
+    width: 100%;
+    display: block;
+    margin: 0 0 16px 0;
+    overflow: hidden;
+}
+
 /* MathJax */
 mjx-container {
     overflow-x: auto;

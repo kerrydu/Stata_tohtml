@@ -1,3 +1,4 @@
+*! version 1.12, 2026-08-22
 *! version 1.11, 2026-08-21
 *! version 1.10, 2026-08-21
 *! version 1.9, 2026-08-21
@@ -66,11 +67,26 @@ program define ishere
 
         // table
         if inlist("`extension'", ".html", ".htm") {
-            if "`height'" == "" local height "400px"
             if "`width'" == "" local width "100%"
+            if "`height'" == "" {
+                mata: st_numscalar("ishere_tr", ishere_count_tr(st_local("filepath")))
+                if ishere_tr <= 0 {
+                    local height "400px"
+                }
+                else {
+                    local h = 52 + ishere_tr * 34
+                    if `h' < 90 local h = 90
+                    if `h' > 1600 local h = 1600
+                    local height "`h'px"
+                }
+            }
+            else if strpos("`height'", "px") == 0 & strpos("`height'", "%") == 0 {
+                local height "`height'px"
+            }
             mata: ishere_ensure_table_css(st_local("filepath"), st_local("cssfile"))
             di
-            display `"<iframe src='`filepath'' width='`width'' height='`height'' frameBorder='0'></iframe>"'
+            local onload onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'px';"
+            display `"<iframe src='`filepath'' width='`width'' height='`height'' frameBorder='0' scrolling='no' `onload'></iframe>"'
         }
         else if "`extension'" == ".md" {
             di
@@ -248,6 +264,32 @@ void function ishere_write_lines(string scalar path, string colvector lines)
         fput(fh, lines[i])
     }
     fclose(fh)
+}
+
+real scalar ishere_count_tr(string scalar htmlfile)
+{
+    f = strtrim(htmlfile)
+    if (f == "") return(0)
+    if (!fileexists(f)) {
+        cand = pathjoin(pwd(), f)
+        if (fileexists(cand)) f = cand
+    }
+    if (!fileexists(f)) return(0)
+    raw = cat(f)
+    if (rows(raw) == 0) return(0)
+    blob = ""
+    for (i = 1; i <= rows(raw); i++) {
+        blob = blob + raw[i]
+    }
+    blob = ustrlower(blob)
+    n = 0
+    for (k = 1; k <= 2000; k++) {
+        p = ustrpos(blob, "<tr")
+        if (p == 0) break
+        n++
+        blob = usubstr(blob, p + 3, .)
+    }
+    return(n)
 }
 
 void function ishere_ensure_table_css(string scalar htmlfile, string scalar cssopt)

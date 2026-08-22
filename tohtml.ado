@@ -1,3 +1,4 @@
+*! version 1.25, 2026-08-22
 *! version 1.24, 2026-08-21
 *! version 1.23, 2026-08-21
 *! version 1.22, 2026-08-21
@@ -435,6 +436,8 @@ program define tohtml_emit_html
     }
     else {
         mata: tohtml_finish_default_refs(`"`html'"')
+        mata: fit_table_iframes(`"`html'"', `"`html_dir'"')
+        mata: fit_table_iframes(`"`md'"', `"`html_dir'"')
     }
 end
 
@@ -513,6 +516,10 @@ program define tohtml_bundle
     cap mkdir "`html_dir'/tables"
 
     mata: bundle_report(`"`html'"', `"`md'"')
+    mata: fit_table_iframes(`"`html'"', `"`html_dir'"')
+    if `"`md'"' != "" {
+        mata: fit_table_iframes(`"`md'"', `"`html_dir'"')
+    }
     di as text "% resources bundled under `html_dir'/{css,figures,tables}"
 
     if `"`zip'"' == "" exit
@@ -557,11 +564,18 @@ program define tohtml_bundle
     quietly cd `"`html_dir_abs'"'
 
     local zlist `"`html_base'"'
-    foreach sub in css figures tables {
-        capture local fs : dir "`sub'" files "*"
-        if _rc == 0 {
-            foreach f of local fs {
-                local zlist `"`zlist' "`sub'/`f'""'
+    capture local fs : dir "css" files "*"
+    if _rc == 0 {
+        foreach f of local fs {
+            local zlist `"`zlist' "css/`f'""'
+        }
+    }
+    // only pack figures/tables that the report actually references
+    if `"`bundle_zip_rel'"' != "" {
+        foreach f of local bundle_zip_rel {
+            capture confirm file `"`f'"'
+            if _rc == 0 {
+                local zlist `"`zlist' "`f'""'
             }
         }
     }
@@ -824,15 +838,26 @@ string scalar resolve_local_file(string scalar src, string scalar root)
     return("")
 }
 
+real scalar path_is_under(string scalar file, string scalar dir)
+{
+    f = abs_path_key(file)
+    d = abs_path_key(dir)
+    if (f == "" | d == "") return(0)
+    if (f == d) return(1)
+    return(ustrpos(f, d + "/") == 1)
+}
+
 string scalar unique_bundle_name(string scalar destdir, string scalar base, string colvector used)
 {
-    if (sum(used :== base) == 0 & !fileexists(pathjoin(destdir, base))) return(base)
+    // Only suffix when THIS run already claimed the basename.
+    // An existing dest file is overwritten (copy, replace), not copied as _2.
+    if (sum(used :== base) == 0) return(base)
 
     suf = pathsuffix(base)
     stem = pathrmsuffix(base)
     for (k = 2; k <= 9999; k++) {
         cand = stem + "_" + strofreal(k) + suf
-        if (sum(used :== cand) == 0 & !fileexists(pathjoin(destdir, cand))) return(cand)
+        if (sum(used :== cand) == 0) return(cand)
     }
     return(stem + "_x" + suf)
 }
@@ -858,7 +883,13 @@ string colvector extract_src_attrs(string scalar s)
 string colvector extract_embed_srcs(string colvector lines)
 {
     out = J(0, 1, "")
+    infence = 0
     for (i = 1; i <= rows(lines); i++) {
+        if (is_md_fence_line(lines[i])) {
+            infence = !infence
+            continue
+        }
+        if (infence) continue
         out = out \ extract_src_attrs(lines[i])
     }
     return(out)
@@ -867,7 +898,13 @@ string colvector extract_embed_srcs(string colvector lines)
 string colvector extract_md_images(string colvector lines)
 {
     out = J(0, 1, "")
+    infence = 0
     for (i = 1; i <= rows(lines); i++) {
+        if (is_md_fence_line(lines[i])) {
+            infence = !infence
+            continue
+        }
+        if (infence) continue
         s2 = lines[i]
         for (k = 1; k <= 30; k++) {
             if (ustrregexm(s2, `"!\[[^\]]*\]\(([^)]+)\)"')) {
@@ -963,26 +1000,13 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
 
     used_fig = J(0, 1, "")
     used_tab = J(0, 1, "")
-    copied_from = J(0, 1, "")
+    copied_key = J(0, 1, "")
     copied_ref = J(0, 1, "")
+    ziprel = J(0, 1, "")
 
     for (i = 1; i <= rows(srcs); i++) {
         src = strtrim(srcs[i])
         if (path_is_remote(src)) continue
-
-        sn = slash_norm_src(src)
-        already_fig = (ustrpos(sn, "./figures/") == 1)
-        already_tab = (ustrpos(sn, "./tables/") == 1)
-        if (already_fig) continue
-        if (already_tab) {
-            resolved0 = resolve_local_file(src, root)
-            if (resolved0 != "" & (path_suffix_lower(resolved0) == ".html" |
-                path_suffix_lower(resolved0) == ".htm")) {
-                fix_table_override_css(resolved0)
-                copy_table_companion_css(resolved0, resolved0)
-            }
-            continue
-        }
 
         resolved = resolve_local_file(src, root)
         if (resolved == "") {
@@ -995,9 +1019,9 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
             continue
         }
 
-        resolved_n = normalize_path(resolved)
-        if (rows(copied_from) > 0) {
-            hit = selectindex(copied_from :== resolved_n)
+        key = abs_path_key(resolved)
+        if (rows(copied_key) > 0) {
+            hit = selectindex(copied_key :== key)
             if (length(hit) > 0) {
                 newref = copied_ref[hit[1]]
                 html = replace_path_refs(html, src, newref)
@@ -1005,52 +1029,67 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
                 continue
             }
         }
-        figdir_n = normalize_path(figdir)
-        tabdir_n = normalize_path(tabdir)
-        if (ustrpos(resolved_n, figdir_n + "/") == 1) {
-            newref = "./figures/" + pathbasename(resolved_n)
-            html = replace_path_refs(html, src, newref)
-            if (hasmd) md = replace_path_refs(md, src, newref)
-            copied_from = copied_from \ resolved_n
-            copied_ref = copied_ref \ newref
-            continue
+
+        if (kind == "fig") {
+            dest_dir = figdir
+            relprefix = "./figures/"
+            zipfolder = "figures/"
         }
-        if (ustrpos(resolved_n, tabdir_n + "/") == 1) {
-            newref = "./tables/" + pathbasename(resolved_n)
+        else {
+            dest_dir = tabdir
+            relprefix = "./tables/"
+            zipfolder = "tables/"
+        }
+
+        // Already lives in the bundle folder: keep the original name, do not copy as _2
+        if (path_is_under(resolved, dest_dir)) {
+            base = pathbasename(resolved)
+            if (kind == "fig") {
+                if (sum(used_fig :== base) == 0) used_fig = used_fig \ base
+            }
+            else {
+                if (sum(used_tab :== base) == 0) used_tab = used_tab \ base
+            }
+            newref = relprefix + base
+            copied_key = copied_key \ key
+            copied_ref = copied_ref \ newref
+            ziprel = ziprel \ (zipfolder + base)
             html = replace_path_refs(html, src, newref)
             if (hasmd) md = replace_path_refs(md, src, newref)
-            if (path_suffix_lower(resolved_n) == ".html" | path_suffix_lower(resolved_n) == ".htm") {
-                fix_table_override_css(resolved_n)
-                copy_table_companion_css(resolved_n, resolved_n)
+            if (kind == "tab" & (path_suffix_lower(resolved) == ".html" |
+                path_suffix_lower(resolved) == ".htm")) {
+                fix_table_override_css(resolved)
+                copy_table_companion_css(resolved, resolved)
+                compact_iframe_document(resolved)
             }
-            copied_from = copied_from \ resolved_n
-            copied_ref = copied_ref \ newref
             continue
         }
 
         base = pathbasename(resolved)
         if (kind == "fig") {
-            dest_dir = figdir
-            relprefix = "./figures/"
             base = unique_bundle_name(dest_dir, base, used_fig)
             used_fig = used_fig \ base
         }
         else {
-            dest_dir = tabdir
-            relprefix = "./tables/"
             base = unique_bundle_name(dest_dir, base, used_tab)
             used_tab = used_tab \ base
         }
         dest = pathjoin(dest_dir, base)
-        if (normalize_path(resolved) != normalize_path(dest)) {
+        if (!paths_are_same(resolved, dest)) {
             stata_copy_file(resolved, dest)
         }
         newref = relprefix + base
-        copied_from = copied_from \ resolved_n
+        copied_key = copied_key \ key
         copied_ref = copied_ref \ newref
+        dest_key = abs_path_key(dest)
+        if (dest_key != key) {
+            copied_key = copied_key \ dest_key
+            copied_ref = copied_ref \ newref
+        }
+        ziprel = ziprel \ (zipfolder + base)
         html = replace_path_refs(html, src, newref)
         if (hasmd) md = replace_path_refs(md, src, newref)
-        if (normalize_path(resolved) != normalize_path(src)) {
+        if (slash_norm_src(resolved) != slash_norm_src(src)) {
             html = replace_path_refs(html, resolved, newref)
             if (hasmd) md = replace_path_refs(md, resolved, newref)
         }
@@ -1058,11 +1097,20 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
             path_suffix_lower(dest) == ".htm")) {
             fix_table_override_css(dest)
             copy_table_companion_css(resolved, dest)
+            compact_iframe_document(dest)
         }
     }
 
     mm_outsheet(htmlfile, html, "replace")
     if (hasmd) mm_outsheet(mdfile, md, "replace")
+
+    if (rows(ziprel) > 0) ziprel = uniqrows(ziprel)
+    s = ""
+    for (j = 1; j <= rows(ziprel); j++) {
+        if (ziprel[j] == "") continue
+        s = s + (s == "" ? "" : " ") + char(34) + ziprel[j] + char(34)
+    }
+    st_local("bundle_zip_rel", s)
 }
 
 string colvector function keep_stata_code_lines(string colvector lines)
@@ -1882,6 +1930,126 @@ void function tohtml_fix_default_refs(string scalar reportfile, string scalar ba
 void function tohtml_finish_default_refs(string scalar htmlfile)
 {
     tohtml_fix_default_refs(htmlfile, pathgetparent(htmlfile))
+}
+
+real scalar count_html_tr(string scalar htmlfile)
+{
+    if (!fileexists(htmlfile)) return(0)
+    raw = cat(htmlfile)
+    if (rows(raw) == 0) return(0)
+    blob = ustrlower(join_lines(raw))
+    n = 0
+    for (k = 1; k <= 2000; k++) {
+        p = ustrpos(blob, "<tr")
+        if (p == 0) break
+        n++
+        blob = usubstr(blob, p + 3, .)
+    }
+    return(n)
+}
+
+real scalar iframe_height_from_rows(real scalar nrows)
+{
+    if (nrows <= 0) nrows = 8
+    h = 52 + nrows * 34
+    if (h < 90) h = 90
+    if (h > 1600) h = 1600
+    return(h)
+}
+
+string scalar iframe_onload_attr()
+{
+    return(`"onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'px';""')
+}
+
+string scalar restyle_iframe_tag(string scalar line, real scalar hpx)
+{
+    h = strofreal(hpx) + "px"
+    dq = char(34)
+    sq = char(39)
+    if (ustrregexm(line, `"height *= *'[^']*'"')) {
+        line = usubinstr(line, ustrregexs(0), "height=" + sq + h + sq, 1)
+    }
+    else if (ustrregexm(line, `"height *= *"[^"]*""')) {
+        line = usubinstr(line, ustrregexs(0), "height=" + dq + h + dq, 1)
+    }
+    low = ustrlower(line)
+    extra = ""
+    if (ustrpos(low, "scrolling=") == 0) {
+        extra = extra + " scrolling=" + sq + "no" + sq
+    }
+    if (ustrpos(low, "onload=") == 0) {
+        extra = extra + " " + iframe_onload_attr()
+    }
+    if (extra != "") {
+        p = ustrpos(line, "></iframe>")
+        if (p > 0) {
+            line = usubstr(line, 1, p - 1) + extra + usubstr(line, p, .)
+        }
+        else {
+            p = ustrpos(line, ">")
+            if (p > 0) {
+                line = usubstr(line, 1, p - 1) + extra + usubstr(line, p, .)
+            }
+        }
+    }
+    return(line)
+}
+
+void function compact_iframe_document(string scalar tabfile)
+{
+    if (!fileexists(tabfile)) return
+    lines = cat(tabfile)
+    if (rows(lines) == 0) return
+    if (sum(ustrpos(lines, "tohtml-iframe-compact") :> 0) > 0) return
+    style = `"<style id="tohtml-iframe-compact">html,body{margin:0;padding:8px;}body{overflow-x:auto;overflow-y:hidden;}</style>"'
+    idx = selectindex(ustrpos(ustrlower(lines), "</head>") :> 0)
+    if (length(idx) > 0) {
+        i = idx[1]
+        if (i > 1) lines = lines[|1 \ i-1|] \ style \ lines[|i \ rows(lines)|]
+        else lines = style \ lines
+    }
+    else {
+        lines = style \ lines
+    }
+    mm_outsheet(tabfile, lines, "replace")
+}
+
+void function fit_table_iframes(string scalar reportfile, string scalar basedir)
+{
+    if (!fileexists(reportfile)) return
+    if (basedir == "") basedir = pathgetparent(reportfile)
+    if (basedir == "") basedir = pwd()
+    lines = cat(reportfile)
+    if (rows(lines) == 0) return
+    changed = 0
+    infence = 0
+    for (i = 1; i <= rows(lines); i++) {
+        line = lines[i]
+        if (is_md_fence_line(line)) {
+            infence = !infence
+            continue
+        }
+        if (infence) continue
+        t = ustrltrim(line)
+        if (usubstr(t, 1, 7) != "<iframe") continue
+        srcs = extract_src_attrs(line)
+        src = ""
+        if (rows(srcs) > 0) src = srcs[1]
+        else src = iframe_bare_path(line)
+        if (src == "" | path_is_remote(src)) continue
+        ext = path_suffix_lower(src)
+        if (ext != ".html" & ext != ".htm") continue
+        resolved = resolve_local_file(src, basedir)
+        if (resolved == "") continue
+        hpx = iframe_height_from_rows(count_html_tr(resolved))
+        news = restyle_iframe_tag(line, hpx)
+        if (news != line) {
+            lines[i] = news
+            changed = 1
+        }
+    }
+    if (changed) mm_outsheet(reportfile, lines, "replace")
 }
 
 real colvector is_md_fence_line(string colvector lines)
