@@ -1,3 +1,5 @@
+*! version 1.27, 2026-08-23
+*! version 1.26, 2026-08-22
 *! version 1.25, 2026-08-22
 *! version 1.24, 2026-08-21
 *! version 1.23, 2026-08-21
@@ -1203,7 +1205,10 @@ void function rewrite_md_finish(string colvector fcon, string scalar tfi, real s
     fcon = get_dot_header(fcon)
     
     // fcon= remove_img_iframe(fcon)
-    // 6. 【核心】动态修复：直到所有 # 行都在代码块外
+    // Open a Stata fence after the ```text log header (or at file start)
+    // so users do not need ishere / ishere ``` as code-block markers.
+    fcon = ensure_stata_fence_open(fcon)
+    // 6. 【核心】动态修复：标题 / 图 / 表 / 叙事块外的代码自动加围栏
     fcon = insert_backtick_before_hash(fcon)
     fcon = add_two_blank_lines(fcon)
     
@@ -2205,100 +2210,113 @@ real colvector cumcount_backtick3(string colvector lines)
     return(count_before)
 }
 
+real scalar line_is_md_fence(string scalar s)
+{
+    return(usubstr(strtrim(s), 1, 3) == "```")
+}
+
+real scalar next_nonempty_is_md_fence(string colvector fcon, real scalar i)
+{
+    n = rows(fcon)
+    j = i + 1
+    while (j <= n & ustrtrim(fcon[j]) == "") j++
+    if (j > n) return(0)
+    return(line_is_md_fence(fcon[j]))
+}
+
+string colvector ensure_stata_fence_open(string colvector lines)
+{
+    // After ```text ... ``` (log header), open a Stata fence so the rest of
+    // the log is inside a code block. If the user already wrote ishere ```
+    // / **```, do not add a second opener.
+    n = rows(lines)
+    if (n == 0) return(lines)
+
+    k = 1
+    while (k <= n & ustrtrim(lines[k]) == "") k++
+    if (k > n) return(lines)
+
+    insert_at = 0
+    if (strtrim(lines[k]) == "```text") {
+        j = k + 1
+        while (j <= n) {
+            if (line_is_md_fence(lines[j])) {
+                insert_at = j
+                break
+            }
+            j++
+        }
+        if (insert_at == 0) return(lines)
+    }
+    else {
+        if (line_is_md_fence(lines[k])) return(lines)
+        insert_at = k - 1
+    }
+
+    m = insert_at + 1
+    while (m <= n & ustrtrim(lines[m]) == "") m++
+    if (m > n) return(lines)
+    if (line_is_md_fence(lines[m])) return(lines)
+
+    if (insert_at <= 0) return("```" \ lines)
+    if (insert_at >= n) return(lines \ "```")
+    return(lines[|1 \ insert_at|] \ "```" \ lines[|insert_at + 1 \ n|])
+}
+
 string colvector insert_backtick_before_hash(string colvector fcon)
 {
     n = rows(fcon)
     if (n == 0) return(J(0, 1, ""))
-    
-    // Estimate max iterations based on potential markers
-    fcon_trim_init = ustrltrim(fcon)
-    is_hash_init = (substr(fcon_trim_init, 1, 1) :== "#")
-    is_hash_init = is_hash_init :| (substr(fcon_trim_init, 1, strlen("<iframe")) :== "<iframe") 
-    is_hash_init = is_hash_init :| (substr(fcon_trim_init, 1, strlen("<img")) :== "<img")
     lens = strlen("_ishere_")
-    is_hash_init = is_hash_init :| (usubstr(fcon_trim_init, 1, lens) :== "_ishere_")
-    //is_hash_init = is_hash_init :| (usubstr(fcon_trim_init, 1, lens) :== "ishere/*")
 
-    // 动态修复：每次插入后重新计算 count_before
-    max_iter = sum(is_hash_init) + 50
-    if (max_iter < 100) max_iter = 100
-    
-    iter = 0
-    changed = 1
+    out = J(0, 1, "")
+    inside = 0
 
-    while (changed & iter < max_iter) {
-        iter = iter + 1
+    for (i = 1; i <= n; i++) {
+        line = fcon[i]
+        t = ustrltrim(line)
 
-        count_before = cumcount_backtick3(fcon)
-
-        fcon_trim = ustrltrim(fcon)
-        
-        // Base checks
-        is_hash = (substr(fcon_trim, 1, 1) :== "#")
-        is_hash = is_hash :| (substr(fcon_trim, 1, strlen("<iframe")) :== "<iframe") 
-        is_hash = is_hash :| (substr(fcon_trim, 1, strlen("<img")) :== "<img")
-        is_hash = is_hash :| (usubstr(fcon_trim, 1, lens) :== "_ishere_")
-        // Robust textcell checks
-        is_tc_start_vec = J(rows(fcon), 1, 0)
-        is_tc_end_vec   = J(rows(fcon), 1, 0)
-        
-        // Check for lines starting with _ishere_
-        cand_idx = selectindex(usubstr(fcon_trim, 1, lens) :== "_ishere_")
-        if (length(cand_idx) > 0) {
-            for (k=1; k<=length(cand_idx); k++) {
-                 idx = cand_idx[k]
-                 rem = ustrltrim(usubstr(fcon_trim[idx], lens+1, .))
-                 if (usubstr(rem, 1, 2) == "/*") {
-                     is_tc_start_vec[idx] = 1
-                 }
-                 if (usubstr(rem, 1, 2) == "*/") {
-                     is_tc_end_vec[idx] = 1
-                 }
-            }
-        }
-        
-        is_hash = is_hash :| is_tc_start_vec
-               
-        // 条件：是 # 行 且 count_before 为奇数 => 插入 BEFORE (Close code block)
-        need_insert_before = is_hash :& (mod(count_before, 2) :== 1)
-        
-        // 条件：是 _textcell */ 且 count_before 为奇数 => 插入 AFTER (Re-open code block)
-        // 注意：只有当 textcell 确实嵌在代码块里时（count=odd）才需要操作。
-        // 如果 textcell 本就在外（count=even），则不需要任何操作（User Case）。
-        need_insert_after = is_tc_end_vec :& (mod(count_before, 2) :== 1)
-
-        changed = (sum(need_insert_before) + sum(need_insert_after) > 0)
-
-        if (!changed) break
-
-        result = J(0, 1, "")
-        n_current = rows(fcon)
-
-        for (i = 1; i <= n_current; i++) {
-            if (need_insert_before[i]) {
-                result = result \ "```"   // 插入关闭代码块
-            }
-            result = result \ fcon[i]
-            if (need_insert_after[i]) {
-                result = result \ "```"   // 插入（重新）打开代码块
-            }
+        if (line_is_md_fence(line)) {
+            out = out \ line
+            inside = !inside
+            continue
         }
 
-        fcon = result
+        is_heading = (usubstr(t, 1, 1) == "#")
+        is_iframe = (usubstr(t, 1, 7) == "<iframe")
+        is_img = (usubstr(t, 1, 4) == "<img")
+        is_tc_start = 0
+        is_tc_end = 0
+        if (usubstr(t, 1, lens) == "_ishere_") {
+            rem = ustrltrim(usubstr(t, lens + 1, .))
+            if (usubstr(rem, 1, 2) == "/*") is_tc_start = 1
+            if (usubstr(rem, 1, 2) == "*/") is_tc_end = 1
+        }
+
+        is_break = is_heading | is_iframe | is_img | is_tc_start
+        if (is_break & inside) {
+            out = out \ "```"
+            inside = 0
+        }
+
+        if (is_tc_start | is_tc_end) {
+            out = out \ ""
+        }
+        else {
+            out = out \ line
+        }
+
+        is_reopen = is_heading | is_iframe | is_img | is_tc_end
+        if (is_reopen & !inside) {
+            if (!next_nonempty_is_md_fence(fcon, i)) {
+                out = out \ "```"
+                inside = 1
+            }
+        }
     }
 
-    if (iter >= max_iter) {
-        printf("{err}Warning: reached max iterations (%g) in insert_backtick_before_hash\n", max_iter)
-    }
-
-    // 清理 textcell 标记 (Robust removal)
-    // We already know how to identify them, let's just strip them
-    r1 = selectindex(is_tc_start_vec:| is_tc_end_vec )
-    if (sum(r1) > 0) {
-        fcon[r1] = J(rows(r1), 1, "")
-    }
-    
-    return(fcon)
+    if (inside) out = out \ "```"
+    return(out)
 }
 
 
@@ -2520,6 +2538,7 @@ void function merge_cmdlog_blocks(string scalar clean_md, string scalar cmdlog_m
     //result = subisheredintxt(result)
 
     // 6. 【核心】动态修复：直到所有 # 行都在代码块外
+    result = ensure_stata_fence_open(result)
     result = insert_backtick_before_hash(result)
     
     // 7. （可选）过滤短代码块
@@ -3016,57 +3035,133 @@ string colvector drop_stata_log_header(string colvector lines)
     return(lines[|1 \ a-1|] \ lines[|b+1 \ n|])
 }
 
+string scalar strip_smcl_prefixes(string scalar raw)
+{
+    s = ustrltrim(raw)
+    changed = 1
+    while (changed) {
+        changed = 0
+        if (ustrpos(s, "{com}") == 1) {
+            s = ustrltrim(usubstr(s, 6, .))
+            changed = 1
+        }
+        else if (ustrpos(s, "{res}") == 1) {
+            s = ustrltrim(usubstr(s, 6, .))
+            changed = 1
+        }
+        else if (ustrpos(s, "{txt}") == 1) {
+            s = ustrltrim(usubstr(s, 6, .))
+            changed = 1
+        }
+    }
+    return(s)
+}
+
+string scalar norm_disp_args(string scalar s)
+{
+    return(ustrtrim(ustrregexra(s, "\s+", " ")))
+}
+
+string scalar display_value_after(string colvector lines, real scalar i)
+{
+    n = rows(lines)
+    for (j = i + 1; j <= n; j++) {
+        nxt = strtrim(strip_smcl_prefixes(lines[j]))
+        if (nxt == "") continue
+        if (nxt == "_ishere_/*" | nxt == "_ishere_*/" |
+            ustrpos(nxt, ".") == 1 | ustrpos(nxt, ">") == 1 |
+            ustrpos(nxt, "/**") == 1) return("")
+        return(nxt)
+    }
+    return("")
+}
+
+string scalar replace_ishere_display_tag(string scalar line, string scalar want, string scalar val)
+{
+    s = line
+    out = ""
+    for (t = 1; t <= 30; t++) {
+        p = ustrpos(ustrlower(s), "{ishere")
+        if (p == 0) {
+            out = out + s
+            break
+        }
+        rest = usubstr(s, p, .)
+        q = ustrpos(rest, "}")
+        if (q == 0) {
+            out = out + s
+            break
+        }
+        tag = usubstr(rest, 1, q)
+        out = out + usubstr(s, 1, p - 1)
+        inner = ustrtrim(usubstr(tag, 2, ustrlen(tag) - 2))
+        matched = 0
+        if (ustrregexm(inner, "^ishere\s+display\s+(.*)$")) {
+            args = ustrtrim(ustrregexs(1))
+            if (norm_disp_args(args) == want) {
+                out = out + " " + val + " "
+                matched = 1
+            }
+        }
+        if (!matched) out = out + tag
+        s = usubstr(rest, q + 1, .)
+    }
+    return(out)
+}
+
 string colvector function subisheredintxt(string colvector lines)
 {
     n = rows(lines)
     if (n == 0) return(lines)
-    
+
     lines2 = strltrim(lines)
     textflag = get_textcell_index(lines2)
-    
+
     // Step 1: 找到所有 . ishere display 命令行及其输出值
     flag = (ustrpos(lines2, ".") :== 1)
     lines3 = strltrim(substr(lines2, 2, .))
     flag = flag :& (ustrpos(lines3, "ishere") :== 1)
     lines4 = strtrim(substr(lines3, strlen("ishere")+1, .))
     flag = flag :& (ustrpos(lines4, "display") :== 1)
-    
+
+    // SMCL logs: {com}. ishere display ...
+    if (sum(flag) == 0) {
+        stripped = J(n, 1, "")
+        for (i = 1; i <= n; i++) stripped[i] = strip_smcl_prefixes(lines2[i])
+        flag = (ustrpos(stripped, ".") :== 1)
+        lines3 = strltrim(substr(stripped, 2, .))
+        flag = flag :& (ustrpos(lines3, "ishere") :== 1)
+        lines4 = strtrim(substr(lines3, strlen("ishere")+1, .))
+        flag = flag :& (ustrpos(lines4, "display") :== 1)
+        lines2 = stripped
+    }
+
     if (sum(flag) == 0 | sum(textflag) == 0) {
         return(lines)
     }
-    
-    // Step 2: 提取 display 参数（去除多余空格）
+
+    // Step 2: 提取 display 参数（压缩空白后按字面比较，避免 e(r2) 被当成正则）
     lines5 = substr(lines4, strlen("display")+1, .)
     lines5 = strtrim(lines5)
     dispcmd = select(lines5, flag)
-    
-    // Step 3: 获取显示值（下一行的内容）
+
     idx = selectindex(flag)
     n_displays = rows(idx)
-    //n_displays
-    
-    // inshere display only act in the following one textcell.
-    
+
     for (i = 1; i <= n_displays; i++) {
-        pattern = "\{\s*ishere\s+display\s*" + dispcmd[i] + "\s*\}"
-        if (idx[i] + 1 <= n) {
-            nxt = strtrim(lines[idx[i]+1])
-            // Do not treat the next command or a narrative marker as the displayed value
-            if (nxt == "_ishere_/*" | nxt == "_ishere_*/" |
-                ustrpos(nxt, ".") == 1 | ustrpos(nxt, ">") == 1 |
-                ustrpos(nxt, "/**") == 1) {
-                continue
-            }
-            textrow =select(textflag, ((1::n):>idx[i]+1):*textflag)
-            if (length(textrow)){
-                text_j =selectindex(textflag:==textrow[1])
-                lines[text_j] =ustrregexra(lines[text_j], pattern, " "+strtrim(lines[idx[i]+1])+" ")
-            }
+        val = display_value_after(lines, idx[i])
+        if (val == "") continue
+        want = norm_disp_args(dispcmd[i])
+        if (want == "") continue
+        after = ((1::n) :> idx[i]) :* textflag
+        textrow = select(textflag, after)
+        if (length(textrow) == 0) continue
+        text_j = selectindex(textflag :== textrow[1])
+        for (k = 1; k <= length(text_j); k++) {
+            lines[text_j[k]] = replace_ishere_display_tag(lines[text_j[k]], want, val)
         }
     }
-    
-    
-    
+
     return(lines)
 }
 
