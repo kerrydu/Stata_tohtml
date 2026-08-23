@@ -1,0 +1,537 @@
+<style>
+
+table {
+  border-collapse: collapse;
+}
+
+.Table1_1_x {
+}
+
+.Table1_2_x {
+}
+
+.Table1_3_x {
+}
+
+.Table1_4_x {
+}
+
+.Table1_5_x {
+}
+
+.Table1_x_1 {
+}
+
+.Table1_x_2 {
+}
+
+.Table1_x_3 {
+}
+
+.Table1_1_1 {
+  border-right-style: solid;
+  border-top-style: solid;
+  text-align: center;
+  vertical-align: bottom;
+}
+
+.Table1_1_1_span {
+}
+
+.Table1_1_2 {
+  border-top-style: solid;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_1_2_span {
+}
+
+.Table1_1_3 {
+  border-top-style: solid;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_1_3_span {
+}
+
+.Table1_2_1 {
+  border-right-style: solid;
+  border-top-style: solid;
+  text-align: left;
+  vertical-align: bottom;
+}
+
+.Table1_2_1_span {
+}
+
+.Table1_2_2 {
+  padding-left: 10pt;
+  border-top-style: solid;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_2_2_span {
+}
+
+.Table1_2_3 {
+  padding-left: 10pt;
+  border-top-style: solid;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_2_3_span {
+}
+
+.Table1_3_1 {
+  border-right-style: solid;
+  text-align: left;
+  vertical-align: bottom;
+}
+
+.Table1_3_1_span {
+}
+
+.Table1_3_2 {
+  padding-left: 10pt;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_3_2_span {
+}
+
+.Table1_3_3 {
+  padding-left: 10pt;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_3_3_span {
+}
+
+.Table1_4_1 {
+  border-right-style: solid;
+  text-align: left;
+  vertical-align: bottom;
+}
+
+.Table1_4_1_span {
+}
+
+.Table1_4_2 {
+  padding-left: 10pt;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_4_2_span {
+}
+
+.Table1_4_3 {
+  padding-left: 10pt;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_4_3_span {
+}
+
+.Table1_5_1 {
+  border-right-style: solid;
+  border-bottom-style: solid;
+  text-align: left;
+  vertical-align: bottom;
+}
+
+.Table1_5_1_span {
+}
+
+.Table1_5_2 {
+  padding-left: 10pt;
+  border-bottom-style: solid;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_5_2_span {
+}
+
+.Table1_5_3 {
+  padding-left: 10pt;
+  border-bottom-style: solid;
+  text-align: right;
+  vertical-align: bottom;
+}
+
+.Table1_5_3_span {
+}
+
+</style>
+<style id="tohtml-inline-css">
+:root {
+    --side-bar-bg-color: #fafafa;
+    --control-text-color: #777;
+    --font-sans-serif: "Open Sans", "Clear Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-monospace: "Consolas", "Monaco", "Bitstream Vera Sans Mono", "Courier New", monospace;
+}
+
+body {
+    font-family: var(--font-sans-serif);
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+    background-color: white;
+    margin: 0 auto;
+    padding: 2rem;
+    max-width: 900px;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #333;
+    line-height: 1.25;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: bold;
+}
+
+h1 { font-size: 2.25em; padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }
+h2 { font-size: 1.75em; padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }
+h3 { font-size: 1.5em; }
+h4 { font-size: 1.25em; }
+h5 { font-size: 1em; }
+h6 { font-size: 0.875em; color: #777; }
+
+/* Links */
+a {
+    color: #4183C4;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* Paragraphs & Lists */
+p, blockquote, ul, ol, dl, table, pre {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+ul, ol {
+    padding-left: 2em;
+}
+
+/* Blockquotes */
+blockquote {
+    padding: 0 1em;
+    color: #777;
+    border-left: 0.25em solid #dfe2e5;
+    background: transparent;
+}
+
+/* Tables - GitHub Style */
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    margin-bottom: 16px;
+    display: block;
+    overflow: auto;
+}
+
+table tr {
+    background-color: #fff;
+    border-top: 1px solid #c6cbd1;
+}
+
+table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+table th, table td {
+    border: 1px solid #dfe2e5;
+    padding: 6px 13px;
+    margin: 0;
+}
+
+table th {
+    font-weight: 600;
+    background-color: #f6f8fa; /* Header background usually distinct */
+}
+
+/* Code Blocks & Inline Code */
+code, kbd, pre, samp {
+    font-family: var(--font-monospace);
+}
+
+/* Inline code */
+code {
+    background-color: #f3f4f4;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    margin: 0 2px;
+}
+
+/* Block code (pre) */
+pre {
+    background-color: #f8f8f8;
+    border: 1px solid #e7eaed;
+    border-radius: 3px;
+    padding: 16px;
+    overflow: auto;
+    line-height: 1.45;
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    border: none;
+    font-size: 100%; /* Reset from inline code size */
+}
+
+/* Stata fenced code: ```stata → <code class="language-stata"> */
+pre code.language-stata,
+code.language-stata {
+    color: #24292f;
+}
+
+pre:has(code.language-stata) {
+    background-color: #f6f8fa;
+    border-left: 4px solid #1a7f37;
+}
+
+/* Horizontal Rule */
+hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: #e7e7e7;
+    border: 0;
+}
+
+/* Images */
+img {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Tables inserted via iframe (collect / outreg HTML) */
+iframe {
+    border: 0;
+    width: 100%;
+    display: block;
+    margin: 0 0 16px 0;
+    overflow: hidden;
+}
+
+/* MathJax */
+mjx-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+</style>
+<pre><code class="language-text">-------------------------------------------------------------------------------
+      name:  &lt;unnamed&gt;
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\bundle
+&gt; _test.log
+  log type:  text
+ opened on:  23 Aug 2026, 09:59:01
+</code></pre>
+<h1><a href="#bundle-and-embed-css" id="bundle-and-embed-css">Bundle and embed CSS</a></h1>
+<pre><code class="language-stata">
+. ishere tab using &quot;table_fragment.html&quot;
+
+</code></pre>
+<div class="tohtml-embedded-table">
+<table class="Table1">
+  <tr class="Table1_1_x">
+    <td class="Table1_x_1 Table1_1_1">
+      <span class="Table1_1_1_span">
+      &nbsp;
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_1_2">
+      <span class="Table1_1_2_span">
+      Mean
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_1_3">
+      <span class="Table1_1_3_span">
+      Standard deviation
+      </span>
+    </td>
+  </tr>
+  <tr class="Table1_2_x">
+    <td class="Table1_x_1 Table1_2_1">
+      <span class="Table1_2_1_span">
+      Car origin
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_2_2">
+      <span class="Table1_2_2_span">
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_2_3">
+      <span class="Table1_2_3_span">
+      </span>
+    </td>
+  </tr>
+  <tr class="Table1_3_x">
+    <td class="Table1_x_1 Table1_3_1">
+      <span class="Table1_3_1_span">
+      &nbsp;&nbsp;Domestic
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_3_2">
+      <span class="Table1_3_2_span">
+      6072.423
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_3_3">
+      <span class="Table1_3_3_span">
+      3097.104
+      </span>
+    </td>
+  </tr>
+  <tr class="Table1_4_x">
+    <td class="Table1_x_1 Table1_4_1">
+      <span class="Table1_4_1_span">
+      &nbsp;&nbsp;Foreign
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_4_2">
+      <span class="Table1_4_2_span">
+      6384.682
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_4_3">
+      <span class="Table1_4_3_span">
+      2621.915
+      </span>
+    </td>
+  </tr>
+  <tr class="Table1_5_x">
+    <td class="Table1_x_1 Table1_5_1">
+      <span class="Table1_5_1_span">
+      &nbsp;&nbsp;Total
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_5_2">
+      <span class="Table1_5_2_span">
+      6165.257
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_5_3">
+      <span class="Table1_5_3_span">
+      2949.496
+      </span>
+    </td>
+  </tr>
+</table>
+</div>
+<pre><code class="language-stata">
+. ishere tab using &quot;table_fragment_custom.html&quot;, cssfile(&quot;chosen_fragment.css&quot;)
+
+</code></pre>
+<div class="tohtml-embedded-table">
+<table class="Table1">
+  <tr class="Table1_1_x">
+    <td class="Table1_x_1 Table1_1_1">
+      <span class="Table1_1_1_span">
+      &nbsp;
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_1_2">
+      <span class="Table1_1_2_span">
+      Mean
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_1_3">
+      <span class="Table1_1_3_span">
+      Standard deviation
+      </span>
+    </td>
+  </tr>
+  <tr class="Table1_2_x">
+    <td class="Table1_x_1 Table1_2_1">
+      <span class="Table1_2_1_span">
+      Car origin
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_2_2">
+      <span class="Table1_2_2_span">
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_2_3">
+      <span class="Table1_2_3_span">
+      </span>
+    </td>
+  </tr>
+  <tr class="Table1_3_x">
+    <td class="Table1_x_1 Table1_3_1">
+      <span class="Table1_3_1_span">
+      &nbsp;&nbsp;Domestic
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_3_2">
+      <span class="Table1_3_2_span">
+      6072.423
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_3_3">
+      <span class="Table1_3_3_span">
+      3097.104
+      </span>
+    </td>
+  </tr>
+  <tr class="Table1_4_x">
+    <td class="Table1_x_1 Table1_4_1">
+      <span class="Table1_4_1_span">
+      &nbsp;&nbsp;Foreign
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_4_2">
+      <span class="Table1_4_2_span">
+      6384.682
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_4_3">
+      <span class="Table1_4_3_span">
+      2621.915
+      </span>
+    </td>
+  </tr>
+  <tr class="Table1_5_x">
+    <td class="Table1_x_1 Table1_5_1">
+      <span class="Table1_5_1_span">
+      &nbsp;&nbsp;Total
+      </span>
+    </td>
+    <td class="Table1_x_2 Table1_5_2">
+      <span class="Table1_5_2_span">
+      6165.257
+      </span>
+    </td>
+    <td class="Table1_x_3 Table1_5_3">
+      <span class="Table1_5_3_span">
+      2949.496
+      </span>
+    </td>
+  </tr>
+</table>
+</div>
+<pre><code class="language-stata">
+. log close
+      name:  &lt;unnamed&gt;
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\bundle
+&gt; _test.log
+  log type:  text
+ closed on:  23 Aug 2026, 09:59:01
+-------------------------------------------------------------------------------
+</code></pre>

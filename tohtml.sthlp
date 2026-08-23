@@ -174,10 +174,14 @@ accepts Windows absolute paths (e.g. {cmd:D:/...}) and encodes them as Base64.
 Requires {opt html()}.
 Without {opt embed}, tables remain iframes. {cmd:tohtml} attaches the
 companion stylesheet from {help collect export} ({cmd:tableonly} writes
-{it:name}{bf:.css} next to {it:name}{bf:.html}) by wrapping a table fragment
-in a small HTML document and placing a {cmd:<link>} in {cmd:<head>}.
-{opt zip()} / {opt bundle} copy that CSS next to the table under {bf:tables/}
-and keep the {cmd:<link>} as a same-folder relative path. Figure and table
+{it:name}{bf:.css} next to {it:name}{bf:.html}, or a name given in
+{cmd:cssfile()}) by wrapping a table fragment in a small HTML document and
+placing a {cmd:<link>} in {cmd:<head>}. The stylesheet is taken from an
+existing local {cmd:<link>} in the table HTML, else the same-basename
+{cmd:.css}, else the single unpaired collect CSS in that folder.
+{opt zip()} / {opt bundle} copy those CSS files next to the table under
+{bf:tables/} (and into the zip) and keep the {cmd:<link>} as a same-folder
+relative path. Figure and table
 {cmd:src} attributes keep the path as written when it is absolute, or when a
 relative path resolves from the report HTML folder. If a relative
 {cmd:<iframe>} / {cmd:<img>} path would not work from that folder, it is

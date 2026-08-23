@@ -1,3 +1,4 @@
+*! version 1.29, 2026-08-23
 *! version 1.28, 2026-08-23
 *! version 1.27, 2026-08-23
 *! version 1.26, 2026-08-22
@@ -1062,7 +1063,10 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
             if (kind == "tab" & (path_suffix_lower(resolved) == ".html" |
                 path_suffix_lower(resolved) == ".htm")) {
                 fix_table_override_css(resolved)
-                copy_table_companion_css(resolved, resolved)
+                css_bases = copy_table_companion_css(resolved, resolved)
+                for (k = 1; k <= rows(css_bases); k++) {
+                    ziprel = ziprel \ (zipfolder + css_bases[k])
+                }
                 compact_iframe_document(resolved)
             }
             continue
@@ -1099,7 +1103,10 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
         if (kind == "tab" & (path_suffix_lower(dest) == ".html" |
             path_suffix_lower(dest) == ".htm")) {
             fix_table_override_css(dest)
-            copy_table_companion_css(resolved, dest)
+            css_bases = copy_table_companion_css(resolved, dest)
+            for (k = 1; k <= rows(css_bases); k++) {
+                ziprel = ziprel \ (zipfolder + css_bases[k])
+            }
             compact_iframe_document(dest)
         }
     }
@@ -1599,8 +1606,26 @@ string colvector companion_css_files(string scalar htmlfile)
         g = guess_companion_css(htmlfile, dir)
         if (g != "") out = out \ g
     }
-    if (rows(out) > 0) out = uniqrows(out)
-    return(out)
+    return(unique_abs_paths(out))
+}
+
+string colvector unique_abs_paths(string colvector files)
+{
+    if (rows(files) == 0) return(files)
+    keep = J(rows(files), 1, 0)
+    keys = J(0, 1, "")
+    for (i = 1; i <= rows(files); i++) {
+        if (files[i] == "") continue
+        k = abs_path_key(files[i])
+        if (k == "") k = slash_norm_src(files[i])
+        if (rows(keys) > 0) {
+            if (sum(keys :== k) > 0) continue
+        }
+        keys = keys \ k
+        keep[i] = 1
+    }
+    if (sum(keep) == 0) return(J(0, 1, ""))
+    return(select(files, keep))
 }
 
 string scalar first_table_class(string scalar blob)
@@ -1670,14 +1695,24 @@ void function collect_embed_css_file(string scalar cssfile)
     collect_embed_style(block)
 }
 
-void function copy_table_companion_css(string scalar src_html, string scalar dest_html)
+string colvector copy_table_companion_css(string scalar src_html, string scalar dest_html)
 {
+    // Follow <link rel=stylesheet> in the source table, same-name CSS,
+    // and a unique unpaired collect CSS. Copy them next to dest and
+    // rewrite hrefs so zip/bundle iframes keep collect/tableonly styles.
     csss = companion_css_files(src_html)
     dest_dir = pathgetparent(dest_html)
     if (dest_dir == "") dest_dir = pwd()
     dest_lines = cat(dest_html)
     used = J(0, 1, "")
+    dest_bases = J(0, 1, "")
+    seen_key = J(0, 1, "")
     for (i = 1; i <= rows(csss); i++) {
+        key = abs_path_key(csss[i])
+        if (key != "" & rows(seen_key) > 0) {
+            if (sum(seen_key :== key) > 0) continue
+        }
+        if (key != "") seen_key = seen_key \ key
         oldbase = pathbasename(csss[i])
         base = unique_bundle_name(dest_dir, oldbase, used)
         used = used \ base
@@ -1690,9 +1725,11 @@ void function copy_table_companion_css(string scalar src_html, string scalar des
         if (oldbase != base) {
             dest_lines = replace_path_refs(dest_lines, oldbase, base)
         }
+        dest_bases = dest_bases \ base
     }
     mm_outsheet(dest_html, dest_lines, "replace")
     ensure_table_css_link(dest_html)
+    return(dest_bases)
 }
 
 string scalar table_css_link_tag(string scalar href)

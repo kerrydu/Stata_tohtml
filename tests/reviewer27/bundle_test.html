@@ -1,0 +1,28 @@
+<link rel="stylesheet" href="./css/tohtml.css">
+<pre><code class="language-text">-------------------------------------------------------------------------------
+      name:  &lt;unnamed&gt;
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\bundle
+&gt; _test.log
+  log type:  text
+ opened on:  23 Aug 2026, 09:59:01
+</code></pre>
+<h1><a href="#bundle-and-embed-css" id="bundle-and-embed-css">Bundle and embed CSS</a></h1>
+<pre><code class="language-stata">
+. ishere tab using &quot;table_fragment.html&quot;
+
+</code></pre>
+<iframe src='./tables/table_fragment.html' width='100%' height='222px' frameBorder='0' scrolling='no' onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'px';"></iframe>
+<pre><code class="language-stata">
+. ishere tab using &quot;table_fragment_custom.html&quot;, cssfile(&quot;chosen_fragment.css&quot;)
+
+</code></pre>
+<iframe src='./tables/table_fragment_custom.html' width='100%' height='222px' frameBorder='0' scrolling='no' onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'px';"></iframe>
+<pre><code class="language-stata">
+. log close
+      name:  &lt;unnamed&gt;
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\bundle
+&gt; _test.log
+  log type:  text
+ closed on:  23 Aug 2026, 09:59:01
+-------------------------------------------------------------------------------
+</code></pre>

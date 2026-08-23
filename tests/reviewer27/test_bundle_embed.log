@@ -1,0 +1,171 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       MP—Parallel Edition
+
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Single-user 16-core  perpetual
+Serial number: 3851871377
+  Licensed to: bbb
+               xxx
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+
+Running D:\Program\StataNow19\profile.do ...
+
+. do C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\test_bundle_em
+> bed.do 
+
+. clear all
+
+. set more off
+
+. capture log close _all
+
+. local root "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+
+. adopath ++ "`root'"
+  [1]              "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+  [2]  (BASE)      "D:\Program\StataNow19\ado\base/"
+  [3]  (SITE)      "D:\Program\StataNow19\ado\site/"
+  [4]              "."
+  [5]  (PERSONAL)  "E:/SynologyDrive\ado\personal/"
+  [6]  (PLUS)      "E:/SynologyDrive\ado\plus/"
+  [7]  (OLDPLACE)  "E:/SynologyDrive\data/"
+
+. cd "`root'/tests/reviewer27"
+C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27
+
+. 
+. capture which pathutil
+
+. if _rc {
+.     di as error "pathutil not found"
+.     exit 111
+. }
+
+. 
+. sysuse auto, clear
+(1978 automobile data)
+
+. collect clear
+
+. table foreign, statistic(mean price) statistic(sd price)
+
+-------------------------------------------
+           |      Mean   Standard deviation
+-----------+-------------------------------
+Car origin |                               
+  Domestic |  6072.423             3097.104
+  Foreign  |  6384.682             2621.915
+  Total    |  6165.257             2949.496
+-------------------------------------------
+
+. collect export "table_fragment.html", tableonly replace
+(collection Table exported to file table_fragment.html)
+
+. collect export "table_fragment_custom.html", tableonly ///
+>     cssfile("chosen_fragment.css") replace
+(collection Table exported to file table_fragment_custom.html)
+
+. 
+. capture erase "bundle_test.log"
+
+. capture erase "bundle_test.md"
+
+. capture erase "bundle_test.html"
+
+. capture erase "bundle_test.zip"
+
+. capture erase "embed_test.md"
+
+. capture erase "embed_test.html"
+
+. 
+. log using "bundle_test.log", text replace
+(file
+    C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\bundle_test.l
+    > og not found)
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\bundle
+> _test.log
+  log type:  text
+ opened on:  23 Aug 2026, 09:59:01
+
+. ishere # Bundle and embed CSS
+
+. ishere
+
+. ishere tab using "table_fragment.html"
+
+<iframe src='table_fragment.html' width='100%' height='222px' frameBorder='0' s
+> crolling='no' onload="this.style.height=this.contentDocument.documentElement.
+> scrollHeight+'px';"></iframe>
+
+. ishere
+
+. ishere tab using "table_fragment_custom.html", cssfile("chosen_fragment.css")
+
+<iframe src='table_fragment_custom.html' width='100%' height='222px' frameBorde
+> r='0' scrolling='no' onload="this.style.height=this.contentDocument.documentE
+> lement.scrollHeight+'px';"></iframe>
+
+. log close
+      name:  <unnamed>
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\bundle
+> _test.log
+  log type:  text
+ closed on:  23 Aug 2026, 09:59:01
+-------------------------------------------------------------------------------
+
+. ishere
+
+. 
+. tohtml "bundle_test.log", ///
+>     md("bundle_test.md") ///
+>     html("bundle_test.html") zip(.) replace
+% markdown written to bundle_test.md
+successfully converted "C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/review
+> er27/bundle_test.html"
+% resources bundled under ./{css,figures,tables}
+    adding: bundle_test.html (deflated 67%)
+    adding: css\table-override.css (deflated 64%)
+    adding: css\tohtml.css (deflated 64%)
+    adding: tables\chosen_fragment.css (deflated 86%)
+    adding: tables\table_fragment.css (deflated 86%)
+    adding: tables\table_fragment.html (deflated 79%)
+    adding: tables\table_fragment_custom.html (deflated 78%)
+    adding: bundle_test.md (deflated 67%)
+
+total processed:  8
+        skipped:  0
+       archived:  8
+% archive written to ./bundle_test.zip
+
+. 
+. tohtml "bundle_test.log", ///
+>     md("embed_test.md") ///
+>     html("embed_test.html") embed replace
+% markdown written to embed_test.md
+successfully converted "C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/review
+> er27/embed_test.html"
+
+. 
+. di as result "DONE"
+DONE
+
+. 
+end of do-file
