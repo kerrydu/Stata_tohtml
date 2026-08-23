@@ -1,3 +1,4 @@
+*! version 1.14, 2026-08-23
 *! version 1.13, 2026-08-23
 *! version 1.12, 2026-08-22
 *! version 1.11, 2026-08-21
@@ -384,6 +385,10 @@ void function ishere_ensure_table_css(string scalar htmlfile, string scalar csso
             else if (fileexists(c2)) csspath = c2
         }
         if (fileexists(csspath) & !pathisabs(csspath)) csspath = pathresolve(pwd(), csspath)
+        if (!fileexists(csspath)) {
+            errprintf("ishere: CSS file not found: %s\n", cssopt)
+            exit(601)
+        }
     }
     else {
         csspath = pathjoin(hdir, pathrmsuffix(pathbasename(htmlpath)) + ".css")

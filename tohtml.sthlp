@@ -33,7 +33,7 @@ Basic usage
 {synopt:{opt replace}}overwrite existing output files{p_end}
 
 {syntab:Style options}
-{synopt:{opt css(filename|githubstyle)}}CSS file; default is package resource {bf:tohtml.css} ({cmd:githubstyle} is an alias){p_end}
+{synopt:{opt css(filename)}}custom CSS file; default is package resource {bf:tohtml.css}{p_end}
 {synopt:{opt mathjax}}inject MathJax when equations are detected (independent of CSS){p_end}
 
 {syntab:Portable package options}
@@ -121,12 +121,12 @@ the command will error.
 {dlgtab:Style options}
 
 {phang}
-{opt css(filename|githubstyle)} applies CSS styling to the generated HTML file.
+{opt css(filename)} applies a custom stylesheet to the generated HTML file.
 When {opt html()} is specified and {opt css()} is omitted, the package resource
-{bf:tohtml.css} is used (installed next to {cmd:tohtml.ado}). {cmd:githubstyle}
-and {cmd:tohtml} are accepted as aliases for that default file. You may also
-pass the path to a custom CSS file. Requires {opt html()}. The chosen CSS is
-copied to a {bf:css/} subdirectory beside the HTML output (and as
+{bf:tohtml.css} is used (installed next to {cmd:tohtml.ado}; GitHub-like
+layout). Pass a file path only when you want a different stylesheet; the
+file must exist. Requires {opt html()}. The chosen CSS is copied to a
+{bf:css/} subdirectory beside the HTML output (and as
 {bf:table-override.css} for embedded tables).
 
 {phang}

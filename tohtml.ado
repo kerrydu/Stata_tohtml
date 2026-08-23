@@ -1,3 +1,4 @@
+*! version 1.30, 2026-08-23
 *! version 1.29, 2026-08-23
 *! version 1.28, 2026-08-23
 *! version 1.27, 2026-08-23
@@ -450,9 +451,10 @@ program define tohtml_style
     version 16
     syntax , HTML(string) [CSS(string) MATHJAX HIGHLIGHT EMBED MD(string)]
 
-    // Resolve CSS source: default / githubstyle / tohtml → package resource tohtml.css
+    // Default stylesheet is package tohtml.css (GitHub-like). css() is only
+    // for a custom file; there is no githubstyle alias.
     local css_l = ustrlower(strtrim(`"`css'"'))
-    if `"`css_l'"' == "" | `"`css_l'"' == "githubstyle" | `"`css_l'"' == "tohtml" {
+    if `"`css_l'"' == "" {
         quietly findfile tohtml.css
         if `"`r(fn)'"' == "" {
             di as error "tohtml.css not found; reinstall the tohtml package"

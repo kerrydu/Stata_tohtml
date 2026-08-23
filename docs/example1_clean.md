@@ -158,4 +158,4 @@ dir : seeout
 
 <iframe src='model.html' width='100%' height='400px' frameBorder='0'></iframe>
 
-. tohtml "example1.log",  html("example1.html") css(githubstyle) replace
+. tohtml "example1.log",  html("example1.html") replace

@@ -55,4 +55,4 @@ estimates store model5
 outreg2e [model*] using "model.html", replace html
 ishere tab using "model.html"
 
-tohtml "example1.log",  html("example1.html") css(githubstyle) replace
+tohtml "example1.log",  html("example1.html") replace

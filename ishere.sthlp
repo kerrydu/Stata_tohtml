@@ -136,10 +136,12 @@ Options apply only to figure/table emit syntax.
 
 {phang}
 {opt cssfile(filename)} stylesheet written by {help collect export} when it is not
-named like the HTML file. If omitted, {cmd:ishere} first looks for
-{cmd:table1.html} → {cmd:table1.css}. If that file is missing, it uses the
-only unpaired collect CSS in the same folder (a {cmd:.css} with no
-same-stem HTML). Two such files: pass {cmd:cssfile()}. Ignored for {cmd:.md}.
+named like the HTML file. The file must exist (current directory, the table
+folder, or an absolute path); otherwise {cmd:ishere} exits with error 601.
+If omitted, {cmd:ishere} first looks for {cmd:table1.html} → {cmd:table1.css}.
+If that file is missing, it uses the only unpaired collect CSS in the same
+folder (a {cmd:.css} with no same-stem HTML). Two such files: pass
+{cmd:cssfile()}. Ignored for {cmd:.md}.
 
 
 {marker examples}{...}

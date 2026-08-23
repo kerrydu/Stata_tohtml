@@ -10,5 +10,5 @@ if _rc {
     exit 111
 }
 
-tohtml "example_from_html.log", md("example_from_html.md") html("example_from_html.html") css(githubstyle) replace
+tohtml "example_from_html.log", md("example_from_html.md") html("example_from_html.html") replace
 di as result "DONE"
