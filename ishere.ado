@@ -1,3 +1,5 @@
+*! version 1.16, 2026-08-23
+*! version 1.15, 2026-08-23
 *! version 1.14, 2026-08-23
 *! version 1.13, 2026-08-23
 *! version 1.12, 2026-08-22
@@ -78,7 +80,6 @@ program define ishere
                 else {
                     local h = 52 + ishere_tr * 34
                     if `h' < 90 local h = 90
-                    if `h' > 1600 local h = 1600
                     local height "`h'px"
                 }
             }
@@ -88,7 +89,7 @@ program define ishere
             mata: ishere_ensure_table_css(st_local("filepath"), st_local("cssfile"))
             di
             local onload onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'px';"
-            display `"<iframe src='`filepath'' width='`width'' height='`height'' frameBorder='0' scrolling='no' `onload'></iframe>"'
+            display `"<iframe src='`filepath'' width='`width'' height='`height'' frameBorder='0' scrolling='auto' `onload'></iframe>"'
         }
         else if "`extension'" == ".md" {
             di
@@ -359,6 +360,36 @@ string scalar ishere_guess_companion_css(string scalar htmlpath, string scalar h
     return("")
 }
 
+void function ishere_strip_override_css(string scalar htmlfile)
+{
+    if (!fileexists(htmlfile)) return
+    lines = cat(htmlfile)
+    if (rows(lines) == 0) return
+    n = rows(lines)
+    keep = J(n, 1, 1)
+    i = 1
+    while (i <= n) {
+        if (ustrpos(ustrlower(lines[i]), "<script") > 0) {
+            j = i
+            hit = 0
+            while (j <= n) {
+                if (ustrpos(lines[j], "table-override.css") > 0) hit = 1
+                if (ustrpos(ustrlower(lines[j]), "</script>") > 0) break
+                j++
+            }
+            if (hit) {
+                for (k = i; k <= j; k++) keep[k] = 0
+                i = j + 1
+                continue
+            }
+        }
+        i++
+    }
+    if (sum(keep) == n) return
+    if (sum(keep) == 0) return
+    ishere_write_lines(htmlfile, select(lines, keep))
+}
+
 void function ishere_ensure_table_css(string scalar htmlfile, string scalar cssopt)
 {
     htmlfile = strtrim(htmlfile)
@@ -371,6 +402,17 @@ void function ishere_ensure_table_css(string scalar htmlfile, string scalar csso
     }
     if (!fileexists(htmlpath)) return
     if (!pathisabs(htmlpath)) htmlpath = pathresolve(pwd(), htmlpath)
+    ishere_strip_override_css(htmlpath)
+
+    raw = cat(htmlpath)
+    blob = ""
+    for (i = 1; i <= rows(raw); i++) blob = blob + raw[i] + char(10)
+    blow = ustrlower(blob)
+    if (cssopt == "" & ustrpos(blow, "<style") > 0 &
+        (ustrpos(blob, ".Table") > 0 | ustrpos(blow, ".texout-table") > 0 |
+         ustrpos(blow, "border-top-style") > 0)) {
+        return
+    }
 
     hdir = pathgetparent(htmlpath)
     if (hdir == "") hdir = pwd()

@@ -29,7 +29,7 @@ Basic usage
 {synoptline}
 {syntab:Output options}
 {synopt:{opt md(filename)}}output Markdown file; default matches {opt html()} with {bf:.md}{p_end}
-{synopt:{opt html(filename)}}generate HTML file from the Markdown output{p_end}
+{synopt:{opt html(filename)}}HTML file; default is the input stem with {bf:.html}{p_end}
 {synopt:{opt replace}}overwrite existing output files{p_end}
 
 {syntab:Style options}
@@ -98,10 +98,10 @@ The command can process a single log file or a directory containing multiple tab
 {dlgtab:Output options}
 
 {phang}
-{opt md(filename)} specifies the output Markdown file. If omitted and {opt html()} is
-specified, the Markdown path is the same as the HTML file with extension {bf:.md}
-(e.g. {cmd:html(report.html)} → {bf:report.md}). If both {opt md()} and {opt html()}
-are omitted, the input stem with extension {bf:.md} is used. If {it:filename} does not
+{opt md(filename)} specifies the output Markdown file. If omitted, the Markdown
+path is the same as the HTML file with extension {bf:.md}
+(e.g. {cmd:html(report.html)} → {bf:report.md}; omitted {opt html()} from
+{bf:analysis.log} → {bf:analysis.md}). If {it:filename} does not
 end with {bf:.md}, the extension is added automatically.
 The Markdown output path must differ from the input file; otherwise {cmd:tohtml}
 errors with {err:input file and Markdown output file must be different}
@@ -110,8 +110,9 @@ a different {opt md()} (or an {opt html()} whose basename is not the input).
 
 {phang}
 {opt html(filename)} converts the Markdown output to HTML after processing.
+If omitted, the HTML path is the input stem with extension {bf:.html}
+(e.g. {cmd:tohtml "analysis.log"} → {bf:analysis.html}).
 If {it:filename} does not end with {bf:.html}, the extension is added automatically.
-Requires the {cmd:markdown} command to be installed.
 
 {phang}
 {opt replace} overwrites existing output files. If this option is not specified and files exist,
@@ -122,20 +123,21 @@ the command will error.
 
 {phang}
 {opt css(filename)} applies a custom stylesheet to the generated HTML file.
-When {opt html()} is specified and {opt css()} is omitted, the package resource
+When {opt css()} is omitted, the package resource
 {bf:tohtml.css} is used (installed next to {cmd:tohtml.ado}; GitHub-like
 layout). Pass a file path only when you want a different stylesheet; the
-file must exist. Requires {opt html()}. The chosen CSS is copied to a
-{bf:css/} subdirectory beside the HTML output (and as
-{bf:table-override.css} for embedded tables).
+file must exist. The chosen CSS is copied to a
+{bf:css/} subdirectory beside the HTML output. Iframe tables from
+{cmd:collect} / {cmd:outreg2e} keep their own three-line styles and
+are not restyled by {bf:tohtml.css}.
 
 {phang}
 {opt mathjax} enables MathJax for LaTeX formulas in the HTML report. This option
 is independent of {opt css()}: you can combine MathJax with {bf:tohtml.css} or any
 custom stylesheet. The MathJax CDN script is injected only when equation
 delimiters are detected in the cleaned Markdown (e.g. {cmd:$...$}, {cmd:$$...$$},
-{cmd:\(...\)}, {cmd:\[...\]}); otherwise nothing is linked. Requires {opt html()}
-and internet access when viewing formulas.
+{cmd:\(...\)}, {cmd:\[...\]}); otherwise nothing is linked. Requires
+internet access when viewing formulas.
 
 
 {dlgtab:Portable package options}
@@ -152,7 +154,7 @@ files into:
 
 {pmore2}
 where {bf:ROOT} is the directory of {opt html()}, then rewrites links to relative paths
-({cmd:./figures/...}, {cmd:./tables/...}, {cmd:./css/...}). Requires {opt html()}.
+({cmd:./figures/...}, {cmd:./tables/...}, {cmd:./css/...}).
 
 {phang}
 {opt embed} writes a self-contained HTML file that does not need sidecar CSS, figure,
@@ -171,7 +173,6 @@ Table and CSS files may be given as absolute or relative paths; they only need
 to exist (they are not rewritten). Image paths in {cmd:![ ](...)} and
 {cmd:<img>} tags are likewise left as written; {cmd:markdown, embedimage}
 accepts Windows absolute paths (e.g. {cmd:D:/...}) and encodes them as Base64.
-Requires {opt html()}.
 Without {opt embed}, tables remain iframes. {cmd:tohtml} attaches the
 companion stylesheet from {help collect export} ({cmd:tableonly} writes
 {it:name}{bf:.css} next to {it:name}{bf:.html}, or a name given in
@@ -194,7 +195,7 @@ You may combine {opt embed} with {opt bundle}/{opt zip()}, but a successful
 {help zipfile} command so you can share one file with colleagues. Use {cmd:zip(.)} (or
 {cmd:zip(auto)}) to name the archive after the HTML file (e.g., {bf:report.html} →
 {bf:report.zip} in {bf:ROOT}). A custom path/name is also allowed, e.g.
-{cmd:zip("delivery/report_v1.zip")}. Requires {opt html()}.
+{cmd:zip("delivery/report_v1.zip")}.
 
 {pmore2}
 Note: If you used {opt mathjax}, MathJax is still loaded from a CDN, so formulas
@@ -241,11 +242,11 @@ commands together with figures and tables, without lengthy output.
 {marker examples}{...}
 {title:Examples}
 
-{pstd}Basic usage: Convert log file to Markdown{p_end}
+{pstd}Basic usage: same-stem Markdown and HTML ({bf:analysis.md}, {bf:analysis.html}){p_end}
 {phang2}{cmd:. tohtml "analysis.log", replace}{p_end}
 
-{pstd}Generate both Markdown and HTML{p_end}
-{phang2}{cmd:. tohtml "analysis.log", html("analysis.html") replace}{p_end}
+{pstd}Choose a different HTML name (Markdown follows it unless {opt md()} is set){p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report.html") replace}{p_end}
 
 {pstd}Bundle resources into css/figures/tables under the HTML folder{p_end}
 {phang2}{cmd:. tohtml "analysis.log", html("report/report.html") bundle replace}{p_end}
@@ -362,9 +363,12 @@ scans for all HTML files starting with "table" and all image files starting with
 temporary Markdown file containing these resources.
 
 {pstd}
-{bf:Dependencies}: Generating HTML requires Stata's {cmd:markdown} command. Install via:
+{bf:Dependencies}: {cmd:tohtml} does not install other packages. If
+{cmd:moremata} is missing, it exits with a message.
+{cmd:markdown} is a built-in Stata command (Stata 16 or newer), not a package
+dependency.
 
-{phang2}{cmd:. ssc install moremata}{p_end}
+{phang2}{cmd:moremata} ({cmd:mm_outsheet}) — {cmd:. ssc install moremata}{p_end}
 
 
 {title:Author}

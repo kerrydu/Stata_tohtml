@@ -59,10 +59,8 @@ blockquote {
     background: transparent;
 }
 
-/* Tables - GitHub Style (markdown tables only).
-   Stata collect (class Table*) and outreg2e (.texout-table) keep their
-   own three-line rules; do not restyle them. */
-table:not([class^="Table"]):not(.texout-table) {
+/* Tables - GitHub Style */
+table {
     border-collapse: collapse;
     border-spacing: 0;
     width: 100%;
@@ -71,45 +69,24 @@ table:not([class^="Table"]):not(.texout-table) {
     overflow: auto;
 }
 
-table:not([class^="Table"]):not(.texout-table) tr {
+table tr {
     background-color: #fff;
     border-top: 1px solid #c6cbd1;
 }
 
-table:not([class^="Table"]):not(.texout-table) tr:nth-child(2n) {
+table tr:nth-child(2n) {
     background-color: #f6f8fa;
 }
 
-table:not([class^="Table"]):not(.texout-table) th,
-table:not([class^="Table"]):not(.texout-table) td {
+table th, table td {
     border: 1px solid #dfe2e5;
     padding: 6px 13px;
     margin: 0;
 }
 
-table:not([class^="Table"]):not(.texout-table) th {
+table th {
     font-weight: 600;
-    background-color: #f6f8fa;
-}
-
-table[class^="Table"],
-table.texout-table,
-.tohtml-embedded-table table {
-    display: table;
-    width: auto;
-    max-width: 100%;
-    border-collapse: collapse;
-    overflow: visible;
-}
-
-table[class^="Table"] tr,
-table[class^="Table"] tr:nth-child(2n),
-table.texout-table tr,
-table.texout-table tr:nth-child(2n),
-.tohtml-embedded-table table tr,
-.tohtml-embedded-table table tr:nth-child(2n) {
-    background-color: transparent;
-    border: none;
+    background-color: #f6f8fa; /* Header background usually distinct */
 }
 
 /* Code Blocks & Inline Code */

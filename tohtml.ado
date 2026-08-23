@@ -1,3 +1,7 @@
+*! version 1.34, 2026-08-23
+*! version 1.33, 2026-08-23
+*! version 1.32, 2026-08-23
+*! version 1.31, 2026-08-23
 *! version 1.30, 2026-08-23
 *! version 1.29, 2026-08-23
 *! version 1.28, 2026-08-23
@@ -30,9 +34,8 @@
 *! version 1.1, 2026-08-11
 *! version 1.0, 2026-04-28
 program define tohtml
-cap which pathutil
-if _rc ssc install pathutil, replace
 version 16
+    tohtml_require
     syntax anything ,  [ MD(string) REPlace HTML(string) ///
                          CSS(string) MATHJAX EMBED ///
                          CLEAN CLEANCODE ///
@@ -373,6 +376,20 @@ program define tohtml_ensure_textlog, rclass
 end
 
 
+capture program drop tohtml_require
+program define tohtml_require
+    version 16
+    // Never ssc install. Tell the user what is missing.
+
+    mata: st_numscalar("tohtml_has_mm", findexternal("mm_outsheet()") != NULL)
+    if tohtml_has_mm == 0 {
+        di as error "tohtml requires moremata (Mata function mm_outsheet)"
+        di as error "install with:  ssc install moremata"
+        exit 111
+    }
+end
+
+
 capture program drop tohtml_resolve_md
 program define tohtml_resolve_md, rclass
     version 16
@@ -382,21 +399,15 @@ program define tohtml_resolve_md, rclass
     local md = subinstr(`"`md'"', "\", "/", .)
     local html = subinstr(`"`html'"', "\", "/", .)
 
-    if `"`html'"' != "" {
-        if ustrright(ustrlower(`"`html'"'), 5) != ".html" {
-            local html `"`html'.html"'
-        }
+    if `"`html'"' == "" {
+        local html = ustrregexra(`"`from'"', "\.[^.]+$", "") + ".html"
+    }
+    if ustrright(ustrlower(`"`html'"'), 5) != ".html" {
+        local html `"`html'.html"'
     }
 
     if `"`md'"' == "" {
-        if `"`html'"' != "" {
-            // same path as html, extension .md
-            local md = ustrregexra(`"`html'"', "\.[Hh][Tt][Mm][Ll]$", ".md")
-        }
-        else {
-            // no html: same stem as input with .md
-            local md = ustrregexra(`"`from'"', "\.[^.]+$", "") + ".md"
-        }
+        local md = ustrregexra(`"`html'"', "\.[Hh][Tt][Mm][Ll]$", ".md")
     }
     else if ustrright(ustrlower(`"`md'"'), 3) != ".md" {
         local md `"`md'.md"'
@@ -482,7 +493,6 @@ program define tohtml_style
         mata: st_local("css_dest_norm", normalize_path(`"`css_dest'"'))
         if `"`css_norm'"' != `"`css_dest_norm'"' {
             copy `"`css_src'"' `"`css_dest'"', replace
-            copy `"`css_src'"' "`html_dir'/css/table-override.css", replace
         }
         mata: inject_css(`"`html'"', "./css/`css_base'")
     }
@@ -957,17 +967,35 @@ string colvector replace_path_refs(string colvector lines, string scalar oldp, s
 
 void function fix_table_override_css(string scalar tabfile)
 {
+    // Older outreg2e HTML injected GitHub tohtml.css (as table-override.css)
+    // into iframes. That restyles collect / outreg three-line tables.
+    // Strip those script hooks; leave the table's own <style> alone.
     if (!fileexists(tabfile)) return
     lines = cat(tabfile)
     if (rows(lines) == 0) return
-    // Only rewrite rooted or same-folder refs; avoid touching "../css/..."
-    lines = subinstr(lines, "='/css/table-override.css'", "='../css/table-override.css'", .)
-    lines = subinstr(lines, `"="/css/table-override.css""', `"="../css/table-override.css""', .)
-    lines = subinstr(lines, "='./css/table-override.css'", "='../css/table-override.css'", .)
-    lines = subinstr(lines, `"="./css/table-override.css""', `"="../css/table-override.css""', .)
-    lines = subinstr(lines, "href = '/css/table-override.css'", "href = '../css/table-override.css'", .)
-    lines = subinstr(lines, `"href = "/css/table-override.css""', `"href = "../css/table-override.css""', .)
-    mm_outsheet(tabfile, lines, "replace")
+    n = rows(lines)
+    keep = J(n, 1, 1)
+    i = 1
+    while (i <= n) {
+        if (ustrpos(ustrlower(lines[i]), "<script") > 0) {
+            j = i
+            hit = 0
+            while (j <= n) {
+                if (ustrpos(lines[j], "table-override.css") > 0) hit = 1
+                if (ustrpos(ustrlower(lines[j]), "</script>") > 0) break
+                j++
+            }
+            if (hit) {
+                for (k = i; k <= j; k++) keep[k] = 0
+                i = j + 1
+                continue
+            }
+        }
+        i++
+    }
+    if (sum(keep) == n) return
+    if (sum(keep) == 0) return
+    mm_outsheet(tabfile, select(lines, keep), "replace")
 }
 
 void function stata_copy_file(string scalar src, string scalar dest)
@@ -1822,6 +1850,9 @@ void function ensure_table_css_link(string scalar htmlfile)
     if (href == "") href = pathbasename(csspath)
 
     blob = ustrlower(join_lines(lines))
+    if (ustrpos(blob, "<style") > 0 &
+        (ustrpos(blob, ".table") > 0 | ustrpos(blob, ".texout-table") > 0 |
+         ustrpos(blob, "border-top-style") > 0)) return
     already = lines_already_link_css(lines, pathbasename(csspath))
     if (already & (ustrpos(blob, "<html") > 0 | ustrpos(blob, "</head>") > 0)) return
 
@@ -2024,7 +2055,10 @@ void function tohtml_fix_default_refs(string scalar reportfile, string scalar ba
         ext = path_suffix_lower(src)
         resolved = resolve_local_file(src, basedir)
         if (ext == ".html" | ext == ".htm") {
-            if (resolved != "") ensure_table_css_link(resolved)
+            if (resolved != "") {
+                fix_table_override_css(resolved)
+                ensure_table_css_link(resolved)
+            }
         }
         news = src_for_default(src, basedir)
         if (news == "" | news == src) continue
@@ -2060,7 +2094,6 @@ real scalar iframe_height_from_rows(real scalar nrows)
     if (nrows <= 0) nrows = 8
     h = 52 + nrows * 34
     if (h < 90) h = 90
-    if (h > 1600) h = 1600
     return(h)
 }
 
@@ -2080,10 +2113,16 @@ string scalar restyle_iframe_tag(string scalar line, real scalar hpx)
     else if (ustrregexm(line, `"height *= *"[^"]*""')) {
         line = usubinstr(line, ustrregexs(0), "height=" + dq + h + dq, 1)
     }
+    if (ustrregexm(line, `"scrolling *= *'[^']*'"')) {
+        line = usubinstr(line, ustrregexs(0), "scrolling=" + sq + "auto" + sq, 1)
+    }
+    else if (ustrregexm(line, `"scrolling *= *"[^"]*""')) {
+        line = usubinstr(line, ustrregexs(0), "scrolling=" + dq + "auto" + dq, 1)
+    }
     low = ustrlower(line)
     extra = ""
     if (ustrpos(low, "scrolling=") == 0) {
-        extra = extra + " scrolling=" + sq + "no" + sq
+        extra = extra + " scrolling=" + sq + "auto" + sq
     }
     if (ustrpos(low, "onload=") == 0) {
         extra = extra + " " + iframe_onload_attr()
@@ -2109,7 +2148,7 @@ void function compact_iframe_document(string scalar tabfile)
     lines = cat(tabfile)
     if (rows(lines) == 0) return
     if (sum(ustrpos(lines, "tohtml-iframe-compact") :> 0) > 0) return
-    style = `"<style id="tohtml-iframe-compact">html,body{margin:0;padding:8px;}body{overflow-x:auto;overflow-y:hidden;}</style>"'
+    style = `"<style id="tohtml-iframe-compact">html,body{margin:0;padding:8px;}body{overflow:auto;}</style>"'
     idx = selectindex(ustrpos(ustrlower(lines), "</head>") :> 0)
     if (length(idx) > 0) {
         i = idx[1]

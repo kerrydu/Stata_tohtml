@@ -1,0 +1,419 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       MP—Parallel Edition
+
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Single-user 16-core  perpetual
+Serial number: 3851871377
+  Licensed to: bbb
+               xxx
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+
+Running D:\Program\StataNow19\profile.do ...
+
+. do C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\example_detail\run_exampl
+> e_detail.do 
+
+. version 19.5
+
+. clear
+
+. set more off
+
+. set linesize 120
+
+. 
+. local root "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+
+. adopath ++ "`root'"
+  [1]              "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+  [2]  (BASE)      "D:\Program\StataNow19\ado\base/"
+  [3]  (SITE)      "D:\Program\StataNow19\ado\site/"
+  [4]              "."
+  [5]  (PERSONAL)  "E:/SynologyDrive\ado\personal/"
+  [6]  (PLUS)      "E:/SynologyDrive\ado\plus/"
+  [7]  (OLDPLACE)  "E:/SynologyDrive\data/"
+
+. 
+. global project "`root'/tests/example_detail"
+
+. global results "$project/results"
+
+. global figures "$results/figures"
+
+. global logs    "$results/logs"
+
+. 
+. foreach dir in "$project" "$results" "$figures" "$logs" {
+  2.     capture mkdir `dir'
+  3. }
+
+. 
+. capture log close
+
+. log using "$logs/example_detail.log", replace text
+------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/logs/example_detail.log
+  log type:  text
+ opened on:  23 Aug 2026, 22:32:33
+
+. 
+. ishere # Data Preparation
+
+. ishere
+
+. sysuse auto, clear
+(1978 automobile data)
+
+. disp "Loaded auto.dta. Observations: `c(N)', Variables: `c(k)'"
+Loaded auto.dta. Observations: 74, Variables: 12
+
+. 
+. drop if missing(price, mpg, weight, foreign)
+(0 observations deleted)
+
+. disp "Dropped missing. Remaining observations: `c(N)'"
+Dropped missing. Remaining observations: 74
+
+. 
+. gen lprice   = ln(price)
+
+. gen weightkg = weight*0.453592
+
+. label var lprice   "Log of price"
+
+. label var weightkg "Weight (kg)"
+
+. disp "Variables created: lprice, weightkg"
+Variables created: lprice, weightkg
+
+. 
+. ishere # Descriptive Statistics
+
+. ishere ## Table 1
+
+. ishere
+
+. table (var) (result), ///
+>     statistic(mean  price mpg weight rep78 lprice) ///
+>     statistic(sd    price mpg weight rep78 lprice) ///
+>     statistic(min   price mpg weight rep78 lprice) ///
+>     statistic(max   price mpg weight rep78 lprice) ///
+>     nototals ///
+>     export($results/summary.html, replace)
+
+-----------------------------------------------------------------------------------
+                   |      Mean   Standard deviation   Minimum value   Maximum value
+-------------------+---------------------------------------------------------------
+Price              |  6165.257             2949.496            3291           15906
+Mileage (mpg)      |   21.2973             5.785503              12              41
+Weight (lbs.)      |  3019.459             777.1936            1760            4840
+Repair record 1978 |  3.405797             .9899323               1               5
+Log of price       |  8.640633             .3921059        8.098947        9.674452
+-----------------------------------------------------------------------------------
+(collection Table exported to file
+ C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/summary.html)
+
+. ishere tab using "$results/summary.html"
+
+<iframe src='C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/summary.html' width='100%' height='
+> 256px' frameBorder='0' scrolling='auto' onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'p
+> x';"></iframe>
+
+. 
+. ishere
+
+. ishere # Figures
+
+. ishere ## Figure 1
+
+. ishere
+
+. histogram price, normal title("Price distribution")
+(bin=8, start=3291, width=1576.875)
+
+. graph export "$figures/price_hist.png", replace
+file C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/figures/price_hist.png saved as PNG
+    format
+
+. ishere fig using "$figures/price_hist.png"
+
+<img src="C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/figures/price_hist.png" style="zoom:10
+> 0%;">
+
+. 
+. ishere ## Figure 2
+
+. ishere
+
+. twoway (scatter price mpg) (lfit price mpg), ///
+>     title("Price vs MPG with linear fit") legend(order(1 "Actual" 2 "Fitted"))
+
+. graph export "$figures/price_mpg.png", replace
+file C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/figures/price_mpg.png saved as PNG format
+
+. 
+. ishere fig using "$figures/price_mpg.png"
+
+<img src="C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/figures/price_mpg.png" style="zoom:100
+> %;">
+
+. ishere
+
+. 
+. /**
+> this is a paragraph of text
+> 
+> this is another paragraph of text
+> 
+> this is a third paragraph of text
+> 
+> this is a mathematical expression
+> 
+> $$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \epsilon$$
+> 
+> the picture is pretty
+> 
+> ![](https://tu.duoduocdn.com/uploads/day_260115/202601150909474420.jpg)
+> 
+> **/
+. 
+. ishere # Regression
+
+. ishere ## Narrative Example
+
+. ishere
+
+. regress price mpg weight
+
+      Source |       SS           df       MS      Number of obs   =        74
+-------------+----------------------------------   F(2, 71)        =     14.74
+       Model |   186321280         2  93160639.9   Prob > F        =    0.0000
+    Residual |   448744116        71  6320339.67   R-squared       =    0.2934
+-------------+----------------------------------   Adj R-squared   =    0.2735
+       Total |   635065396        73  8699525.97   Root MSE        =      2514
+
+------------------------------------------------------------------------------
+       price | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+         mpg |  -49.51222   86.15604    -0.57   0.567    -221.3025     122.278
+      weight |   1.746559   .6413538     2.72   0.008      .467736    3.025382
+       _cons |   1946.069    3597.05     0.54   0.590    -5226.245    9118.382
+------------------------------------------------------------------------------
+
+. local r2 = e(r2)
+
+. display %5.3f `r2'
+0.293
+
+. ishere display %5.3f `r2'
+0.293
+
+. /**
+> The R-squared is {ishere display %5.3f `r2'}.
+> **/
+. 
+. ishere
+
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model1
+
+. 
+. qui regress price mpg , vce(robust)
+
+. estimates store model2
+
+. 
+. qui regress price i.foreign, vce(robust)
+
+. estimates store model3
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model4
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model5
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model6
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model7
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model8
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model9
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model10
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model11
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model12
+
+. 
+. qui regress price mpg weight i.foreign, vce(robust)
+
+. estimates store model13
+
+. ishere
+
+. 
+. ishere ## Table 2
+
+. ishere
+
+. outreg2e [model1 model2 model3 model4 model5] using "$results/model.html", replace html
+C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/model.html
+C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/model.md
+dir : seeout
+
+. ishere tab using "$results/model.html"
+
+<iframe src='C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/model.html' width='100%' height='56
+> 2px' frameBorder='0' scrolling='auto' onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'px'
+> ;"></iframe>
+
+. 
+. ishere ## Table 3
+
+. ishere
+
+. outreg2e [model*] using "$results/model2.html", replace html
+C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/model2.html
+C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/model2.md
+dir : seeout
+
+. ishere tab using "$results/model2.html"
+
+<iframe src='C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/model2.html' width='100%' height='5
+> 62px' frameBorder='0' scrolling='auto' onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'px
+> ';"></iframe>
+
+. 
+. capture log close
+
+. tohtml "$logs/example_detail.log", ///
+>     md("$logs/example_detail.md") ///
+>     html("$logs/example_detail.html") ///
+>     zip(.) mathjax replace
+% markdown written to C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/logs/example_detail.md
+successfully converted "C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/logs/example_detail.html
+> "
+% resources bundled under C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\example_detail\results\logs/{css,figures,tabl
+> es}
+    adding: example_detail.html (deflated 73%)
+    adding: css\table-override.css (deflated 63%)
+    adding: css\tohtml.css (deflated 66%)
+    adding: figures\price_hist.png (deflated 54%)
+    adding: figures\price_mpg.png (deflated 45%)
+    adding: tables\model.html (deflated 77%)
+    adding: tables\model2.html (deflated 87%)
+    adding: tables\summary.html (deflated 87%)
+    adding: example_detail.md (deflated 73%)
+
+total processed:  9
+        skipped:  0
+       archived:  9
+% archive written to C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/example_detail/results/logs/example_detail.zip
+
+. 
+. di as result "DONE"
+DONE
+
+. which tohtml
+C:/Users/kerry/Desktop/tohtml/Stata_tohtml\tohtml.ado
+*! version 1.34, 2026-08-23
+*! version 1.33, 2026-08-23
+*! version 1.32, 2026-08-23
+*! version 1.31, 2026-08-23
+*! version 1.30, 2026-08-23
+*! version 1.29, 2026-08-23
+*! version 1.28, 2026-08-23
+*! version 1.27, 2026-08-23
+*! version 1.26, 2026-08-22
+*! version 1.25, 2026-08-22
+*! version 1.24, 2026-08-21
+*! version 1.23, 2026-08-21
+*! version 1.22, 2026-08-21
+*! version 1.21, 2026-08-21
+*! version 1.20, 2026-08-21
+*! version 1.19, 2026-08-21
+*! version 1.18, 2026-08-21
+*! version 1.17, 2026-08-21
+*! version 1.16, 2026-08-21
+*! version 1.15, 2026-08-21
+*! version 1.14, 2026-08-21
+*! version 1.13, 2026-08-21
+*! version 1.12, 2026-08-19
+*! version 1.11, 2026-08-19
+*! version 1.10, 2026-08-19
+*! version 1.9, 2026-08-19
+*! version 1.8, 2026-08-12
+*! version 1.7, 2026-08-12
+*! version 1.6, 2026-08-11
+*! version 1.5, 2026-08-11
+*! version 1.4, 2026-08-11
+*! version 1.3, 2026-08-11
+*! version 1.2, 2026-08-11
+*! version 1.1, 2026-08-11
+*! version 1.0, 2026-04-28
+
+. which ishere
+C:/Users/kerry/Desktop/tohtml/Stata_tohtml\ishere.ado
+*! version 1.16, 2026-08-23
+*! version 1.15, 2026-08-23
+*! version 1.14, 2026-08-23
+*! version 1.13, 2026-08-23
+*! version 1.12, 2026-08-22
+*! version 1.11, 2026-08-21
+*! version 1.10, 2026-08-21
+*! version 1.9, 2026-08-21
+*! version 1.8, 2026-08-21
+*! version 1.7, 2026-08-21
+*! version 1.6, 2026-08-11
+
+. which outreg2e
+C:/Users/kerry/Desktop/tohtml/Stata_tohtml\outreg2e.ado
+*! outreg2e extend outreg2 for creating tables in html
+
+. 
+end of do-file

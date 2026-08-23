@@ -2899,7 +2899,7 @@ quietly {
 				local percent "%"
 				local widthstr = string(`width', "%9.0g")
 				local heightstr = string(`height', "%9.0g")
-				local iframe "<iframe src='`usingTermHtml'' width='`widthstr'`percent'' height='`heightstr'px' frameBorder='0'></iframe>"
+				local iframe "<iframe src='`usingTermHtml'' width='`widthstr'`percent'' height='`heightstr'px' frameBorder='0' scrolling='auto'></iframe>"
 				c_local cl_iframe_open "                  "
 				c_local cl_iframe_line `"`iframe'"'
 				c_local cl_iframe_close "                  "
@@ -7542,20 +7542,6 @@ prog define _texout2html, sortpreserve
 		file write htmlout ".texout-mono{font-family:'Courier New',Consolas,monospace;}" _n
 		if `pretty' file write htmlout ".texout-notes td{font-style:italic;font-size:0.9em;}" _n
 		file write htmlout "</style>" _n
-		file write htmlout "<script>" _n
-		file write htmlout "// inject override css when embedded in iframe" _n
-		file write htmlout "if (window.self !== window.top) {" _n
-		file write htmlout "  var candidates = ['../css/table-override.css','./css/table-override.css'];" _n
-		file write htmlout "  var link = document.createElement('link');" _n
-		file write htmlout "  link.rel = 'stylesheet';" _n
-		file write htmlout "  link.href = candidates[0];" _n
-		file write htmlout "  link.onerror = function () {" _n
-		file write htmlout "    if (link.href.indexOf(candidates[0]) >= 0) { link.href = candidates[1]; }" _n
-		file write htmlout "    else if (link && link.parentNode) { link.parentNode.removeChild(link); }" _n
-		file write htmlout "  };" _n
-		file write htmlout "  document.head.appendChild(link);" _n
-		file write htmlout "}" _n
-		file write htmlout "</script>" _n
 		if !`fragment' file write htmlout "</head><body>" _n
 		
 		* title here, before table (skip empty rows — avoids leading blank lines)
