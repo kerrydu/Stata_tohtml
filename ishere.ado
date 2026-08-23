@@ -1,3 +1,4 @@
+*! version 1.13, 2026-08-23
 *! version 1.12, 2026-08-22
 *! version 1.11, 2026-08-21
 *! version 1.10, 2026-08-21
@@ -292,6 +293,71 @@ real scalar ishere_count_tr(string scalar htmlfile)
     return(n)
 }
 
+string scalar ishere_first_table_class(string scalar blob)
+{
+    cls = ""
+    if (ustrregexm(blob, `"(?is)<table\b[^>]*class *= *"([^"]+)""')) cls = ustrregexs(1)
+    else if (ustrregexm(blob, `"(?is)<table\b[^>]*class *= *'([^']+)'"')) cls = ustrregexs(1)
+    cls = strtrim(cls)
+    if (cls == "") return("")
+    p = ustrpos(cls, " ")
+    if (p > 0) cls = usubstr(cls, 1, p - 1)
+    return(cls)
+}
+
+real scalar ishere_reserved_css_name(string scalar base)
+{
+    b = ustrlower(pathbasename(base))
+    return(b == "tohtml.css" | b == "table-override.css")
+}
+
+real scalar ishere_css_looks_collect(string scalar cssfile)
+{
+    if (!fileexists(cssfile)) return(0)
+    raw = cat(cssfile)
+    if (rows(raw) == 0) return(0)
+    blob = ""
+    for (i = 1; i <= rows(raw); i++) blob = blob + raw[i] + char(10)
+    return(ustrpos(blob, "border-collapse") > 0 | ustrpos(blob, ".Table") > 0)
+}
+
+real scalar ishere_css_mentions_class(string scalar cssfile, string scalar cls)
+{
+    if (cls == "" | !fileexists(cssfile)) return(0)
+    raw = cat(cssfile)
+    if (rows(raw) == 0) return(0)
+    blob = ""
+    for (i = 1; i <= rows(raw); i++) blob = blob + raw[i] + char(10)
+    return(ustrpos(blob, "." + cls + "_") > 0 | ustrpos(blob, "." + cls + "{") > 0 | ustrpos(blob, "." + cls + " ") > 0)
+}
+
+string scalar ishere_guess_companion_css(string scalar htmlpath, string scalar hdir)
+{
+    names = dir(hdir, "files", "*.css")
+    if (rows(names) == 0) return("")
+    blob = ""
+    if (fileexists(htmlpath)) {
+        raw = cat(htmlpath)
+        for (i = 1; i <= rows(raw); i++) blob = blob + raw[i] + char(10)
+    }
+    cls = ishere_first_table_class(blob)
+    unpaired = J(0, 1, "")
+    classhit = J(0, 1, "")
+    for (i = 1; i <= rows(names); i++) {
+        base = names[i]
+        if (ishere_reserved_css_name(base)) continue
+        full = pathjoin(hdir, base)
+        if (!ishere_css_looks_collect(full)) continue
+        stem = pathrmsuffix(base)
+        if (fileexists(pathjoin(hdir, stem + ".html")) | fileexists(pathjoin(hdir, stem + ".htm"))) continue
+        unpaired = unpaired \ full
+        if (ishere_css_mentions_class(full, cls)) classhit = classhit \ full
+    }
+    if (rows(classhit) == 1) return(classhit[1])
+    if (rows(unpaired) == 1) return(unpaired[1])
+    return("")
+}
+
 void function ishere_ensure_table_css(string scalar htmlfile, string scalar cssopt)
 {
     htmlfile = strtrim(htmlfile)
@@ -321,6 +387,7 @@ void function ishere_ensure_table_css(string scalar htmlfile, string scalar csso
     }
     else {
         csspath = pathjoin(hdir, pathrmsuffix(pathbasename(htmlpath)) + ".css")
+        if (!fileexists(csspath)) csspath = ishere_guess_companion_css(htmlpath, hdir)
     }
     if (!fileexists(csspath)) return
     if (!pathisabs(csspath)) csspath = pathresolve(pwd(), csspath)

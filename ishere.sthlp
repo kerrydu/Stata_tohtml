@@ -93,7 +93,8 @@ Prints content to the log (kept / processed by {help tohtml}):
 {pmore2}
 - HTML tables: {cmd:ishere tab using "table1.html"} writes an HTML {cmd:<iframe>} tag
   (same path rule as figures). If {help collect export} wrote a companion
-  CSS file (same basename as the table, or the name given in {cmd:cssfile()}), and
+  CSS file (same basename as the table, the name given in {cmd:cssfile()}, or
+  the single unpaired collect CSS in that folder), and
   the HTML does not already contain a stylesheet {cmd:<link>}, {cmd:ishere} inserts
   that link so the table keeps its {help table}, {help dtable}, or {help etable}
   style when shown in an iframe.
@@ -135,8 +136,10 @@ Options apply only to figure/table emit syntax.
 
 {phang}
 {opt cssfile(filename)} stylesheet written by {help collect export} when it is not
-named like the HTML file. The default is the table's basename with a {cmd:.css}
-suffix (e.g. {cmd:table1.html} → {cmd:table1.css}). Ignored for {cmd:.md}.
+named like the HTML file. If omitted, {cmd:ishere} first looks for
+{cmd:table1.html} → {cmd:table1.css}. If that file is missing, it uses the
+only unpaired collect CSS in the same folder (a {cmd:.css} with no
+same-stem HTML). Two such files: pass {cmd:cssfile()}. Ignored for {cmd:.md}.
 
 
 {marker examples}{...}

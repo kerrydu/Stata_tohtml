@@ -1,3 +1,4 @@
+*! version 1.28, 2026-08-23
 *! version 1.27, 2026-08-23
 *! version 1.26, 2026-08-22
 *! version 1.25, 2026-08-22
@@ -1594,8 +1595,70 @@ string colvector companion_css_files(string scalar htmlfile)
     }
     sib = pathjoin(dir, pathrmsuffix(pathbasename(htmlfile)) + ".css")
     if (fileexists(sib)) out = out \ sib
+    if (rows(out) == 0) {
+        g = guess_companion_css(htmlfile, dir)
+        if (g != "") out = out \ g
+    }
     if (rows(out) > 0) out = uniqrows(out)
     return(out)
+}
+
+string scalar first_table_class(string scalar blob)
+{
+    cls = ""
+    if (ustrregexm(blob, `"(?is)<table\b[^>]*class *= *"([^"]+)""')) cls = ustrregexs(1)
+    else if (ustrregexm(blob, `"(?is)<table\b[^>]*class *= *'([^']+)'"')) cls = ustrregexs(1)
+    cls = strtrim(cls)
+    if (cls == "") return("")
+    p = ustrpos(cls, " ")
+    if (p > 0) cls = usubstr(cls, 1, p - 1)
+    return(cls)
+}
+
+real scalar reserved_css_name(string scalar base)
+{
+    b = ustrlower(pathbasename(base))
+    return(b == "tohtml.css" | b == "table-override.css")
+}
+
+real scalar css_looks_collect(string scalar cssfile)
+{
+    if (!fileexists(cssfile)) return(0)
+    raw = cat(cssfile)
+    if (rows(raw) == 0) return(0)
+    blob = join_lines(raw)
+    return(ustrpos(blob, "border-collapse") > 0 | ustrpos(blob, ".Table") > 0)
+}
+
+real scalar css_mentions_table_class(string scalar cssfile, string scalar cls)
+{
+    if (cls == "" | !fileexists(cssfile)) return(0)
+    blob = join_lines(cat(cssfile))
+    return(ustrpos(blob, "." + cls + "_") > 0 | ustrpos(blob, "." + cls + "{") > 0 | ustrpos(blob, "." + cls + " ") > 0)
+}
+
+string scalar guess_companion_css(string scalar htmlfile, string scalar hdir)
+{
+    names = dir(hdir, "files", "*.css")
+    if (rows(names) == 0) return("")
+    blob = ""
+    if (fileexists(htmlfile)) blob = join_lines(cat(htmlfile))
+    cls = first_table_class(blob)
+    unpaired = J(0, 1, "")
+    classhit = J(0, 1, "")
+    for (i = 1; i <= rows(names); i++) {
+        base = names[i]
+        if (reserved_css_name(base)) continue
+        full = pathjoin(hdir, base)
+        if (!css_looks_collect(full)) continue
+        stem = pathrmsuffix(base)
+        if (fileexists(pathjoin(hdir, stem + ".html")) | fileexists(pathjoin(hdir, stem + ".htm"))) continue
+        unpaired = unpaired \ full
+        if (css_mentions_table_class(full, cls)) classhit = classhit \ full
+    }
+    if (rows(classhit) == 1) return(classhit[1])
+    if (rows(unpaired) == 1) return(unpaired[1])
+    return("")
 }
 
 void function collect_embed_css_file(string scalar cssfile)
@@ -2109,55 +2172,49 @@ real colvector char_lengths_including_backticks(string colvector lines)
 
 
 
+real scalar is_html_embed_open(string scalar line)
+{
+    t = ustrltrim(line)
+    if (usubstr(t, 1, 7) == "<iframe") return(1)
+    if (usubstr(t, 1, 4) == "<img") return(1)
+    return(0)
+}
+
+real scalar html_embed_tag_complete(string scalar line)
+{
+    t = ustrltrim(line)
+    if (usubstr(t, 1, 7) == "<iframe") {
+        return(ustrpos(ustrlower(t), "</iframe>") > 0)
+    }
+    if (usubstr(t, 1, 4) == "<img") {
+        return(ustrregexm(t, ">\s*$"))
+    }
+    return(1)
+}
+
 string colvector merge_html_vectorized(string colvector f)
 {
+    // Stata wraps long <iframe>/<img> lines; continuations start with "> ".
+    // Absorb every following wrap until the tag is complete. A single
+    // pair-merge leaves leftover "> scrollHeight..." as fake Stata commands.
     n = rows(f)
     if (n == 0) return(f)
-    
-        // 1. flag1: 当前行是否以 <iframe src= 或 <img src= 开头
-    len_iframe = strlen("<iframe src=")
-    len_img    = strlen("<img src=")
-        f_trim = ustrltrim(f)
-    
-        flag1 = J(n, 1, 0)
-        flag1 = (substr(f_trim, 1, len_iframe) :== "<iframe src=") :| ///
-            (substr(f_trim, 1, len_img)    :== "<img src=")
-    
-        // 2. flag2: 当前行是否以 ">" 开头（用于下一行判断）
-        flag2 = (substr(f_trim, 1, 1) :== ">")
-    
-    // 3. 合并标志：第 i 行要合并下一行 iff flag1[i]==1 且 flag2[i+1]==1 （i=1..n-1）
-    flag_merge = J(n, 1, 0)
-    if (n > 1) {
-        flag_merge[|1 \ n-1|] = flag1[|1 \ n-1|] :& flag2[|2 \ n|]
-    }
-    
-    // 4. 构造新内容：对要合并的行，拼接处理后的下一行
-    // selectindex() on a 1x1 false matrix returns a 1x0 rowvector (rows=1,
-    // length=0). Checking rows()>0 would then call substr() on an empty
-    // rowvector and throw a conformability error (e.g. a one-line Markdown
-    // file with no Stata log header).
-    new_f = f
-    to_merge_idx = selectindex(flag_merge)
-    if (length(to_merge_idx) > 0) {
-        if (rows(to_merge_idx) == 1 & cols(to_merge_idx) > 1) {
-            to_merge_idx = to_merge_idx'
+    out = J(0, 1, "")
+    i = 1
+    while (i <= n) {
+        line = f[i]
+        if (is_html_embed_open(line)) {
+            while (i < n & !html_embed_tag_complete(line)) {
+                nxt = ustrltrim(f[i + 1])
+                if (usubstr(nxt, 1, 1) != ">") break
+                line = line + strtrim(usubstr(nxt, 2, .))
+                i++
+            }
         }
-        next_lines = f[to_merge_idx :+ 1]
-        stripped   = strtrim(substr(next_lines, 2, .))
-        new_f[to_merge_idx] = f[to_merge_idx] :+ stripped
+        out = out \ line
+        i++
     }
-
-    // 5. 标记哪些行应保留：所有行都保留，除了那些是"被合并的下一行"
-    is_next_of_merge = J(n, 1, 0)
-    if (length(to_merge_idx) > 0) {
-        is_next_of_merge[to_merge_idx :+ 1] = J(length(to_merge_idx), 1, 1)
-    }
-    keep = (is_next_of_merge :== 0)
-    
-    // 6. 返回保留的行
-    result = select(new_f, keep)
-    return(result)
+    return(out)
 }
 
 string colvector remove_prefix_and_trim(string colvector lines,string rowvector prefixes)   

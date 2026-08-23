@@ -1,0 +1,156 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       MP—Parallel Edition
+
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Single-user 16-core  perpetual
+Serial number: 3851871377
+  Licensed to: bbb
+               xxx
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+
+Running D:\Program\StataNow19\profile.do ...
+
+. do C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\test_css.do 
+
+. clear all
+
+. set more off
+
+. capture log close _all
+
+. local root "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+
+. adopath ++ "`root'"
+  [1]              "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+  [2]  (BASE)      "D:\Program\StataNow19\ado\base/"
+  [3]  (SITE)      "D:\Program\StataNow19\ado\site/"
+  [4]              "."
+  [5]  (PERSONAL)  "E:/SynologyDrive\ado\personal/"
+  [6]  (PLUS)      "E:/SynologyDrive\ado\plus/"
+  [7]  (OLDPLACE)  "E:/SynologyDrive\data/"
+
+. cd "`root'/tests/reviewer27"
+C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27
+
+. 
+. foreach f in table_fragment.html table_fragment.css ///
+>     table_fragment.raw.html table_fragment.raw.css ///
+>     table_fragment_custom.html table_fragment_custom.raw.html ///
+>     table_fragment_custom_nocss.html ///
+>     chosen_fragment.css chosen_fragment.raw.css ///
+>     reviewer27.log reviewer27.md reviewer27.html {
+  2.     capture erase "`f'"
+  3. }
+
+. 
+. sysuse auto, clear
+(1978 automobile data)
+
+. collect clear
+
+. table foreign, statistic(mean price) statistic(sd price)
+
+-------------------------------------------
+           |      Mean   Standard deviation
+-----------+-------------------------------
+Car origin |                               
+  Domestic |  6072.423             3097.104
+  Foreign  |  6384.682             2621.915
+  Total    |  6165.257             2949.496
+-------------------------------------------
+
+. 
+. collect export "table_fragment.html", tableonly replace
+(collection Table exported to file table_fragment.html)
+
+. copy "table_fragment.html" "table_fragment.raw.html", replace
+(file table_fragment.raw.html not found)
+
+. 
+. collect export "table_fragment_custom.html", tableonly ///
+>     cssfile("chosen_fragment.css") replace
+(collection Table exported to file table_fragment_custom.html)
+
+. copy "table_fragment_custom.html" "table_fragment_custom.raw.html", replace
+(file table_fragment_custom.raw.html not found)
+
+. copy "table_fragment_custom.html" "table_fragment_custom_nocss.html", replace
+(file table_fragment_custom_nocss.html not found)
+
+. 
+. log using "reviewer27.log", text replace
+(file
+    C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\reviewer27.lo
+    > g not found)
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\review
+> er27.log
+  log type:  text
+ opened on:  23 Aug 2026, 09:51:21
+
+. ishere # Reviewer 27 CSS test
+
+. ishere
+
+. ishere tab using "table_fragment.html"
+
+<iframe src='table_fragment.html' width='100%' height='222px' frameBorder='0'><
+> /iframe>
+
+. ishere ## custom cssfile()
+
+. ishere
+
+. ishere tab using "table_fragment_custom.html", cssfile("chosen_fragment.css")
+
+<iframe src='table_fragment_custom.html' width='100%' height='222px' frameBorde
+> r='0'></iframe>
+
+. ishere ## custom CSS without cssfile()
+
+. ishere
+
+. ishere tab using "table_fragment_custom_nocss.html"
+
+<iframe src='table_fragment_custom_nocss.html' width='100%' height='222px' fram
+> eBorder='0'></iframe>
+
+. log close
+      name:  <unnamed>
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\review
+> er27.log
+  log type:  text
+ closed on:  23 Aug 2026, 09:51:21
+-------------------------------------------------------------------------------
+
+. ishere
+
+. 
+. tohtml "reviewer27.log", ///
+>     md("reviewer27.md") ///
+>     html("reviewer27.html") replace
+% markdown written to reviewer27.md
+successfully converted "C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/review
+> er27/reviewer27.html"
+
+. di as result "DONE"
+DONE
+
+. 
+end of do-file

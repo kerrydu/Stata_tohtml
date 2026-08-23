@@ -1,0 +1,41 @@
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\review
+> er27.log
+  log type:  text
+ opened on:  23 Aug 2026, 09:51:21
+
+. ishere # Reviewer 27 CSS test
+
+. ishere
+
+. ishere tab using "table_fragment.html"
+
+<iframe src='table_fragment.html' width='100%' height='222px' frameBorder='0'><
+> /iframe>
+
+. ishere ## custom cssfile()
+
+. ishere
+
+. ishere tab using "table_fragment_custom.html", cssfile("chosen_fragment.css")
+
+<iframe src='table_fragment_custom.html' width='100%' height='222px' frameBorde
+> r='0'></iframe>
+
+. ishere ## custom CSS without cssfile()
+
+. ishere
+
+. ishere tab using "table_fragment_custom_nocss.html"
+
+<iframe src='table_fragment_custom_nocss.html' width='100%' height='222px' fram
+> eBorder='0'></iframe>
+
+. log close
+      name:  <unnamed>
+       log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\reviewer27\review
+> er27.log
+  log type:  text
+ closed on:  23 Aug 2026, 09:51:21
+-------------------------------------------------------------------------------
