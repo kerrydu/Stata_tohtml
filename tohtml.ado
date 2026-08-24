@@ -1,3 +1,4 @@
+*! version 1.35, 2026-08-24
 *! version 1.34, 2026-08-23
 *! version 1.33, 2026-08-23
 *! version 1.32, 2026-08-23
@@ -385,6 +386,17 @@ program define tohtml_require
     if tohtml_has_mm == 0 {
         di as error "tohtml requires moremata (Mata function mm_outsheet)"
         di as error "install with:  ssc install moremata"
+        exit 111
+    }
+end
+
+capture program drop tohtml_require_fs
+program define tohtml_require_fs
+    version 16
+    capture which fs
+    if _rc {
+        di as error "tohtml directory mode requires fs (Nick Cox)"
+        di as error "install with:  ssc install fs"
         exit 111
     }
 end
@@ -3318,7 +3330,8 @@ capture program drop alltohtml
 program define alltohtml,rclass
     version 16
     syntax anything, [width(string) height(string) zoom(string)]
-    
+    tohtml_require_fs
+
     // check directory exists
     if "`zoom'"=="" local zoom "100%"
     else{

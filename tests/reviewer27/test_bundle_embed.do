@@ -5,12 +5,6 @@ local root "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
 adopath ++ "`root'"
 cd "`root'/tests/reviewer27"
 
-capture which pathutil
-if _rc {
-    di as error "pathutil not found"
-    exit 111
-}
-
 sysuse auto, clear
 collect clear
 table foreign, statistic(mean price) statistic(sd price)

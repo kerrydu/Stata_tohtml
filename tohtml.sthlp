@@ -363,12 +363,23 @@ scans for all HTML files starting with "table" and all image files starting with
 temporary Markdown file containing these resources.
 
 {pstd}
-{bf:Dependencies}: {cmd:tohtml} does not install other packages. If
-{cmd:moremata} is missing, it exits with a message.
+{bf:Dependencies}: {cmd:tohtml} never installs other packages
+({cmd:ssc install} is not run). Path helpers use Mata functions shipped
+with Stata 16+; {cmd:pathutil} is not required.
+If a listed package is missing, {cmd:tohtml} exits and prints the install
+command (the user must run it):
+
+{phang2}{cmd:moremata} ({cmd:mm_outsheet}) — {cmd:. ssc install moremata}{p_end}
+{phang2}{cmd:fs} (Nick Cox; directory input only) — {cmd:. ssc install fs}{p_end}
+
+{pstd}
 {cmd:markdown} is a built-in Stata command (Stata 16 or newer), not a package
 dependency.
 
-{phang2}{cmd:moremata} ({cmd:mm_outsheet}) — {cmd:. ssc install moremata}{p_end}
+{pstd}
+{bf:AI agents}: copy {bf:skills/stata-tohtml/} from the package source into
+the agent's skills folder so it can write {cmd:ishere}/{cmd:tohtml} do-files
+and run them to HTML.
 
 
 {title:Author}
