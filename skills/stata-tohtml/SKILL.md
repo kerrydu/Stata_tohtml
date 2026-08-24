@@ -26,8 +26,8 @@ a package. Full template: [examples.md](examples.md).
   `capture log close` → `tohtml`.
 - Headings: `ishere # Title` and `ishere ## Section`. Do not use a bare `#`
   heading in the do-file unless it is inside `/** ... **/`.
-- Code that should appear in the report: a lone `ishere` on the line before
-  the block and a lone `ishere` after it.
+- Code blocks: default `tohtml` auto-fences command lines as ` ```stata `.
+  Do not wrap code with a lone `ishere`.
 - Figures: `graph export "file.png", replace` then immediately
   `ishere fig using "file.png"`. Do not hand-write `<img>`.
 - Tables: export HTML first (`table ..., export()` / `collect export` /
@@ -53,9 +53,7 @@ adopath ++ "PATH/TO/tohtml"
 capture log close
 log using "report.log", replace text
 ishere # Title
-ishere
 * commands
-ishere
 ishere fig using "fig.png"
 ishere tab using "tab.html"
 capture log close

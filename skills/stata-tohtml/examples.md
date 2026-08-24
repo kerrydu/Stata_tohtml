@@ -1,5 +1,9 @@
 # Minimal tohtml do-file
 
+Default `tohtml` **auto-fences** Stata commands (lines echoed with `.`) as
+` ```stata ` blocks. Do **not** wrap code with a lone `ishere`.
+Use `ishere` only for headings, figures, tables, and in-text values.
+
 Copy this, set `root` to the folder that contains `tohtml.ado`, and run it
 under Stata 16+ (19+ if you use `table (var) (result)`). Requires moremata
 and, for the regression table, `outreg2e` from the same package.
@@ -20,25 +24,19 @@ capture log close
 log using "`out'/report.log", replace text
 
 ishere # Data Preparation
-ishere
 sysuse auto, clear
 disp "Observations: `c(N)'"
-
 gen lprice = ln(price)
 label var lprice "Log of price"
-ishere
 
 ishere # Figures
 ishere ## Figure 1
-ishere
 histogram price, normal title("Price distribution")
 graph export "`out'/price_hist.png", replace
 ishere fig using "`out'/price_hist.png"
-ishere
 
 ishere # Regression
 ishere ## Table 1
-ishere
 regress price mpg weight
 local r2 = e(r2)
 ishere display %5.3f `r2'
