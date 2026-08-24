@@ -78,4 +78,3 @@ tohtml "report.log", html("report.html") replace
 
 - Change `tohtml.ado` / `ishere.ado` unless the user asked to fix the package.
 - `ssc install` without asking.
-- Treat `markdown` as an installable dependency.
