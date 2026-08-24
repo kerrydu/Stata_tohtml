@@ -38,10 +38,9 @@ ishere fig using "`out'/price_hist.png"
 ishere # Regression
 ishere ## Table 1
 regress price mpg weight
-local r2 = e(r2)
-ishere display %5.3f `r2'
+ishere display %5.3f e(r2)
 /**
-The R-squared is {ishere display %5.3f `r2'}.
+The R-squared is {ishere display %5.3f e(r2)}.
 **/
 
 qui regress price mpg weight i.foreign, vce(robust)

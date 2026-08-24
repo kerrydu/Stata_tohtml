@@ -34,9 +34,9 @@ a package. Full template: [examples.md](examples.md).
   `outreg2e ..., html`), then `ishere tab using "file.html"`.
   Do not hand-write `<iframe>`.
 - Narrative: `/**` … `**/` for paragraphs, `$...$` / `$$...$$`, and Markdown images.
-- In-text numbers: emit with `ishere display %5.3f \`r2'`, then in the next
-  `/**` block write the tag `{ishere display %5.3f \`r2'}` as a **literal**
-  (same format string and argument; not a regex).
+- In-text numbers: emit with `ishere display %5.3f e(r2)`, then in the next
+  `/**` block write the tag `{ishere display %5.3f e(r2)}` as a **literal**
+  (same format string and argument; no `local` copy).
 - Finish with:
 
 ```stata

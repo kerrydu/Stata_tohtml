@@ -88,7 +88,8 @@ Produces no visible output. Leaves markers in the log that {help tohtml} uses la
 Prints content to the log (kept / processed by {help tohtml}):
 
 {pmore2}
-- Values: {cmd:ishere display} {it:...} prints the same output as {help display}.
+- Values: {cmd:ishere display} {it:...} prints the same output as {help display}
+  (scalars such as {cmd:e(r2)} are allowed; no {cmd:local} copy is needed).
   Place a matching tag {cmd:{c -(}ishere display} {it:...}{cmd:{c )-}} inside a
   {cmd:/**} ... {cmd:**/} narrative block; {help tohtml} replaces that tag with the
   printed value in the first narrative block that follows the command.
@@ -171,10 +172,9 @@ folder (a {cmd:.css} with no same-stem HTML). Two such files: pass
 
 {pstd}{bf:Mode 2: display values into narrative}{p_end}
 
-{phang2}{cmd:. local r2 = e(r2)}{p_end}
-{phang2}{cmd:. ishere display %5.3f `r2'}{p_end}
+{phang2}{cmd:. ishere display %5.3f e(r2)}{p_end}
 {phang2}{cmd:. /**}{p_end}
-{phang2}{cmd:. The R-squared is {c -(}ishere display %5.3f `r2'{c )-}.}{p_end}
+{phang2}{cmd:. The R-squared is {c -(}ishere display %5.3f e(r2){c )-}.}{p_end}
 {phang2}{cmd:. **/}{p_end}
 
 {pstd}{bf:Mode 2: figures and tables}{p_end}
