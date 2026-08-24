@@ -89,7 +89,7 @@ Prints content to the log (kept / processed by {help tohtml}):
 
 {pmore2}
 - Values: {cmd:ishere display} {it:...} prints the same output as {help display}
-  (scalars such as {cmd:e(r2)} are allowed; no {cmd:local} copy is needed).
+  (scalars such as {cmd:e(r2)} are allowed.
   Place a matching tag {cmd:{c -(}ishere display} {it:...}{cmd:{c )-}} inside a
   {cmd:/**} ... {cmd:**/} narrative block; {help tohtml} replaces that tag with the
   printed value in the first narrative block that follows the command.
