@@ -1,0 +1,230 @@
+<style id="tohtml-inline-css">
+:root {
+    --side-bar-bg-color: #fafafa;
+    --control-text-color: #777;
+    --font-sans-serif: "Open Sans", "Clear Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-monospace: "Consolas", "Monaco", "Bitstream Vera Sans Mono", "Courier New", monospace;
+}
+
+body {
+    font-family: var(--font-sans-serif);
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+    background-color: white;
+    margin: 0 auto;
+    padding: 2rem;
+    max-width: 900px;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #333;
+    line-height: 1.25;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: bold;
+}
+
+h1 { font-size: 2.25em; padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }
+h2 { font-size: 1.75em; padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }
+h3 { font-size: 1.5em; }
+h4 { font-size: 1.25em; }
+h5 { font-size: 1em; }
+h6 { font-size: 0.875em; color: #777; }
+
+/* Links */
+a {
+    color: #4183C4;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* Paragraphs & Lists */
+p, blockquote, ul, ol, dl, table, pre {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+ul, ol {
+    padding-left: 2em;
+}
+
+/* Blockquotes */
+blockquote {
+    padding: 0 1em;
+    color: #777;
+    border-left: 0.25em solid #dfe2e5;
+    background: transparent;
+}
+
+/* Tables - GitHub Style (markdown tables only).
+   Stata collect (class Table*) and outreg2e (.texout-table) keep their
+   own three-line rules; do not restyle them. */
+table:not([class^="Table"]):not(.texout-table) {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    margin-bottom: 16px;
+    display: block;
+    overflow: auto;
+}
+
+table:not([class^="Table"]):not(.texout-table) tr {
+    background-color: #fff;
+    border-top: 1px solid #c6cbd1;
+}
+
+table:not([class^="Table"]):not(.texout-table) tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+table:not([class^="Table"]):not(.texout-table) th,
+table:not([class^="Table"]):not(.texout-table) td {
+    border: 1px solid #dfe2e5;
+    padding: 6px 13px;
+    margin: 0;
+}
+
+table:not([class^="Table"]):not(.texout-table) th {
+    font-weight: 600;
+    background-color: #f6f8fa;
+}
+
+table[class^="Table"],
+table.texout-table,
+.tohtml-embedded-table table {
+    display: table;
+    width: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    overflow: visible;
+}
+
+table[class^="Table"] tr,
+table[class^="Table"] tr:nth-child(2n),
+table.texout-table tr,
+table.texout-table tr:nth-child(2n),
+.tohtml-embedded-table table tr,
+.tohtml-embedded-table table tr:nth-child(2n) {
+    background-color: transparent;
+    border: none;
+}
+
+/* Code Blocks & Inline Code */
+code, kbd, pre, samp {
+    font-family: var(--font-monospace);
+}
+
+/* Inline code */
+code {
+    background-color: #f3f4f4;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    margin: 0 2px;
+}
+
+/* Block code (pre) */
+pre {
+    background-color: #f8f8f8;
+    border: 1px solid #e7eaed;
+    border-radius: 3px;
+    padding: 16px;
+    overflow: auto;
+    line-height: 1.45;
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    border: none;
+    font-size: 100%; /* Reset from inline code size */
+}
+
+/* Stata fenced code: ```stata → <code class="language-stata"> */
+pre code.language-stata,
+code.language-stata {
+    color: #24292f;
+}
+
+pre:has(code.language-stata) {
+    background-color: #f6f8fa;
+    border-left: 4px solid #1a7f37;
+}
+
+/* Horizontal Rule */
+hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: #e7e7e7;
+    border: 0;
+}
+
+/* Images */
+img {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Tables inserted via iframe (collect / outreg HTML) */
+iframe {
+    border: 0;
+    width: 100%;
+    display: block;
+    margin: 0 0 16px 0;
+    overflow: auto;
+}
+
+/* MathJax */
+mjx-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+</style>
+<pre><code class="language-text">-------------------------------------------------------------------------------
+      name:  &lt;unnamed&gt;
+       log:  C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere_md_tab/mdtab.log
+  log type:  text
+ opened on:  24 Aug 2026, 14:38:13
+</code></pre>
+<h1><a href="#markdown-table-via-ishere-tab" id="markdown-table-via-ishere-tab">Markdown table via ishere tab</a></h1>
+<pre><code class="language-stata">
+. sysuse auto, clear
+(1978 automobile data)
+
+. summarize price mpg weight
+
+    Variable |        Obs        Mean    Std. dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         74    6165.257    2949.496       3291      15906
+         mpg |         74     21.2973    5.785503         12         41
+      weight |         74    3019.459    777.1936       1760       4840
+
+</code></pre>
+<p>A pipe table from <code>table1.md</code> should appear below (inlined, not an iframe).</p>
+<pre><code class="language-stata">. ishere tab using &quot;`here'/table1.md&quot;
+
+</code></pre>
+<table>
+<thead>
+<tr><th> Variable </th><th> Mean </th><th> SD </th></tr>
+</thead>
+<tbody>
+<tr><td> price </td><td> 6165.3 </td><td> 2949.5 </td></tr>
+<tr><td> mpg </td><td> 21.3 </td><td> 5.8 </td></tr>
+<tr><td> weight </td><td> 3019.5 </td><td> 777.2 </td></tr>
+</tbody>
+</table>
+<p>End of table test.</p>
+<pre><code class="language-stata">. log close
+      name:  &lt;unnamed&gt;
+       log:  C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere_md_tab/mdtab.log
+  log type:  text
+ closed on:  24 Aug 2026, 14:38:13
+-------------------------------------------------------------------------------
+</code></pre>

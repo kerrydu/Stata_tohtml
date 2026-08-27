@@ -1,3 +1,4 @@
+*! version 1.36, 2026-08-24
 *! version 1.35, 2026-08-24
 *! version 1.34, 2026-08-23
 *! version 1.33, 2026-08-23
@@ -1205,6 +1206,7 @@ void function rewrite_md_cleancode(string scalar ofi, string scalar tfi, real sc
 {
     // Replace {ishere display ...} from the full log first, then drop output.
     fcon = cat(ofi)
+    fcon = merge_html_vectorized(fcon)
     fcon = drop_stata_log_header(fcon)
     fcon = ishererep(fcon)
     fcon = merge_html_vectorized(fcon)
@@ -1217,6 +1219,7 @@ void function rewrite_md_cleancode(string scalar ofi, string scalar tfi, real sc
 void function rewrite_md(string scalar ofi, string scalar tfi, real scalar replace)
 {
     fcon = cat(ofi)
+    fcon = merge_html_vectorized(fcon)
     fcon = fence_stata_log_header(fcon)
     fcon = ishererep(fcon)
     fcon = merge_html_vectorized(fcon)
@@ -1308,6 +1311,7 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
 {
     // 1. 读取文件
     fcon = cat(ofi)
+    fcon = merge_html_vectorized(fcon)
     fcon = drop_stata_log_header(fcon)
     fcon = ishererep(fcon)
     // 2. 合并 HTML 行
@@ -2282,11 +2286,30 @@ real scalar html_embed_tag_complete(string scalar line)
     return(1)
 }
 
+real scalar is_stata_wrap_cont(string scalar line)
+{
+    return(usubstr(ustrltrim(line), 1, 1) == ">")
+}
+
+real scalar is_stata_cmd_echo(string scalar line)
+{
+    t = ustrltrim(line)
+    return(usubstr(t, 1, 1) == ".")
+}
+
+string scalar take_stata_wrap_payload(string scalar line)
+{
+    t = ustrltrim(line)
+    if (usubstr(t, 1, 1) != ">") return(t)
+    return(strtrim(usubstr(t, 2, .)))
+}
+
 string colvector merge_html_vectorized(string colvector f)
 {
-    // Stata wraps long <iframe>/<img> lines; continuations start with "> ".
-    // Absorb every following wrap until the tag is complete. A single
-    // pair-merge leaves leftover "> scrollHeight..." as fake Stata commands.
+    // Stata splits lines longer than linesize; the next line starts with "> ".
+    // Join those output wraps (log paths, <iframe>/<img>, long results).
+    // Do not join ". command" continuations: /** ... **/ narrative is echoed
+    // that way and must stay on separate lines until clean_textcell_content.
     n = rows(f)
     if (n == 0) return(f)
     out = J(0, 1, "")
@@ -2295,9 +2318,17 @@ string colvector merge_html_vectorized(string colvector f)
         line = f[i]
         if (is_html_embed_open(line)) {
             while (i < n & !html_embed_tag_complete(line)) {
-                nxt = ustrltrim(f[i + 1])
-                if (usubstr(nxt, 1, 1) != ">") break
-                line = line + strtrim(usubstr(nxt, 2, .))
+                if (!is_stata_wrap_cont(f[i + 1])) break
+                line = line + take_stata_wrap_payload(f[i + 1])
+                i++
+            }
+        }
+        else if (ustrtrim(line) != "" & !is_stata_cmd_echo(line) &
+            !is_stata_wrap_cont(line) &
+            usubstr(ustrltrim(line), 1, 3) != "```") {
+            while (i < n) {
+                if (!is_stata_wrap_cont(f[i + 1])) break
+                line = line + take_stata_wrap_payload(f[i + 1])
                 i++
             }
         }

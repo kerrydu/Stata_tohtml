@@ -124,7 +124,7 @@ the command will error.
 {phang}
 {opt css(filename)} applies a custom stylesheet to the generated HTML file.
 When {opt css()} is omitted, the package resource
-{bf:tohtml.css} is used (installed next to {cmd:tohtml.ado}; GitHub-like
+{bf:tohtml.css} (GitHub-like
 layout). Pass a file path only when you want a different stylesheet; the
 file must exist. The chosen CSS is copied to a
 {bf:css/} subdirectory beside the HTML output. Iframe tables from
@@ -315,7 +315,7 @@ commands together with figures and tables, without lengthy output.
 {pstd}
 SMCL logs are also accepted: if the input is {bf:.smcl} (or begins with {cmd:{c -(}smcl{c )-}}),
 {cmd:tohtml} automatically runs {help translate} with translator {cmd:smcl2log} before
-processing. Manual translation is no longer required.
+processing. 
 
 
 {title:Remarks}
@@ -363,13 +363,7 @@ scans for all HTML files starting with "table" and all image files starting with
 temporary Markdown file containing these resources.
 
 {pstd}
-{bf:Dependencies}: {cmd:tohtml} never installs other packages
-({cmd:ssc install} is not run). Path helpers use Mata functions shipped
-with Stata 16+; {cmd:pathutil} is not required.
-If a listed package is missing, {cmd:tohtml} exits and prints the install
-command (the user must run it):
-
-{phang2}{cmd:moremata} ({cmd:mm_outsheet}) — {cmd:. ssc install moremata}{p_end}
+{bf:Dependencies}: {cmd:moremata} ({cmd:mm_outsheet}) — {cmd:. ssc install moremata}{p_end}
 {phang2}{cmd:fs} (Nick Cox; directory input only) — {cmd:. ssc install fs}{p_end}
 
 {pstd}

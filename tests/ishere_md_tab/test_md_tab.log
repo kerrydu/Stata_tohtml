@@ -1,0 +1,158 @@
+
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       MP—Parallel Edition
+
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Single-user 16-core  perpetual
+Serial number: 3851871377
+  Licensed to: bbb
+               xxx
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+
+Running D:\Program\StataNow19\profile.do ...
+
+. do C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\ishere_md_tab\test_md_tab
+> .do 
+
+. clear all
+
+. set more off
+
+. capture log close _all
+
+. 
+. local root "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+
+. adopath ++ "`root'"
+  [1]              "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+  [2]  (BASE)      "D:\Program\StataNow19\ado\base/"
+  [3]  (SITE)      "D:\Program\StataNow19\ado\site/"
+  [4]              "."
+  [5]  (PERSONAL)  "E:/SynologyDrive\ado\personal/"
+  [6]  (PLUS)      "E:/SynologyDrive\ado\plus/"
+  [7]  (OLDPLACE)  "E:/SynologyDrive\data/"
+
+. local here "`root'/tests/ishere_md_tab"
+
+. capture mkdir "`here'"
+
+. cd "`here'"
+C:\Users\kerry\Desktop\tohtml\Stata_tohtml\tests\ishere_md_tab
+
+. 
+. * Sample Markdown table (GFM pipe table)
+. tempname fh
+
+. file open `fh' using "`here'/table1.md", write text replace
+
+. file write `fh' "| Variable | Mean | SD |" _n
+
+. file write `fh' "| --- | --- | --- |" _n
+
+. file write `fh' "| price | 6165.3 | 2949.5 |" _n
+
+. file write `fh' "| mpg | 21.3 | 5.8 |" _n
+
+. file write `fh' "| weight | 3019.5 | 777.2 |" _n
+
+. file close `fh'
+
+. 
+. capture erase "`here'/mdtab.log"
+
+. capture erase "`here'/mdtab.md"
+
+. capture erase "`here'/mdtab.html"
+
+. capture erase "`here'/mdtab_embed.md"
+
+. capture erase "`here'/mdtab_embed.html"
+
+. 
+. log using "`here'/mdtab.log", text replace
+(file
+    C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere_md_tab/mdtab.log
+    not found)
+-------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere_md_tab/mdt
+> ab.log
+  log type:  text
+ opened on:  24 Aug 2026, 14:38:13
+
+. 
+. ishere # Markdown table via ishere tab
+
+. sysuse auto, clear
+(1978 automobile data)
+
+. summarize price mpg weight
+
+    Variable |        Obs        Mean    Std. dev.       Min        Max
+-------------+---------------------------------------------------------
+       price |         74    6165.257    2949.496       3291      15906
+         mpg |         74     21.2973    5.785503         12         41
+      weight |         74    3019.459    777.1936       1760       4840
+
+. /**
+> A pipe table from `table1.md` should appear below (inlined, not an iframe).
+> **/
+. ishere tab using "`here'/table1.md"
+
+<iframe C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere_md_tab/table1.m
+> d ></iframe>
+
+. /**
+> End of table test.
+> **/
+. 
+. log close
+      name:  <unnamed>
+       log:  C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere_md_tab/mdt
+> ab.log
+  log type:  text
+ closed on:  24 Aug 2026, 14:38:13
+-------------------------------------------------------------------------------
+
+. 
+. di as result "=== default tohtml ==="
+=== default tohtml ===
+
+. tohtml "`here'/mdtab.log", md("`here'/mdtab.md") html("`here'/mdtab.html") re
+> place
+% markdown written to C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere_m
+> d_tab/mdtab.md
+successfully converted "C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere
+> _md_tab/mdtab.html"
+
+. 
+. di as result "=== embed tohtml ==="
+=== embed tohtml ===
+
+. tohtml "`here'/mdtab.log", md("`here'/mdtab_embed.md") html("`here'/mdtab_emb
+> ed.html") embed replace
+% markdown written to C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere_m
+> d_tab/mdtab_embed.md
+successfully converted "C:/Users/kerry/Desktop/tohtml/Stata_tohtml/tests/ishere
+> _md_tab/mdtab_embed.html"
+
+. 
+. di as result "DONE"
+DONE
+
+. 
+end of do-file
