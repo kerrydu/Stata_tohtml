@@ -2904,7 +2904,8 @@ quietly {
 				c_local cl_iframe_line `"`iframe'"'
 				c_local cl_iframe_close "                  "
 			}
-			if "`md'"!="" {   
+			* md is 0/1 after local md = (...); do not use "`md'"!="" (that is always true)
+			if `md' {
 				use `"`outing'"', clear
 				_texout2md v* using `"`strippedname'"', titleWide(`titleWide') headBorder(`headBorder') bottomBorder(`bottomBorder') `texopts' replace
 				local mdEndName "md"

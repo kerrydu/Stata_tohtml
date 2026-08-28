@@ -2,14 +2,54 @@
 	model1
 VARIABLES	price
 	
-mpg	-49.51
-	(86.16)
-weight	1.747***
-	(0.641)
-Constant	1,946
-	(3,597)
+mpg	-0
+	(0)
+mpg1	1
+	(0)
+o.mpg2	-
+	
+o.mpg3	-
+	
+o.mpg4	-
+	
+o.mpg5	-
+	
+o.mpg6	-
+	
+o.mpg7	-
+	
+o.mpg8	-
+	
+o.mpg9	-
+	
+o.mpg10	-
+	
+o.mpg11	-
+	
+o.mpg12	-
+	
+o.mpg13	-
+	
+o.mpg14	-
+	
+o.mpg15	-
+	
+o.mpg16	-
+	
+o.mpg17	-
+	
+o.mpg18	-
+	
+o.mpg19	-
+	
+o.mpg20	-
+	
+weight	0
+	(0)
+Constant	0
+	(0)
 	
 Observations	74
-R-squared	0.293
+R-squared	1.000
 Standard errors in parentheses	
 *** p<0.01, ** p<0.05, * p<0.1	

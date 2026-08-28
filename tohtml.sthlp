@@ -36,9 +36,13 @@ Basic usage
 {synopt:{opt css(filename)}}custom CSS file; default is package resource {bf:tohtml.css}{p_end}
 {synopt:{opt mathjax}}inject MathJax when equations are detected (independent of CSS){p_end}
 
+{syntab:Table options}
+{synopt:{opt tabwidth(size)}}max width of an inlined table box; overflow scrolls (default {bf:100%}){p_end}
+{synopt:{opt tabheight(size)}}max height of an inlined table box; overflow scrolls (default {bf:80vh}){p_end}
+
 {syntab:Portable package options}
 {synopt:{opt bundle}}collect figures/tables into {bf:figures/} and {bf:tables/} under the HTML folder{p_end}
-{synopt:{opt embed}}self-contained HTML: inline {bf:tohtml.css}, Base64 images, and HTML tables{p_end}
+{synopt:{opt embed}}self-contained HTML: inline {bf:tohtml.css} and Base64 images{p_end}
 {synopt:{opt zip(filename|.)}}create a zip archive of the HTML package (implies {cmd:bundle}); use {cmd:.} for default name{p_end}
 
 {syntab:Cleaning modes}
@@ -140,6 +144,31 @@ delimiters are detected in the cleaned Markdown (e.g. {cmd:$...$}, {cmd:$$...$$}
 internet access when viewing formulas.
 
 
+{dlgtab:Table options}
+
+{phang}
+{opt tabwidth(size)} sets the maximum width of each inlined table box
+({cmd:.tohtml-embedded-table}). If a table is wider than this, a horizontal
+scrollbar appears. The default is {bf:100%} of the report content width.
+A bare number is treated as pixels ({cmd:tabwidth(800)} → {bf:800px}).
+CSS lengths such as {cmd:100%}, {cmd:90vw}, and {cmd:800px} are accepted.
+Use {cmd:none}, {cmd:off}, or {cmd:.} to disable the width cap.
+
+{phang}
+{opt tabheight(size)} sets the maximum height of each inlined table box.
+If a table is taller than this, a vertical scrollbar appears. The default
+is {bf:80vh} (80% of the browser viewport). A bare number is treated as
+pixels ({cmd:tabheight(400)} → {bf:400px}). CSS lengths such as {cmd:80vh}
+and {cmd:600px} are accepted. Use {cmd:none}, {cmd:off}, or {cmd:.} to let
+the table grow with the page.
+
+{phang}
+These options apply in every report mode (default, {cmd:clean},
+{cmd:cleancode}, and {opt embed}), because HTML tables are always inlined.
+They require {opt html()}. They are independent of {opt width()}/{opt height()},
+which only affect directory-mode figures.
+
+
 {dlgtab:Portable package options}
 
 {phang}
@@ -157,38 +186,31 @@ where {bf:ROOT} is the directory of {opt html()}, then rewrites links to relativ
 ({cmd:./figures/...}, {cmd:./tables/...}, {cmd:./css/...}).
 
 {phang}
-{opt embed} writes a self-contained HTML file that does not need sidecar CSS, figure,
-or table files. The report stylesheet ({bf:tohtml.css}, or {opt css()}) is inlined
+{opt embed} writes a self-contained HTML file that does not need sidecar CSS or
+figure files. The report stylesheet ({bf:tohtml.css}, or {opt css()}) is inlined
 as a {cmd:<style>} block. Images are passed to {help markdown}'s {opt embedimage} (Base64 data URIs).
 Because {cmd:markdown} only embeds Markdown image links ({cmd:![ ](file.png)}),
 {cmd:tohtml} first rewrites local {cmd:<img src="...">} tags (PNG/JPEG/GIF/TIFF)
 to that syntax. SVG and other types are left as file links.
-HTML tables referenced by {cmd:<iframe src="file.html">} are read, and the table
-markup is inserted into the Markdown in place of the iframe. Table {cmd:<style>}
+HTML tables referenced by {cmd:ishere tab} ({cmd:<iframe src="file.html">}) are
+always inlined: the table markup replaces the iframe in every report mode
+({cmd:clean}, {cmd:cleancode}, default, and {opt embed}). If {cmd:ishere} was
+given {opt title()}, {cmd:tohtml} places that caption above the table
+(outside the scroll box) and below a figure, centered. Table {cmd:<style>}
 blocks are not written to Markdown (CSS braces break {cmd:markdown}); they are
 injected into the HTML {cmd:<head>} after conversion. Companion CSS written by
 {help collect export} (same basename as the table, or a {cmd:<link>} already in
 the table HTML) is inlined the same way. Scripts are dropped.
 Table and CSS files may be given as absolute or relative paths; they only need
-to exist (they are not rewritten). Image paths in {cmd:![ ](...)} and
-{cmd:<img>} tags are likewise left as written; {cmd:markdown, embedimage}
-accepts Windows absolute paths (e.g. {cmd:D:/...}) and encodes them as Base64.
-Without {opt embed}, tables remain iframes. {cmd:tohtml} attaches the
-companion stylesheet from {help collect export} ({cmd:tableonly} writes
-{it:name}{bf:.css} next to {it:name}{bf:.html}, or a name given in
-{cmd:cssfile()}) by wrapping a table fragment in a small HTML document and
-placing a {cmd:<link>} in {cmd:<head>}. The stylesheet is taken from an
-existing local {cmd:<link>} in the table HTML, else the same-basename
-{cmd:.css}, else the single unpaired collect CSS in that folder.
-{opt zip()} / {opt bundle} copy those CSS files next to the table under
-{bf:tables/} (and into the zip) and keep the {cmd:<link>} as a same-folder
-relative path. Figure and table
-{cmd:src} attributes keep the path as written when it is absolute, or when a
+to exist. Image paths in {cmd:![ ](...)} and {cmd:<img>} tags are left as written
+unless {opt embed} is used; then {cmd:markdown, embedimage} accepts Windows
+absolute paths (e.g. {cmd:D:/...}) and encodes them as Base64.
+Figure {cmd:src} attributes keep the path as written when it is absolute, or when a
 relative path resolves from the report HTML folder. If a relative
-{cmd:<iframe>} / {cmd:<img>} path would not work from that folder, it is
+{cmd:<img>} path would not work from that folder, it is
 replaced by the file's absolute path so the browser can load it.
 You may combine {opt embed} with {opt bundle}/{opt zip()}, but a successful
-{opt embed} already inlines the report CSS plus the usual figure and table files.
+{opt embed} already inlines the report CSS and figure files.
 
 {phang}
 {opt zip(filename|.)} first performs {opt bundle}, then creates a zip archive with Stata's
@@ -253,6 +275,11 @@ commands together with figures and tables, without lengthy output.
 
 {pstd}Self-contained HTML: Base64 images and inlined HTML tables{p_end}
 {phang2}{cmd:. tohtml "analysis.log", html("report.html") embed replace}{p_end}
+
+{pstd}Scroll a wide or tall inlined table (defaults are {bf:100%} × {bf:80vh}){p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report.html") tabwidth(100%) tabheight(80vh) replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report.html") tabheight(400) replace}{p_end}
+{phang2}{cmd:. tohtml "analysis.log", html("report.html") tabheight(none) replace}{p_end}
 
 {pstd}Bundle and create a zip archive for sharing{p_end}
 {phang2}{cmd:. tohtml "analysis.log", html("report/report.html") zip(.) replace}{p_end}

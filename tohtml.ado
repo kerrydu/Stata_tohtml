@@ -1,3 +1,9 @@
+*! version 1.43, 2026-08-29
+*! version 1.42, 2026-08-28
+*! version 1.41, 2026-08-28
+*! version 1.40, 2026-08-28
+*! version 1.39, 2026-08-28
+*! version 1.38, 2026-08-28
 *! version 1.37, 2026-08-28
 *! version 1.36, 2026-08-24
 *! version 1.35, 2026-08-24
@@ -43,7 +49,8 @@ version 16
                          CSS(string) MATHJAX EMBED ///
                          CLEAN CLEANCODE ///
                          BUNDLE ZIP(string) ///
-                         width(string) height(string) zoom(string)]
+                         width(string) height(string) zoom(string) ///
+                         TABWidth(string) TABHeight(string)]
 
     if "`clean'" != "" & "`cleancode'" != "" {
         di as error "options clean and cleancode may not be combined"
@@ -125,13 +132,15 @@ version 16
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
-        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed'
+        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed' ///
+            tabwidth(`tabwidth') tabheight(`tabheight')
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
     }
-    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/mathjax/embed/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" ///
+        | "`tabwidth'" != "" | "`tabheight'" != "" {
+        di as error "css()/mathjax/embed/bundle/zip/tabwidth()/tabheight() require html()"
         exit 198
     }
 end
@@ -141,7 +150,8 @@ program define cleancode
     syntax anything , CLEANCODE [MD(string) REPlace HTML(string) ///
                                          CSS(string) MATHJAX EMBED ///
                                          BUNDLE ZIP(string) ///
-                                         width(string) height(string) zoom(string)]
+                                         width(string) height(string) zoom(string) ///
+                                         TABWidth(string) TABHeight(string)]
 
     removequotes , t(`anything')
     local anything  `r(s)'
@@ -187,13 +197,15 @@ program define cleancode
 
     // Optional: regenerate HTML from code markdown
     if "`html'" != "" {
-        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed' highlight
+        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed' highlight ///
+            tabwidth(`tabwidth') tabheight(`tabheight')
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
     }
-    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/mathjax/embed/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" ///
+        | "`tabwidth'" != "" | "`tabheight'" != "" {
+        di as error "css()/mathjax/embed/bundle/zip/tabwidth()/tabheight() require html()"
         exit 198
     }
 end
@@ -210,7 +222,8 @@ program define mclean
     syntax anything , [MD(string)  REPlace HTML(string) CSS(string) MATHJAX ///
                        EMBED CLEAN CLEANCODE ///
                        BUNDLE ZIP(string) ///
-                       width(string) height(string) zoom(string)]
+                       width(string) height(string) zoom(string) ///
+                       TABWidth(string) TABHeight(string)]
     // only keep lines that start with #, <iframe, <img
 
     removequotes , t(`anything')
@@ -257,13 +270,15 @@ program define mclean
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
-        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed'
+        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed' ///
+            tabwidth(`tabwidth') tabheight(`tabheight')
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
     }
-    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/mathjax/embed/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" ///
+        | "`tabwidth'" != "" | "`tabheight'" != "" {
+        di as error "css()/mathjax/embed/bundle/zip/tabwidth()/tabheight() require html()"
         exit 198
     }
 end
@@ -274,7 +289,8 @@ program define mclean2
     syntax [anything] , [MD(string)  REPlace HTML(string) CSS(string) MATHJAX ///
                        EMBED CLEAN CLEANCODE ///
                        BUNDLE ZIP(string) ///
-                       width(string) height(string) zoom(string)]
+                       width(string) height(string) zoom(string) ///
+                       TABWidth(string) TABHeight(string)]
     // only keep lines that start with #, <iframe, <img
 
     // removequotes , t(`anything')
@@ -317,13 +333,15 @@ program define mclean2
 
     // Optional: regenerate HTML from cleaned markdown
     if "`html'" != "" {
-        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed'
+        tohtml_emit_html, md(`"`outfile'"') html(`"`html'"') css(`"`css'"') `mathjax' `embed' ///
+            tabwidth(`tabwidth') tabheight(`tabheight')
         if "`zip'" != "" | "`bundle'" != "" {
             tohtml_bundle, html(`"`html'"') md(`"`outfile'"') zip(`"`zip'"') `replace'
         }
     }
-    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" {
-        di as error "css()/mathjax/embed/bundle/zip require html()"
+    else if "`css'" != "" | "`mathjax'" != "" | "`embed'" != "" | "`bundle'" != "" | "`zip'" != "" ///
+        | "`tabwidth'" != "" | "`tabheight'" != "" {
+        di as error "css()/mathjax/embed/bundle/zip/tabwidth()/tabheight() require html()"
         exit 198
     }
 end
@@ -447,27 +465,28 @@ end
 capture program drop tohtml_emit_html
 program define tohtml_emit_html
     version 16
-    syntax , MD(string) HTML(string) [CSS(string) MATHJAX HIGHLIGHT EMBED]
+    syntax , MD(string) HTML(string) [CSS(string) MATHJAX HIGHLIGHT EMBED TABWidth(string) TABHeight(string)]
+
+    mata: st_local("html_dir", path_dir(`"`html'"'))
+    if "`html_dir'" == "" local html_dir "."
+
+    // HTML tables are always inlined (same path as embed).
+    local convimg = ("`embed'" != "")
+    mata: tohtml_inline_tables(`"`md'"', `convimg')
 
     if "`embed'" != "" {
-        mata: tohtml_prepare_embed(`"`md'"')
         mata: st_local("embase", tohtml_get_resource_root())
         markdown `"`md'"', saving(`"`html'"') replace embedimage basedir(`"`embase'"')
     }
     else {
-        mata: st_local("html_dir", path_dir(`"`html'"'))
-        if "`html_dir'" == "" local html_dir "."
         mata: tohtml_fix_default_refs(`"`md'"', `"`html_dir'"')
         markdown `"`md'"', saving(`"`html'"') replace
     }
     tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`md'"') `mathjax' `highlight' `embed'
-    if "`embed'" != "" {
-        mata: inject_embed_table_styles(`"`html'"')
-    }
-    else {
+    mata: inject_embed_table_styles(`"`html'"')
+    mata: inject_table_scroll_css(`"`html'"', `"`tabwidth'"', `"`tabheight'"')
+    if "`embed'" == "" {
         mata: tohtml_finish_default_refs(`"`html'"')
-        mata: fit_table_iframes(`"`html'"', `"`html_dir'"')
-        mata: fit_table_iframes(`"`md'"', `"`html_dir'"')
     }
 end
 
@@ -546,10 +565,6 @@ program define tohtml_bundle
     cap mkdir "`html_dir'/tables"
 
     mata: bundle_report(`"`html'"', `"`md'"')
-    mata: fit_table_iframes(`"`html'"', `"`html_dir'"')
-    if `"`md'"' != "" {
-        mata: fit_table_iframes(`"`md'"', `"`html_dir'"')
-    }
     di as text "% resources bundled under `html_dir'/{css,figures,tables}"
 
     if `"`zip'"' == "" exit
@@ -1111,7 +1126,6 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
                 for (k = 1; k <= rows(css_bases); k++) {
                     ziprel = ziprel \ (zipfolder + css_bases[k])
                 }
-                compact_iframe_document(resolved)
             }
             continue
         }
@@ -1151,7 +1165,6 @@ void function bundle_report(string scalar htmlfile, string scalar mdfile)
             for (k = 1; k <= rows(css_bases); k++) {
                 ziprel = ziprel \ (zipfolder + css_bases[k])
             }
-            compact_iframe_document(dest)
         }
     }
 
@@ -1402,7 +1415,65 @@ string scalar iframe_bare_path(string scalar line)
             line2 = strtrim(substr(line2, 1, strlen(line2)-1))
         }
     }
+    // Markdown-table markers are "<iframe path.md></iframe>". Keep only
+    // the path token so data-tohtml-title= and other attributes are ignored.
+    if (ustrregexm(ustrltrim(line2), `"^([^ \t>]+)"')) {
+        return(ustrregexs(1))
+    }
     return(line2)
+}
+
+string scalar html_data_attr(string scalar tag, string scalar name)
+{
+    if (name == "") return("")
+    if (ustrregexm(tag, "(?i)" + name + `" *= *"([^"]*)""')) return(ustrregexs(1))
+    if (ustrregexm(tag, "(?i)" + name + `" *= *'([^']*)'"')) return(ustrregexs(1))
+    return("")
+}
+
+string scalar strip_html_attr(string scalar tag, string scalar name)
+{
+    if (name == "") return(tag)
+    tag = ustrregexra(tag, "(?i)[ \t]+" + name + `" *= *"[^"]*""', "")
+    tag = ustrregexra(tag, "(?i)[ \t]+" + name + `" *= *'[^']*'"', "")
+    return(tag)
+}
+
+string colvector wrap_captioned_block(string scalar kind, string scalar cap, string colvector body)
+{
+    string scalar q, open, close, capel, cls, capcls
+    if (ustrtrim(cap) == "") return(body)
+    q = char(34)
+    if (kind == "figure") {
+        cls = "tohtml-figure"
+        capcls = "tohtml-fig-title"
+    }
+    else {
+        cls = "tohtml-table-block"
+        capcls = "tohtml-table-title"
+    }
+    open = "<figure class=" + q + cls + q + ">"
+    capel = "<figcaption class=" + q + capcls + q + ">" + cap + "</figcaption>"
+    close = "</figure>"
+    if (kind == "figure") {
+        return((open) \ body \ (capel) \ (close))
+    }
+    return((open) \ (capel) \ body \ (close))
+}
+
+string colvector wrap_img_caption(string scalar line, real scalar convert_img)
+{
+    string scalar cap, img
+    cap = html_data_attr(line, "data-tohtml-title")
+    img = strip_html_attr(line, "data-tohtml-title")
+    if (convert_img) {
+        img = rewrite_md_bang_images(html_img_to_md_image(img))
+    }
+    if (ustrtrim(cap) == "") return((img))
+    if (convert_img) {
+        return(wrap_captioned_block("figure", cap, ("" \ img \ "")))
+    }
+    return(wrap_captioned_block("figure", cap, (img)))
 }
 
 real scalar img_ext_embeddable(string scalar src)
@@ -1571,6 +1642,10 @@ string colvector split_newlines(string scalar s)
 void function collect_embed_style(string scalar st)
 {
     external string scalar tohtml_embed_css
+    st = ustrtrim(st)
+    if (st == "") return
+    // iframe-document rules must not restyle the report page
+    st = ustrregexra(st, `"(?i)html\s*,\s*body\s*\{[^}]*\}"', "")
     st = ustrtrim(st)
     if (st == "") return
     if (tohtml_embed_css == "") {
@@ -1923,7 +1998,7 @@ string colvector extract_html_table_fragment(string scalar htmlfile)
     return(split_newlines(wrapped))
 }
 
-string colvector inline_iframe_tables(string colvector lines, string scalar mdfile)
+string colvector inline_iframe_tables(string colvector lines, string scalar mdfile, real scalar convert_img)
 {
     root = pathgetparent(mdfile)
     if (root == "") root = pwd()
@@ -1942,9 +2017,10 @@ string colvector inline_iframe_tables(string colvector lines, string scalar mdfi
         }
         t = ustrltrim(line)
         if (usubstr(t, 1, 7) != "<iframe") {
-            out = out \ rewrite_md_bang_images(html_img_to_md_image(line))
+            out = out \ wrap_img_caption(line, convert_img)
             continue
         }
+        cap = html_data_attr(line, "data-tohtml-title")
         srcs = extract_src_attrs(line)
         src = ""
         if (rows(srcs) > 0) src = srcs[1]
@@ -1976,22 +2052,34 @@ string colvector inline_iframe_tables(string colvector lines, string scalar mdfi
             continue
         }
         frag = select(frag, strtrim(frag) :!= "")
-        out = out \ "" \ frag \ ""
+        if (ext == ".md" & ustrtrim(cap) != "") {
+            q = char(34)
+            capel = "<p class=" + q + "tohtml-table-title" + q + ">" + cap + "</p>"
+            out = out \ "" \ capel \ "" \ frag \ ""
+        }
+        else {
+            out = out \ "" \ wrap_captioned_block("table", cap, frag) \ ""
+        }
     }
     return(out)
 }
 
-void function tohtml_prepare_embed(string scalar mdfile)
+void function tohtml_inline_tables(string scalar mdfile, real scalar convert_img)
 {
     external string scalar tohtml_embed_css
     if (!fileexists(mdfile)) {
-        errprintf("tohtml embed: Markdown file not found: %s\n", mdfile)
+        errprintf("tohtml: Markdown file not found: %s\n", mdfile)
         exit(601)
     }
     tohtml_embed_css = ""
     lines = cat(mdfile)
-    lines = inline_iframe_tables(lines, mdfile)
+    lines = inline_iframe_tables(lines, mdfile, convert_img)
     mm_outsheet(mdfile, lines, "replace")
+}
+
+void function tohtml_prepare_embed(string scalar mdfile)
+{
+    tohtml_inline_tables(mdfile, 1)
 }
 
 void function inject_embed_table_styles(string scalar htmlfile)
@@ -2002,6 +2090,61 @@ void function inject_embed_table_styles(string scalar htmlfile)
     if (rows(lines) == 0) return
 
     csslines = split_newlines(tohtml_embed_css)
+    idx = selectindex(ustrpos(lines, "</head>") :> 0)
+    if (length(idx) > 0) {
+        i = idx[1]
+        if (i > 1) {
+            lines = lines[|1 \ i-1|] \ csslines \ lines[|i \ rows(lines)|]
+        }
+        else {
+            lines = csslines \ lines
+        }
+    }
+    else {
+        lines = csslines \ lines
+    }
+    mm_outsheet(htmlfile, lines, "replace")
+}
+
+string scalar normalize_table_css_size(string scalar raw, string scalar def)
+{
+    string scalar s, sl
+    s = ustrtrim(raw)
+    if (s == "") return(def)
+    sl = ustrlower(s)
+    if (sl == "none" | sl == "off" | sl == ".") return("none")
+    if (ustrregexm(s, "[;{}<>" + char(34) + char(39) + "]")) return(def)
+    if (ustrregexm(s, "^[0-9]+(\.[0-9]+)?$")) return(s + "px")
+    return(s)
+}
+
+void function inject_table_scroll_css(string scalar htmlfile, string scalar maxw, string scalar maxh)
+{
+    string scalar css, q
+    string colvector lines, csslines
+    real colvector idx
+    real scalar i
+
+    maxw = normalize_table_css_size(maxw, "100%")
+    maxh = normalize_table_css_size(maxh, "80vh")
+    q = char(34)
+    css = "<style id=" + q + "tohtml-table-scroll" + q + ">" + char(10)
+    css = css + ".tohtml-embedded-table {" + char(10)
+    css = css + "  overflow: auto;" + char(10)
+    css = css + "  max-width: " + maxw + ";" + char(10)
+    css = css + "  max-height: " + maxh + ";" + char(10)
+    css = css + "  -webkit-overflow-scrolling: touch;" + char(10)
+    css = css + "}" + char(10)
+    css = css + ".tohtml-embedded-table table," + char(10)
+    css = css + ".tohtml-embedded-table .texout-table {" + char(10)
+    css = css + "  max-width: none !important;" + char(10)
+    css = css + "  width: max-content;" + char(10)
+    css = css + "}" + char(10)
+    css = css + "</style>"
+
+    lines = cat(htmlfile)
+    if (rows(lines) == 0) return
+    csslines = split_newlines(css)
     idx = selectindex(ustrpos(lines, "</head>") :> 0)
     if (length(idx) > 0) {
         i = idx[1]
@@ -2068,130 +2211,6 @@ void function tohtml_finish_default_refs(string scalar htmlfile)
     tohtml_fix_default_refs(htmlfile, pathgetparent(htmlfile))
 }
 
-real scalar count_html_tr(string scalar htmlfile)
-{
-    if (!fileexists(htmlfile)) return(0)
-    raw = cat(htmlfile)
-    if (rows(raw) == 0) return(0)
-    blob = ustrlower(join_lines(raw))
-    n = 0
-    for (k = 1; k <= 2000; k++) {
-        p = ustrpos(blob, "<tr")
-        if (p == 0) break
-        n++
-        blob = usubstr(blob, p + 3, .)
-    }
-    return(n)
-}
-
-real scalar iframe_height_from_rows(real scalar nrows)
-{
-    if (nrows <= 0) nrows = 8
-    h = 52 + nrows * 34
-    if (h < 90) h = 90
-    return(h)
-}
-
-string scalar iframe_onload_attr()
-{
-    return(`"onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'px';""')
-}
-
-string scalar restyle_iframe_tag(string scalar line, real scalar hpx)
-{
-    h = strofreal(hpx) + "px"
-    dq = char(34)
-    sq = char(39)
-    if (ustrregexm(line, `"height *= *'[^']*'"')) {
-        line = usubinstr(line, ustrregexs(0), "height=" + sq + h + sq, 1)
-    }
-    else if (ustrregexm(line, `"height *= *"[^"]*""')) {
-        line = usubinstr(line, ustrregexs(0), "height=" + dq + h + dq, 1)
-    }
-    if (ustrregexm(line, `"scrolling *= *'[^']*'"')) {
-        line = usubinstr(line, ustrregexs(0), "scrolling=" + sq + "auto" + sq, 1)
-    }
-    else if (ustrregexm(line, `"scrolling *= *"[^"]*""')) {
-        line = usubinstr(line, ustrregexs(0), "scrolling=" + dq + "auto" + dq, 1)
-    }
-    low = ustrlower(line)
-    extra = ""
-    if (ustrpos(low, "scrolling=") == 0) {
-        extra = extra + " scrolling=" + sq + "auto" + sq
-    }
-    if (ustrpos(low, "onload=") == 0) {
-        extra = extra + " " + iframe_onload_attr()
-    }
-    if (extra != "") {
-        p = ustrpos(line, "></iframe>")
-        if (p > 0) {
-            line = usubstr(line, 1, p - 1) + extra + usubstr(line, p, .)
-        }
-        else {
-            p = ustrpos(line, ">")
-            if (p > 0) {
-                line = usubstr(line, 1, p - 1) + extra + usubstr(line, p, .)
-            }
-        }
-    }
-    return(line)
-}
-
-void function compact_iframe_document(string scalar tabfile)
-{
-    if (!fileexists(tabfile)) return
-    lines = cat(tabfile)
-    if (rows(lines) == 0) return
-    if (sum(ustrpos(lines, "tohtml-iframe-compact") :> 0) > 0) return
-    style = `"<style id="tohtml-iframe-compact">html,body{margin:0;padding:8px;}body{overflow:auto;}</style>"'
-    idx = selectindex(ustrpos(ustrlower(lines), "</head>") :> 0)
-    if (length(idx) > 0) {
-        i = idx[1]
-        if (i > 1) lines = lines[|1 \ i-1|] \ style \ lines[|i \ rows(lines)|]
-        else lines = style \ lines
-    }
-    else {
-        lines = style \ lines
-    }
-    mm_outsheet(tabfile, lines, "replace")
-}
-
-void function fit_table_iframes(string scalar reportfile, string scalar basedir)
-{
-    if (!fileexists(reportfile)) return
-    if (basedir == "") basedir = pathgetparent(reportfile)
-    if (basedir == "") basedir = pwd()
-    lines = cat(reportfile)
-    if (rows(lines) == 0) return
-    changed = 0
-    infence = 0
-    for (i = 1; i <= rows(lines); i++) {
-        line = lines[i]
-        if (is_md_fence_line(line)) {
-            infence = !infence
-            continue
-        }
-        if (infence) continue
-        t = ustrltrim(line)
-        if (usubstr(t, 1, 7) != "<iframe") continue
-        srcs = extract_src_attrs(line)
-        src = ""
-        if (rows(srcs) > 0) src = srcs[1]
-        else src = iframe_bare_path(line)
-        if (src == "" | path_is_remote(src)) continue
-        ext = path_suffix_lower(src)
-        if (ext != ".html" & ext != ".htm") continue
-        resolved = resolve_local_file(src, basedir)
-        if (resolved == "") continue
-        hpx = iframe_height_from_rows(count_html_tr(resolved))
-        news = restyle_iframe_tag(line, hpx)
-        if (news != line) {
-            lines[i] = news
-            changed = 1
-        }
-    }
-    if (changed) mm_outsheet(reportfile, lines, "replace")
-}
 
 real colvector is_md_fence_line(string colvector lines)
 {
@@ -2283,6 +2302,22 @@ string scalar take_stata_wrap_payload(string scalar line)
     return(strtrim(usubstr(t, 2, .)))
 }
 
+string scalar join_stata_wrap(string scalar line, string scalar nxt)
+{
+    payload = take_stata_wrap_payload(nxt)
+    // Stata drops the space between HTML attributes when it wraps at that
+    // space. Restore it only if the previous line already closed a quoted
+    // value. If the wrap split a name (data-tohtml-ti / tle="..."), do not
+    // insert a space.
+    if (payload != "" & ustrregexm(ustrlower(payload), `"^[a-z][a-z0-9_-]* *="')) {
+        last = usubstr(ustrrtrim(line), ustrlen(ustrrtrim(line)), 1)
+        if (last == char(34) | last == char(39) | last == ">") {
+            return(line + " " + payload)
+        }
+    }
+    return(line + payload)
+}
+
 string colvector merge_html_vectorized(string colvector f)
 {
     // Stata splits lines longer than linesize; the next line starts with "> ".
@@ -2298,7 +2333,7 @@ string colvector merge_html_vectorized(string colvector f)
         if (is_html_embed_open(line)) {
             while (i < n & !html_embed_tag_complete(line)) {
                 if (!is_stata_wrap_cont(f[i + 1])) break
-                line = line + take_stata_wrap_payload(f[i + 1])
+                line = join_stata_wrap(line, f[i + 1])
                 i++
             }
         }
@@ -2307,7 +2342,7 @@ string colvector merge_html_vectorized(string colvector f)
             usubstr(ustrltrim(line), 1, 3) != "```") {
             while (i < n) {
                 if (!is_stata_wrap_cont(f[i + 1])) break
-                line = line + take_stata_wrap_payload(f[i + 1])
+                line = join_stata_wrap(line, f[i + 1])
                 i++
             }
         }

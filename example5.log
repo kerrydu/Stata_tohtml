@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\example5.log
   log type:  text
- opened on:  28 Aug 2026, 17:18:48
+ opened on:  29 Aug 2026, 00:31:45
 
 . 
 . ishere # Output Variant Comparison
@@ -22,36 +22,94 @@
        price |         74    6165.257    2949.496       3291      15906
          mpg |         74     21.2973    5.785503         12         41
 
-. regress price mpg weight
+. scatter price mpg
+
+. graph export "scatter.png", replace
+file scatter.png saved as PNG format
+
+. ishere fig using "scatter.png", title("Price versus fuel efficiency")
+
+<img src="scatter.png" style="zoom:100%;" data-tohtml-title="Price versus fuel 
+> efficiency">
+
+. 
+. local len 20 
+
+. forv i=1/20{
+  2.     gen mpg`i' = price
+  3. }
+
+. regress price mpg* weight
+note: mpg2 omitted because of collinearity.
+note: mpg3 omitted because of collinearity.
+note: mpg4 omitted because of collinearity.
+note: mpg5 omitted because of collinearity.
+note: mpg6 omitted because of collinearity.
+note: mpg7 omitted because of collinearity.
+note: mpg8 omitted because of collinearity.
+note: mpg9 omitted because of collinearity.
+note: mpg10 omitted because of collinearity.
+note: mpg11 omitted because of collinearity.
+note: mpg12 omitted because of collinearity.
+note: mpg13 omitted because of collinearity.
+note: mpg14 omitted because of collinearity.
+note: mpg15 omitted because of collinearity.
+note: mpg16 omitted because of collinearity.
+note: mpg17 omitted because of collinearity.
+note: mpg18 omitted because of collinearity.
+note: mpg19 omitted because of collinearity.
+note: mpg20 omitted because of collinearity.
 
       Source |       SS           df       MS      Number of obs   =        74
--------------+----------------------------------   F(2, 71)        =     14.74
-       Model |   186321280         2  93160639.9   Prob > F        =    0.0000
-    Residual |   448744116        71  6320339.67   R-squared       =    0.2934
--------------+----------------------------------   Adj R-squared   =    0.2735
-       Total |   635065396        73  8699525.97   Root MSE        =      2514
+-------------+----------------------------------   F(3, 70)        =         .
+       Model |   635065396         3   211688465   Prob > F        =         .
+    Residual |           0        70           0   R-squared       =    1.0000
+-------------+----------------------------------   Adj R-squared   =    1.0000
+       Total |   635065396        73  8699525.97   Root MSE        =         0
 
 ------------------------------------------------------------------------------
        price | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
 -------------+----------------------------------------------------------------
-         mpg |  -49.51222   86.15604    -0.57   0.567    -221.3025     122.278
-      weight |   1.746559   .6413538     2.72   0.008      .467736    3.025382
-       _cons |   1946.069    3597.05     0.54   0.590    -5226.245    9118.382
+         mpg |  -1.33e-14          .        .       .            .           .
+        mpg1 |          1          .        .       .            .           .
+        mpg2 |          0  (omitted)
+        mpg3 |          0  (omitted)
+        mpg4 |          0  (omitted)
+        mpg5 |          0  (omitted)
+        mpg6 |          0  (omitted)
+        mpg7 |          0  (omitted)
+        mpg8 |          0  (omitted)
+        mpg9 |          0  (omitted)
+       mpg10 |          0  (omitted)
+       mpg11 |          0  (omitted)
+       mpg12 |          0  (omitted)
+       mpg13 |          0  (omitted)
+       mpg14 |          0  (omitted)
+       mpg15 |          0  (omitted)
+       mpg16 |          0  (omitted)
+       mpg17 |          0  (omitted)
+       mpg18 |          0  (omitted)
+       mpg19 |          0  (omitted)
+       mpg20 |          0  (omitted)
+      weight |   2.17e-16          .        .       .            .           .
+       _cons |   9.09e-13          .        .       .            .           .
 ------------------------------------------------------------------------------
 
 . estimates store model1
 
-. outreg2e [model1] using "table_regression", replace md
-table_regression.md
+. outreg2e [model1] using "table_regression", replace html
+table_regression.html
 dir : seeout
 
-. ishere tab using "table_regression.md"
+. ishere tab using "table_regression.html", title("Regression of price on mpg a
+> nd weight")
 
-<iframe table_regression.md ></iframe>
+<iframe src='table_regression.html' width='100%' frameBorder='0' data-tohtml-ti
+> tle="Regression of price on mpg and weight"></iframe>
 
 . log close
       name:  <unnamed>
        log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\example5.log
   log type:  text
- closed on:  28 Aug 2026, 17:18:49
+ closed on:  29 Aug 2026, 00:31:47
 -------------------------------------------------------------------------------

@@ -1,35 +1,69 @@
 
+  ___  ____  ____  ____  ____ ®
+ /__    /   ____/   /   ____/      StataNow 19.5
+___/   /   /___/   /   /___/       MP—Parallel Edition
 
-```text
+ Statistics and Data Science       Copyright 1985-2025 StataCorp LLC
+                                   StataCorp
+                                   4905 Lakeway Drive
+                                   College Station, Texas 77845 USA
+                                   800-782-8272        https://www.stata.com
+                                   979-696-4600        service@stata.com
+
+Stata license: Single-user 16-core  perpetual
+Serial number: 3851871377
+  Licensed to: bbb
+               xxx
+
+Notes:
+      1. Stata is running in batch mode.
+      2. Unicode is supported; see help unicode_advice.
+      3. More than 2 billion observations are allowed; see help obs_advice.
+      4. Maximum number of variables is set to 5,000 but can be increased;
+          see help set_maxvar.
+
+
+Running D:\Program\StataNow19\profile.do ...
+
+. do C:/Users/kerry/Desktop/tohtml/Stata_tohtml/example-clean.do 
+
+. cd "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+C:\Users\kerry\Desktop\tohtml\Stata_tohtml
+
+. adopath ++ "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+  [1]              "C:/Users/kerry/Desktop/tohtml/Stata_tohtml"
+  [2]  (BASE)      "D:\Program\StataNow19\ado\base/"
+  [3]  (SITE)      "D:\Program\StataNow19\ado\site/"
+  [4]              "."
+  [5]  (PERSONAL)  "E:/SynologyDrive\ado\personal/"
+  [6]  (PLUS)      "E:/SynologyDrive\ado\plus/"
+  [7]  (OLDPLACE)  "E:/SynologyDrive\data/"
+
+. clear all
+
+. set more off
+
+. 
+. capture log close
+
+. log using "example5.log", text replace
 -------------------------------------------------------------------------------
       name:  <unnamed>
        log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\example5.log
   log type:  text
  opened on:  29 Aug 2026, 00:31:45
-```
 
-
-
-
-
-
-# Output Variant Comparison
-
-
-```stata
+. 
+. ishere # Output Variant Comparison
 
 . sysuse auto, clear
 (1978 automobile data)
 
-```
-
-
-
-This report summarizes automobile prices and fuel efficiency.
-
-
-
-```stata
+. 
+. /**
+> This report summarizes automobile prices and fuel efficiency.
+> **/
+. 
 . summarize price mpg
 
     Variable |        Obs        Mean    Std. dev.       Min        Max
@@ -44,17 +78,10 @@ file scatter.png saved as PNG format
 
 . ishere fig using "scatter.png", title("Price versus fuel efficiency")
 
-```
+<img src="scatter.png" style="zoom:100%;" data-tohtml-title="Price versus fuel 
+> efficiency">
 
-
-<figure class="tohtml-figure">
-<img src="scatter.png" style="zoom:100%;">
-<figcaption class="tohtml-fig-title">Price versus fuel efficiency</figcaption>
-</figure>
-
-
-```stata
-
+. 
 . local len 20 
 
 . forv i=1/20{
@@ -126,157 +153,8 @@ dir : seeout
 . ishere tab using "table_regression.html", title("Regression of price on mpg a
 > nd weight")
 
-```
-
-
-
-<figure class="tohtml-table-block">
-<figcaption class="tohtml-table-title">Regression of price on mpg and weight</figcaption>
-<div class="tohtml-embedded-table">
-<div class='texout-table-wrap'>
-<table class='texout-table'>
-<thead>
-<tr>
-<th>&nbsp;</th>
-<th>(1)</th>
-</tr>
-<tr>
-<th>&nbsp;</th>
-<th>model1</th>
-</tr>
-<tr class='texout-headline'>
-<th>VARIABLES</th>
-<th>price</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>mpg</td>
-<td class='texout-mono'>-0</td>
-</tr>
-<tr>
-<td>&nbsp;</td>
-<td class='texout-mono'>(0)</td>
-</tr>
-<tr>
-<td>mpg1</td>
-<td class='texout-mono'>1</td>
-</tr>
-<tr>
-<td>&nbsp;</td>
-<td class='texout-mono'>(0)</td>
-</tr>
-<tr>
-<td>o.mpg2</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg3</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg4</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg5</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg6</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg7</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg8</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg9</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg10</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg11</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg12</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg13</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg14</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg15</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg16</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg17</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg18</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg19</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>o.mpg20</td>
-<td class='texout-mono'>-</td>
-</tr>
-<tr>
-<td>weight</td>
-<td class='texout-mono'>0</td>
-</tr>
-<tr>
-<td>&nbsp;</td>
-<td class='texout-mono'>(0)</td>
-</tr>
-<tr>
-<td>Constant</td>
-<td class='texout-mono'>0</td>
-</tr>
-<tr>
-<td>&nbsp;</td>
-<td class='texout-mono'>(0)</td>
-</tr>
-<tr>
-<td>Observations</td>
-<td class='texout-mono'>74</td>
-</tr>
-<tr class='texout-bottomline'>
-<td>R-squared</td>
-<td class='texout-mono'>1.000</td>
-</tr>
-<tr class='texout-notes'><td colspan='2'>Standard errors in parentheses</td></tr>
-<tr class='texout-notes'><td colspan='2'>*** p&lt;0.01, ** p&lt;0.05, * p&lt;0.1</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-</figure>
-
-
-
-```stata
+<iframe src='table_regression.html' width='100%' frameBorder='0' data-tohtml-ti
+> tle="Regression of price on mpg and weight"></iframe>
 
 . log close
       name:  <unnamed>
@@ -284,6 +162,15 @@ dir : seeout
   log type:  text
  closed on:  29 Aug 2026, 00:31:47
 -------------------------------------------------------------------------------
-```
 
+. 
+. tohtml "example5.log", ///
+>     md("example5_clean.md") ///
+>     html("example5_clean.html") ///
+>     tabwidth("100%") tabheight("80vh") replace
+% markdown written to example5_clean.md
+successfully converted "C:/Users/kerry/Desktop/tohtml/Stata_tohtml/example5_cle
+> an.html"
 
+. 
+end of do-file

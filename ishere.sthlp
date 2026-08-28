@@ -1,5 +1,5 @@
 {smcl}
-{* *! version 1.12.0  24aug2026}{...}
+{* *! version 1.19.0  29aug2026}{...}
 {vieweralsosee "tohtml" "help tohtml"}{...}
 {vieweralsosee "markdown" "help markdown"}{...}
 {viewerjumpto "Syntax" "ishere##syntax"}{...}
@@ -47,7 +47,7 @@ Insert figure
 
 {p 8 16 2}
 {cmd:ishere} {cmd:fig}|{cmd:figure} {cmd:using} {it:filename}
-[{cmd:,} {opt zoom(string)} {opt height(string)} {opt width(string)}]
+[{cmd:,} {opt zoom(string)} {opt height(string)} {opt width(string)} {opt title(string)}]
 
 
 {pstd}
@@ -55,7 +55,7 @@ Insert table
 
 {p 8 16 2}
 {cmd:ishere} {cmd:tab}|{cmd:table} {cmd:using} {it:filename}
-[{cmd:,} {opt height(string)} {opt width(string)} {opt cssfile(filename)}]
+[{cmd:,} {opt height(string)} {opt width(string)} {opt cssfile(filename)} {opt title(string)}]
 
 
 {marker description}{...}
@@ -97,18 +97,21 @@ Prints content to the log (kept / processed by {help tohtml}):
 {pmore2}
 - Figures: {cmd:ishere fig using "figure1.png"} writes an HTML {cmd:<img>} tag.
   The path is stored as given (absolute or relative); backslashes become
-  forward slashes. {help tohtml} later keeps that form in the default HTML
-  report, inlines it with {opt embed}, or rewrites it to a package-relative
-  path with {opt zip()}.
+  forward slashes. {opt title()} is carried on the tag; {help tohtml} shows
+  that caption centered below the figure. {help tohtml} later keeps the image
+  path in the default HTML report, inlines it with {opt embed}, or rewrites it
+  to a package-relative path with {opt zip()}.
 
 {pmore2}
-- HTML tables: {cmd:ishere tab using "table1.html"} writes an HTML {cmd:<iframe>} tag
-  (same path rule as figures). If {help collect export} wrote a companion
-  CSS file (same basename as the table, the name given in {cmd:cssfile()}, or
-  the single unpaired collect CSS in that folder), and
-  the HTML does not already contain a stylesheet {cmd:<link>}, {cmd:ishere} inserts
-  that link so the table keeps its {help table}, {help dtable}, or {help etable}
-  style when shown in an iframe.
+- HTML tables: {cmd:ishere tab using "table1.html"} writes an HTML {cmd:<iframe>}
+  marker (same path rule as figures). {help tohtml} always replaces that marker
+  with the table markup (the same inlining used by {opt embed}). {opt title()}
+  is carried on the marker; {help tohtml} shows that caption above the table. If
+  {help collect export} wrote a companion CSS file (same basename as the table,
+  the name given in {cmd:cssfile()}, or the single unpaired collect CSS in that
+  folder), and the HTML does not already contain a stylesheet {cmd:<link>},
+  {cmd:ishere} inserts that link so {help tohtml} can keep the {help table},
+  {help dtable}, or {help etable} style when the table is inlined.
 
 {pmore2}
 - Markdown tables: {cmd:ishere tab using "table1.md"} writes a placeholder for inlining
@@ -136,11 +139,17 @@ Options apply only to figure/table emit syntax.
 {phang}
 {opt width(string)} image width (CSS units).
 
+{phang}
+{opt title(string)} caption shown {bf:below} the figure, centered.
+{help tohtml} reads this from the log marker and wraps the image.
+Quote the string if it contains spaces or commas.
+
 
 {dlgtab:Table options}
 
 {phang}
-{opt height(string)} iframe height for HTML tables; default {cmd:400px}. Ignored for {cmd:.md}.
+{opt height(string)} ignored for HTML tables ({help tohtml} inlines the table).
+Ignored for {cmd:.md}.
 
 {phang}
 {opt width(string)} iframe width for HTML tables; default {cmd:100%}. Ignored for {cmd:.md}.
@@ -153,6 +162,12 @@ If omitted, {cmd:ishere} first looks for {cmd:table1.html} → {cmd:table1.css}.
 If that file is missing, it uses the only unpaired collect CSS in the same
 folder (a {cmd:.css} with no same-stem HTML). Two such files: pass
 {cmd:cssfile()}. Ignored for {cmd:.md}.
+
+{phang}
+{opt title(string)} caption shown {bf:above} the table.
+{help tohtml} reads this from the log marker. The title stays outside the
+table scroll box, so it remains visible when the table is scrolled.
+Quote the string if it contains spaces or commas.
 
 
 {marker examples}{...}
@@ -183,11 +198,15 @@ folder (a {cmd:.css} with no same-stem HTML). Two such files: pass
 {phang2}{cmd:. graph export "figure1.png", replace}{p_end}
 {phang2}{cmd:. ishere fig using "figure1.png"}{p_end}
 
+{phang2}{cmd:. ishere fig using "figure1.png", title("Price versus MPG")}{p_end}
+
 {phang2}{cmd:. ishere fig using "figure1.png", zoom(80%)}{p_end}
 
 {phang2}{cmd:. ishere figure using "figure1.png", height(400px) width(600px)}{p_end}
 
 {phang2}{cmd:. ishere tab using "table1.html"}{p_end}
+
+{phang2}{cmd:. ishere tab using "table1.html", title("Regression results")}{p_end}
 
 {phang2}{cmd:. ishere table using "table1.html", height(500px) width(100%)}{p_end}
 
@@ -209,7 +228,7 @@ folder (a {cmd:.css} with no same-stem HTML). Two such files: pass
 {phang2}{cmd:. ishere}{p_end}
 {phang2}{cmd:. scatter price mpg}{p_end}
 {phang2}{cmd:. graph export "scatter.png", replace}{p_end}
-{phang2}{cmd:. ishere fig using "scatter.png", zoom(80%)}{p_end}
+{phang2}{cmd:. ishere fig using "scatter.png", zoom(80%) title("Price versus MPG")}{p_end}
 {phang2}{cmd:. log close}{p_end}
 {phang2}{cmd:. tohtml analysis.log, html(analysis.html) replace}{p_end}
 

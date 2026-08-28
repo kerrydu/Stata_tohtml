@@ -1,3 +1,6 @@
+*! version 1.19, 2026-08-29
+*! version 1.18, 2026-08-28
+*! version 1.17, 2026-08-28
 *! version 1.16, 2026-08-23
 *! version 1.15, 2026-08-23
 *! version 1.14, 2026-08-23
@@ -31,7 +34,7 @@ program define ishere
     // Mode 2: emit markdown/HTML insertion for figures and tables
     // ---------------------------------------------------------------
     if `isfig' | `istab' {
-        syntax anything using/ [, Height(string) Width(string) Zoom(string) CSSFile(string)]
+        syntax anything using/ [, Height(string) Width(string) Zoom(string) CSSFile(string) TItle(string)]
 
         removequotes, t(`using')
         local using `r(s)'
@@ -49,6 +52,12 @@ program define ishere
         mata: st_local("extension", pathsuffix("`filepath'"))
         local extension = lower("`extension'")
 
+        local capattr
+        if `"`title'"' != "" {
+            mata: st_local("title_esc", ishere_html_escape(st_local("title")))
+            local capattr `" data-tohtml-title="`title_esc'""'
+        }
+
         if `isfig' {
             if "`zoom'" == "" & "`height'" == "" & "`width'" == "" local zoom "100%"
             if !inlist("`extension'", ".png", ".jpg", ".jpeg", ".svg", ".gif", ".bmp", ".webp") {
@@ -58,42 +67,27 @@ program define ishere
             if "`zoom'" != "" {
                 if strpos("`zoom'", "%") == 0 local zoom "`zoom'%"
                 di
-                display `"<img src="`filepath'" style="zoom:`zoom';">"'
+                display `"<img src="`filepath'" style="zoom:`zoom';"`capattr'>"'
             }
             else {
                 if "`width'" == "" local width "auto"
                 if "`height'" == "" local height "auto"
                 di
-                display `"<img src="`filepath'" width="`width'" height="`height'">"'
+                display `"<img src="`filepath'" width="`width'" height="`height'"`capattr'>"'
             }
             exit
         }
 
-        // table
+        // table: iframe is only a log marker; tohtml inlines the HTML table.
         if inlist("`extension'", ".html", ".htm") {
             if "`width'" == "" local width "100%"
-            if "`height'" == "" {
-                mata: st_numscalar("ishere_tr", ishere_count_tr(st_local("filepath")))
-                if ishere_tr <= 0 {
-                    local height "400px"
-                }
-                else {
-                    local h = 52 + ishere_tr * 34
-                    if `h' < 90 local h = 90
-                    local height "`h'px"
-                }
-            }
-            else if strpos("`height'", "px") == 0 & strpos("`height'", "%") == 0 {
-                local height "`height'px"
-            }
             mata: ishere_ensure_table_css(st_local("filepath"), st_local("cssfile"))
             di
-            local onload onload="this.style.height=this.contentDocument.documentElement.scrollHeight+'px';"
-            display `"<iframe src='`filepath'' width='`width'' height='`height'' frameBorder='0' scrolling='auto' `onload'></iframe>"'
+            display `"<iframe src='`filepath'' width='`width'' frameBorder='0'`capattr'></iframe>"'
         }
         else if "`extension'" == ".md" {
             di
-            display `"<iframe `filepath' ></iframe>"'
+            display `"<iframe `filepath'`capattr'></iframe>"'
         }
         else {
             di as error "unsupported table format: `extension'"
@@ -122,8 +116,8 @@ program define ishere
     di as error `"ishere: unsupported argument `a'"'
     di as error "placeholder mode: ishere  |  ishere # heading"
     di as error "emit mode: ishere display ..."
-    di as error "           ishere fig|figure using filename [, zoom() height() width()]"
-    di as error "           ishere tab|table using filename [, height() width() cssfile()]"
+    di as error "           ishere fig|figure using filename [, zoom() height() width() title()]"
+    di as error "           ishere tab|table using filename [, height() width() cssfile() title()]"
     exit 198
 end
 
@@ -136,6 +130,16 @@ program define removequotes, rclass
 end
 
 mata:
+string scalar ishere_html_escape(string scalar s)
+{
+    s = usubinstr(s, "&", "&amp;", .)
+    s = usubinstr(s, "<", "&lt;", .)
+    s = usubinstr(s, ">", "&gt;", .)
+    s = usubinstr(s, char(34), "&quot;", .)
+    s = usubinstr(s, char(39), "&#39;", .)
+    return(s)
+}
+
 string scalar ishere_join_lines(string colvector lines)
 {
     s = ""
@@ -267,32 +271,6 @@ void function ishere_write_lines(string scalar path, string colvector lines)
         fput(fh, lines[i])
     }
     fclose(fh)
-}
-
-real scalar ishere_count_tr(string scalar htmlfile)
-{
-    f = strtrim(htmlfile)
-    if (f == "") return(0)
-    if (!fileexists(f)) {
-        cand = pathjoin(pwd(), f)
-        if (fileexists(cand)) f = cand
-    }
-    if (!fileexists(f)) return(0)
-    raw = cat(f)
-    if (rows(raw) == 0) return(0)
-    blob = ""
-    for (i = 1; i <= rows(raw); i++) {
-        blob = blob + raw[i]
-    }
-    blob = ustrlower(blob)
-    n = 0
-    for (k = 1; k <= 2000; k++) {
-        p = ustrpos(blob, "<tr")
-        if (p == 0) break
-        n++
-        blob = usubstr(blob, p + 3, .)
-    }
-    return(n)
 }
 
 string scalar ishere_first_table_class(string scalar blob)
