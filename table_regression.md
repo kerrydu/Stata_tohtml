@@ -1,0 +1,14 @@
+|  | (1) |
+| --- | --- |
+|  | model1 |
+| VARIABLES | price |
+| mpg | -49.51 |
+|  | (86.16) |
+| weight | 1.747\*\*\* |
+|  | (0.641) |
+| Constant | 1,946 |
+|  | (3,597) |
+| Observations | 74 |
+| R-squared | 0.293 |
+Standard errors in parentheses
+\*\*\* p<0.01, \*\* p<0.05, \* p<0.1

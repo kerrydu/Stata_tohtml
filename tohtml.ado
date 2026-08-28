@@ -1,3 +1,4 @@
+*! version 1.37, 2026-08-28
 *! version 1.36, 2026-08-24
 *! version 1.35, 2026-08-24
 *! version 1.34, 2026-08-23
@@ -1270,29 +1271,7 @@ void function rewrite_md_finish(string colvector fcon, string scalar tfi, real s
     fcon = select(fcon, !(fconlen :< 2*(strlen("```")+2)))
     
     // 将md源代码插入到<iframe ></iframe>位置
-    // 首先使用正则表达式找到 任意空格<iframe任意空格*.md任意空格></iframe>任意空格 的行
-    regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
-    flag = selectindex(regexm(fcon, regex))
-    fconnew = fcon
-    if (sum(flag) > 0) {
-        if (flag[1]<length(fcon)){
-            fconnew = fcon[1::(flag[1]-1)]
-        }
-        else{
-            fconnew = J(0,1,"")
-        }
-        for(i=1; i<=length(flag); i++) {
-            mdtext = extractmdtable(fcon[flag[i]])
-            fconnew = fconnew \ mdtext 
-            if((flag[i]<length(fcon)) & (i<length(flag))) {
-              fconnew = fconnew \ fcon[(flag[i]+1)::(flag[i+1]-1)]
-             }
-             else if(((flag[i]<length(fcon)) & (i==length(flag)))) {
-                fconnew = fconnew \ fcon[(flag[i]+1)::length(fcon)]
-             }
-        }
-    }
-    fcon = fconnew
+    fcon = splice_md_iframes(fcon)
 
     // Opening Stata code fences: ```  →  ```stata  (keep ```text etc.)
     fcon = tag_stata_opening_fences(fcon)
@@ -1345,34 +1324,7 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
     }
 
     // 将md源代码插入到<iframe ></iframe>位置
-    // 首先使用正则表达式找到 任意空格<iframe任意空格*.md任意空格></iframe>任意空格 的行
-    regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
-    flag = selectindex(regexm(fcon, regex))
-    fconnew = fcon
-    if (sum(flag) > 0) {
-        if (flag[1]<length(fcon)){
-            fconnew = fcon[1::(flag[1]-1)]
-        }
-        else{
-            fconnew = J(0,1,"")
-        }
-        for(i=1; i<=length(flag); i++) {
-            mdtext = extractmdtable(fcon[flag[i]])
-            fconnew = fconnew \ mdtext 
-            if((flag[i]<length(fcon)) & (i<length(flag))) {
-              if (flag[i]+1 !=flag[i+1]){
-                fconnew = fconnew \ fcon[(flag[i]+1)::(flag[i+1]-1)]
-              }
-              else{
-                fconnew = fconnew \ " "
-              }
-             }
-             else if(((flag[i]<length(fcon)) & (i==length(flag)))) {
-                fconnew = fconnew \ fcon[(flag[i]+1)::length(fcon)]
-             }
-        }
-    }
-    fcon = fconnew
+    fcon = splice_md_iframes(fcon)
     
     
     fcon = slash_normalize_embed_paths(fcon)
@@ -1382,6 +1334,33 @@ void function rewrite_md2(string scalar ofi, string scalar tfi, real scalar repl
     } else {
         mm_outsheet(tfi, fcon, "replace")
     }
+}
+
+string colvector splice_md_iframes(string colvector fcon)
+{
+    // Replace <iframe path.md ></iframe> with the file contents.
+    // Keep every line before the first iframe (flag[1] > 1), not only when
+    // the iframe is not the last line — clean mode often ends with the table.
+    regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
+    flag = selectindex(regexm(fcon, regex))
+    if (length(flag) == 0) return(fcon)
+    n = length(fcon)
+    nflag = length(flag)
+    if (flag[1] > 1) fconnew = fcon[1::(flag[1]-1)]
+    else fconnew = J(0, 1, "")
+    for (i = 1; i <= nflag; i++) {
+        fconnew = fconnew \ extractmdtable(fcon[flag[i]])
+        if (i < nflag) {
+            a = flag[i] + 1
+            b = flag[i + 1] - 1
+            if (a <= b) fconnew = fconnew \ fcon[a::b]
+            else fconnew = fconnew \ " "
+        }
+        else if (flag[i] < n) {
+            fconnew = fconnew \ fcon[(flag[i]+1)::n]
+        }
+    }
+    return(fconnew)
 }
 
 string colvector extractmdtable(string scalar line){
@@ -2734,29 +2713,7 @@ void function merge_cmdlog_blocks(string scalar clean_md, string scalar cmdlog_m
     
     fcon = result
     // 将md源代码插入到<iframe ></iframe>位置
-    // 首先使用正则表达式找到 任意空格<iframe任意空格*.md任意空格></iframe>任意空格 的行
-    regex = `"(\s*<iframe\s*.*\.md\s*></iframe>\s*)"'
-    flag = selectindex(regexm(fcon, regex))
-    fconnew = fcon
-    if (sum(flag) > 0) {
-        if (flag[i]<length(fcon)){
-            fconnew = fcon[1::(flag[1]-1)]
-        }
-        else{
-            fconnew = J(0,1,"")
-        }
-        for(i=1; i<=length(flag); i++) {
-            mdtext = extractmdtable(fcon[flag[i]])
-            fconnew = fconnew \ mdtext 
-            if((flag[i]<length(fcon)) & (i<length(flag))) {
-              fconnew = fconnew \ fcon[(flag[i]+1)::(flag[i+1]-1)]
-             }
-             else if(((flag[i]<length(fcon)) & (i==length(flag)))) {
-                fconnew = fconnew \ fcon[(flag[i]+1)::length(fcon)]
-             }
-        }
-    }
-    result = fconnew
+    result = splice_md_iframes(fcon)
     
 
     // 8b. 在代码块之间插入两个空行
