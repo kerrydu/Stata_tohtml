@@ -1,11 +1,11 @@
 
 
 ```text
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
       name:  <unnamed>
        log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\example5.log
   log type:  text
- opened on:  29 Aug 2026, 00:31:45
+ opened on:  29 Aug 2026, 17:25:40
 ```
 
 
@@ -123,8 +123,8 @@ note: mpg20 omitted because of collinearity.
 table_regression.html
 dir : seeout
 
-. ishere tab using "table_regression.html", title("Regression of price on mpg a
-> nd weight")
+. ishere tab using "table_regression.html", title("Regression of price on mpg an
+> d weight")
 
 ```
 
@@ -282,8 +282,8 @@ dir : seeout
       name:  <unnamed>
        log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\example5.log
   log type:  text
- closed on:  29 Aug 2026, 00:31:47
--------------------------------------------------------------------------------
+ closed on:  29 Aug 2026, 17:25:42
+--------------------------------------------------------------------------------
 ```
 
 

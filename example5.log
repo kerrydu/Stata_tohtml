@@ -1,8 +1,8 @@
--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
       name:  <unnamed>
        log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\example5.log
   log type:  text
- opened on:  29 Aug 2026, 00:31:45
+ opened on:  29 Aug 2026, 17:25:40
 
 . 
 . ishere # Output Variant Comparison
@@ -29,8 +29,8 @@ file scatter.png saved as PNG format
 
 . ishere fig using "scatter.png", title("Price versus fuel efficiency")
 
-<img src="scatter.png" style="zoom:100%;" data-tohtml-title="Price versus fuel 
-> efficiency">
+<img src="scatter.png" style="zoom:100%;" data-tohtml-title="Price versus fuel e
+> fficiency">
 
 . 
 . local len 20 
@@ -101,15 +101,15 @@ note: mpg20 omitted because of collinearity.
 table_regression.html
 dir : seeout
 
-. ishere tab using "table_regression.html", title("Regression of price on mpg a
-> nd weight")
+. ishere tab using "table_regression.html", title("Regression of price on mpg an
+> d weight")
 
-<iframe src='table_regression.html' width='100%' frameBorder='0' data-tohtml-ti
-> tle="Regression of price on mpg and weight"></iframe>
+<iframe src='table_regression.html' width='100%' frameBorder='0' data-tohtml-tit
+> le="Regression of price on mpg and weight"></iframe>
 
 . log close
       name:  <unnamed>
        log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\example5.log
   log type:  text
- closed on:  29 Aug 2026, 00:31:47
--------------------------------------------------------------------------------
+ closed on:  29 Aug 2026, 17:25:42
+--------------------------------------------------------------------------------

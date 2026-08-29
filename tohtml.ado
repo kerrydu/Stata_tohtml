@@ -1,3 +1,5 @@
+*! version 1.45, 2026-08-29
+*! version 1.44, 2026-08-29
 *! version 1.43, 2026-08-29
 *! version 1.42, 2026-08-28
 *! version 1.41, 2026-08-28
@@ -484,10 +486,10 @@ program define tohtml_emit_html
     }
     tohtml_style, html(`"`html'"') css(`"`css'"') md(`"`md'"') `mathjax' `highlight' `embed'
     mata: inject_embed_table_styles(`"`html'"')
-    mata: inject_table_scroll_css(`"`html'"', `"`tabwidth'"', `"`tabheight'"')
     if "`embed'" == "" {
         mata: tohtml_finish_default_refs(`"`html'"')
     }
+    mata: inject_table_scroll_css(`"`html'"', `"`tabwidth'"', `"`tabheight'"')
 end
 
 capture program drop tohtml_style
@@ -2120,19 +2122,23 @@ string scalar normalize_table_css_size(string scalar raw, string scalar def)
 
 void function inject_table_scroll_css(string scalar htmlfile, string scalar maxw, string scalar maxh)
 {
-    string scalar css, q
+    string scalar css, q, ox, oy
     string colvector lines, csslines
-    real colvector idx
-    real scalar i
 
     maxw = normalize_table_css_size(maxw, "100%")
     maxh = normalize_table_css_size(maxh, "80vh")
+    if (maxw == "none") ox = "visible"
+    else ox = "auto"
+    if (maxh == "none") oy = "visible"
+    else oy = "auto"
     q = char(34)
     css = "<style id=" + q + "tohtml-table-scroll" + q + ">" + char(10)
     css = css + ".tohtml-embedded-table {" + char(10)
-    css = css + "  overflow: auto;" + char(10)
-    css = css + "  max-width: " + maxw + ";" + char(10)
-    css = css + "  max-height: " + maxh + ";" + char(10)
+    css = css + "  overflow-x: " + ox + " !important;" + char(10)
+    css = css + "  overflow-y: " + oy + " !important;" + char(10)
+    css = css + "  width: max-content !important;" + char(10)
+    css = css + "  max-width: " + maxw + " !important;" + char(10)
+    css = css + "  max-height: " + maxh + " !important;" + char(10)
     css = css + "  -webkit-overflow-scrolling: touch;" + char(10)
     css = css + "}" + char(10)
     css = css + ".tohtml-embedded-table table," + char(10)
@@ -2140,24 +2146,19 @@ void function inject_table_scroll_css(string scalar htmlfile, string scalar maxw
     css = css + "  max-width: none !important;" + char(10)
     css = css + "  width: max-content;" + char(10)
     css = css + "}" + char(10)
+    css = css + ".tohtml-embedded-table .texout-table-wrap {" + char(10)
+    css = css + "  overflow: visible !important;" + char(10)
+    css = css + "  width: max-content;" + char(10)
+    css = css + "  max-width: none;" + char(10)
+    css = css + "}" + char(10)
     css = css + "</style>"
 
     lines = cat(htmlfile)
     if (rows(lines) == 0) return
+    // Stata markdown has no </head>; a leading <style> would lose to
+    // the later ./css/tohtml.css link. Append so tabwidth/tabheight win.
     csslines = split_newlines(css)
-    idx = selectindex(ustrpos(lines, "</head>") :> 0)
-    if (length(idx) > 0) {
-        i = idx[1]
-        if (i > 1) {
-            lines = lines[|1 \ i-1|] \ csslines \ lines[|i \ rows(lines)|]
-        }
-        else {
-            lines = csslines \ lines
-        }
-    }
-    else {
-        lines = csslines \ lines
-    }
+    lines = lines \ csslines
     mm_outsheet(htmlfile, lines, "replace")
 }
 

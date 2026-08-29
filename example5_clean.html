@@ -1,16 +1,3 @@
-<style id="tohtml-table-scroll">
-.tohtml-embedded-table {
-  overflow: auto;
-  max-width: 100%;
-  max-height: 80vh;
-  -webkit-overflow-scrolling: touch;
-}
-.tohtml-embedded-table table,
-.tohtml-embedded-table .texout-table {
-  max-width: none !important;
-  width: max-content;
-}
-</style>
 <style>
 .texout-table{width:auto;min-width:720px;max-width:100%;margin:0;border-collapse:collapse;font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif;color:#222;table-layout:auto;}
 .texout-table-wrap{width:100%;overflow-x:auto;padding:6px 4px;}
@@ -23,11 +10,11 @@
 .texout-mono{font-family:'Courier New',Consolas,monospace;}
 </style>
 <link rel="stylesheet" href="./css/tohtml.css">
-<pre><code class="language-text">-------------------------------------------------------------------------------
+<pre><code class="language-text">--------------------------------------------------------------------------------
       name:  &lt;unnamed&gt;
        log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\example5.log
   log type:  text
- opened on:  29 Aug 2026, 00:31:45
+ opened on:  29 Aug 2026, 17:25:40
 </code></pre>
 <h1><a href="#output-variant-comparison" id="output-variant-comparison">Output Variant Comparison</a></h1>
 <pre><code class="language-stata">
@@ -124,8 +111,8 @@ note: mpg20 omitted because of collinearity.
 table_regression.html
 dir : seeout
 
-. ishere tab using &quot;table_regression.html&quot;, title(&quot;Regression of price on mpg a
-&gt; nd weight&quot;)
+. ishere tab using &quot;table_regression.html&quot;, title(&quot;Regression of price on mpg an
+&gt; d weight&quot;)
 
 </code></pre>
 <figure class="tohtml-table-block">
@@ -276,6 +263,26 @@ dir : seeout
       name:  &lt;unnamed&gt;
        log:  C:\Users\kerry\Desktop\tohtml\Stata_tohtml\example5.log
   log type:  text
- closed on:  29 Aug 2026, 00:31:47
--------------------------------------------------------------------------------
+ closed on:  29 Aug 2026, 17:25:42
+--------------------------------------------------------------------------------
 </code></pre>
+<style id="tohtml-table-scroll">
+.tohtml-embedded-table {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  width: max-content !important;
+  max-width: 100% !important;
+  max-height: 80vh !important;
+  -webkit-overflow-scrolling: touch;
+}
+.tohtml-embedded-table table,
+.tohtml-embedded-table .texout-table {
+  max-width: none !important;
+  width: max-content;
+}
+.tohtml-embedded-table .texout-table-wrap {
+  overflow: visible !important;
+  width: max-content;
+  max-width: none;
+}
+</style>

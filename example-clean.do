@@ -31,4 +31,4 @@ log close
 tohtml "example5.log", ///
     md("example5_clean.md") ///
     html("example5_clean.html") ///
-    tabwidth("100%") tabheight("80vh") replace
+    replace

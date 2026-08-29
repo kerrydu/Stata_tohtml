@@ -93,9 +93,7 @@ table:not([class^="Table"]):not(.texout-table) th {
 }
 
 .tohtml-embedded-table {
-    overflow: auto;
-    max-width: 100%;
-    max-height: 80vh;
+    width: max-content;
     -webkit-overflow-scrolling: touch;
 }
 
@@ -147,6 +145,12 @@ table.texout-table,
 .tohtml-embedded-table .texout-table {
     max-width: none;
     width: max-content;
+}
+
+.tohtml-embedded-table .texout-table-wrap {
+    overflow: visible;
+    width: max-content;
+    max-width: none;
 }
 
 table[class^="Table"] tr,

@@ -148,9 +148,11 @@ internet access when viewing formulas.
 
 {phang}
 {opt tabwidth(size)} sets the maximum width of each inlined table box
-({cmd:.tohtml-embedded-table}). If a table is wider than this, a horizontal
-scrollbar appears. The default is {bf:100%} of the report content width.
-A bare number is treated as pixels ({cmd:tabwidth(800)} → {bf:800px}).
+({cmd:.tohtml-embedded-table}). The box grows with the table up to this cap;
+if the table is still wider, a horizontal scrollbar appears. The default is
+{bf:100%} of the report content width. A value larger than {bf:100%} (e.g.
+{cmd:tabwidth(1000%)}) lets the table extend past the text column instead of
+scrolling. A bare number is treated as pixels ({cmd:tabwidth(800)} → {bf:800px}).
 CSS lengths such as {cmd:100%}, {cmd:90vw}, and {cmd:800px} are accepted.
 Use {cmd:none}, {cmd:off}, or {cmd:.} to disable the width cap.
 
