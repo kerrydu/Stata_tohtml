@@ -230,7 +230,7 @@ highlight.js in {opt cleancode} HTML reports.
 {dlgtab:Cleaning modes}
 
 {phang}
-{opt clean} activates minimal cleaning mode, keeping only headings starting with #, <img> tags, 
+{opt clean} activates the clean output variant, keeping only headings starting with #, <img> tags,
 <iframe> tags, and Markdown narrative blocks marked with {cmd:/**} ... {cmd:**/}.
 Removes all code and output. May not be combined with {opt cleancode}.
 
@@ -391,13 +391,11 @@ file's absolute path. {opt embed} does not rewrite image, table, or CSS paths
 scans for all HTML files starting with "table" and all image files starting with "figure", generating a
 temporary Markdown file containing these resources.
 
-{pstd}
-{bf:Dependencies}: {cmd:moremata} ({cmd:mm_outsheet}) — {cmd:. ssc install moremata}{p_end}
-{phang2}{cmd:fs} (Nick Cox; directory input only) — {cmd:. ssc install fs}{p_end}
+{title:Dependencies}
 
-{pstd}
-{cmd:markdown} is a built-in Stata command (Stata 16 or newer), not a package
-dependency.
+{pstd}{help tohtml} requires two dependencies: {help moremata} and {help fs}. These can be installed as follows{p_end}
+{phang2}{cmd:.} {bf:{stata "ssc install moremata"}}{p_end}
+{phang2}{cmd:.} {bf:{stata "ssc install fs"}}{p_end}
 
 {pstd}
 {bf:AI agents}: copy {bf:skills/stata-tohtml/} from the package source into
