@@ -55,7 +55,7 @@ Insert table
 
 {p 8 16 2}
 {cmd:ishere} {cmd:tab}|{cmd:table} {cmd:using} {it:filename}
-[{cmd:,} {opt height(string)} {opt width(string)} {opt cssfile(filename)} {opt title(string)}]
+[{cmd:,} {opt cssfile(filename)} {opt title(string)}]
 
 
 {marker description}{...}
@@ -207,8 +207,6 @@ Quote the string if it contains spaces or commas.
 {phang2}{cmd:. ishere tab using "table1.html"}{p_end}
 
 {phang2}{cmd:. ishere tab using "table1.html", title("Regression results")}{p_end}
-
-{phang2}{cmd:. ishere table using "table1.html", height(500px) width(100%)}{p_end}
 
 {phang2}{cmd:. table foreign, statistic(mean price)}{p_end}
 {phang2}{cmd:. collect export "table1.html", tableonly replace}{p_end}
