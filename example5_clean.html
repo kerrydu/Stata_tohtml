@@ -18,7 +18,8 @@
 <pre><code class="language-stata">summarize price mpg
 scatter price mpg
 graph export &quot;scatter.png&quot;, replace
-ishere fig using &quot;scatter.png&quot;, title(&quot;Figure 1: Price versus fuel efficiency&quot;)
+ishere fig using &quot;scatter.png&quot;, ///
+      title(&quot;Figure 1: Price versus fuel efficiency&quot;)
 </code></pre>
 <figure class="tohtml-figure">
 <img src="scatter.png" style="zoom:100%;">
@@ -27,7 +28,8 @@ ishere fig using &quot;scatter.png&quot;, title(&quot;Figure 1: Price versus fue
 <pre><code class="language-stata">regress price mpg* weight
 estimates store model1
 outreg2e [model1] using &quot;table_regression&quot;, replace html
-ishere tab using &quot;table_regression.html&quot;, title(&quot;Table 1: Regression of price on mpg and weight&quot;)
+ishere tab using &quot;table_regression.html&quot;, ///
+      title(&quot;Table 1: Regression of price on mpg and weight&quot;)
 </code></pre>
 <figure class="tohtml-table-block">
 <figcaption class="tohtml-table-title">Table 1: Regression of price on mpg and weight</figcaption>

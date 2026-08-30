@@ -2313,19 +2313,26 @@ string scalar take_stata_wrap_payload(string scalar line)
     return(strtrim(usubstr(t, 2, .)))
 }
 
+real scalar line_ends_with_triple_slash(string scalar line)
+{
+    // User-written "///" continuation: keep the line break, do not splice.
+    return(ustrregexm(ustrrtrim(line), "///$"))
+}
+
 string colvector join_stata_cmd_continuations(string colvector lines)
 {
-    // Join Stata command wraps (lines starting with ">") onto the preceding
-    // ". command". Used by cleancode so a linesize-split command is one line.
+    // Join Stata linesize wraps ("> ...") onto the preceding ". command".
+    // Do not join after a user "///" break: only the ">" prompt is stripped later.
     n = rows(lines)
     if (n == 0) return(lines)
     out = J(0, 1, "")
     i = 1
     while (i <= n) {
         line = lines[i]
-        if (is_stata_cmd_echo(line)) {
+        if (is_stata_cmd_echo(line) | is_stata_wrap_cont(line)) {
             while (i < n) {
                 if (!is_stata_wrap_cont(lines[i + 1])) break
+                if (line_ends_with_triple_slash(line)) break
                 line = join_stata_wrap(line, lines[i + 1])
                 i++
             }
@@ -2347,12 +2354,17 @@ string colvector strip_stata_cmd_prompt(string colvector lines)
         s = lines[i]
         t = ustrltrim(s)
         c = usubstr(t, 1, 1)
-        if (c == "." | c == ">") {
+        if (c == ".") {
             rest = usubstr(t, 2, .)
             if (rest == "" | usubstr(rest, 1, 1) == " " | usubstr(rest, 1, 1) == char(9)) {
                 out[i] = ustrltrim(rest)
                 continue
             }
+        }
+        else if (c == ">") {
+            // Drop only the wrap prompt; keep spaces after ">" (/// indent).
+            out[i] = usubstr(t, 2, .)
+            continue
         }
         out[i] = s
     }
