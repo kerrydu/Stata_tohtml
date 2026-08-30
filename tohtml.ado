@@ -1229,7 +1229,7 @@ void function rewrite_md_cleancode(string scalar ofi, string scalar tfi, real sc
     fcon = clean_textcell_content(fcon)
     fcon = subisheredintxt(fcon)
     fcon = keep_stata_code_lines(fcon)
-    rewrite_md_finish(fcon, tfi, replace)
+    rewrite_md_finish(fcon, tfi, replace, 1)
 }
 
 void function rewrite_md(string scalar ofi, string scalar tfi, real scalar replace)
@@ -1241,14 +1241,19 @@ void function rewrite_md(string scalar ofi, string scalar tfi, real scalar repla
     fcon = merge_html_vectorized(fcon)
     fcon = clean_textcell_content(fcon)
     fcon = subisheredintxt(fcon)
-    rewrite_md_finish(fcon, tfi, replace)
+    rewrite_md_finish(fcon, tfi, replace, 0)
 }
 
-void function rewrite_md_finish(string colvector fcon, string scalar tfi, real scalar replace)
+void function rewrite_md_finish(string colvector fcon, string scalar tfi, real scalar replace, real scalar strip_prompt)
 {
     // 3. 移除前缀
     prefixes = (">", "{com}", "{res}", "{txt}")
     fcon = remove_prefix_and_trim(fcon, prefixes)
+
+    // cleancode: splice "> " wraps back onto the ". command" they continue
+    if (strip_prompt) {
+        fcon = join_stata_cmd_continuations(fcon)
+    }
 
     flag = strpos(strtrim(substr(fcon, 2, .)), "ishere"):==1
     rem = strtrim(substr(fcon, strpos(fcon, "ishere"):+strlen("ishere")+1, .))
@@ -1272,6 +1277,11 @@ void function rewrite_md_finish(string colvector fcon, string scalar tfi, real s
     
     // . ishere # hearder -> # header
     fcon = get_dot_header(fcon)
+
+    // cleancode: drop the Stata prompt so the fence looks like a do-file
+    if (strip_prompt) {
+        fcon = strip_stata_cmd_prompt(fcon)
+    }
     
     // fcon= remove_img_iframe(fcon)
     // Open a Stata fence after the ```text log header (or at file start)
@@ -2301,6 +2311,52 @@ string scalar take_stata_wrap_payload(string scalar line)
     t = ustrltrim(line)
     if (usubstr(t, 1, 1) != ">") return(t)
     return(strtrim(usubstr(t, 2, .)))
+}
+
+string colvector join_stata_cmd_continuations(string colvector lines)
+{
+    // Join Stata command wraps (lines starting with ">") onto the preceding
+    // ". command". Used by cleancode so a linesize-split command is one line.
+    n = rows(lines)
+    if (n == 0) return(lines)
+    out = J(0, 1, "")
+    i = 1
+    while (i <= n) {
+        line = lines[i]
+        if (is_stata_cmd_echo(line)) {
+            while (i < n) {
+                if (!is_stata_wrap_cont(lines[i + 1])) break
+                line = join_stata_wrap(line, lines[i + 1])
+                i++
+            }
+        }
+        out = out \ line
+        i++
+    }
+    return(out)
+}
+
+string colvector strip_stata_cmd_prompt(string colvector lines)
+{
+    // Remove the Stata echo prompt (". " / "> ") from command lines.
+    // Require a following space/tab/EOL so a narrative ".5" is left alone.
+    n = rows(lines)
+    if (n == 0) return(lines)
+    out = J(n, 1, "")
+    for (i = 1; i <= n; i++) {
+        s = lines[i]
+        t = ustrltrim(s)
+        c = usubstr(t, 1, 1)
+        if (c == "." | c == ">") {
+            rest = usubstr(t, 2, .)
+            if (rest == "" | usubstr(rest, 1, 1) == " " | usubstr(rest, 1, 1) == char(9)) {
+                out[i] = ustrltrim(rest)
+                continue
+            }
+        }
+        out[i] = s
+    }
+    return(out)
 }
 
 string scalar join_stata_wrap(string scalar line, string scalar nxt)
