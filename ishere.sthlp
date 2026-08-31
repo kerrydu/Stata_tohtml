@@ -20,13 +20,7 @@
 {bf:Mode 1: Placeholder (code block or heading)}
 
 {p 8 16 2}
-{cmd:ishere} {cmd:```}
-
-{p 8 16 2}
 {cmd:ishere}
-
-{p 8 16 2}
-{cmd:**```}
 
 {p 8 16 2}
 {cmd:ishere} {it:# heading text}
@@ -72,11 +66,7 @@ narrative tags, and insert figures/tables in reports generated from Stata logs.
 Produces no visible output. Leaves markers in the log that {help tohtml} uses later.
 
 {pmore2}
-- Code block boundaries: the full form is {cmd:ishere} {cmd:```}.
-  It may be abbreviated as {cmd:ishere}, or written as {cmd:**```}.
-  All three are equivalent placeholders (no printed output).
-  With default {help tohtml}, Stata commands are fenced automatically, so
-  these markers are optional.
+- Code block boundaries: {cmd:ishere}
 
 {pmore2}
 - Markdown headings: {cmd:ishere # Main Title} or {cmd:ishere ## Subtitle}
@@ -175,8 +165,8 @@ Quote the string if it contains spaces or commas.
 
 {pstd}{bf:Mode 1: placeholders}{p_end}
 
-{pstd}Code block boundaries ({cmd:ishere} {cmd:```}, {cmd:ishere}, or {cmd:**```}){p_end}
-{phang2}{cmd:. ishere ```}{p_end}
+{pstd}Code block boundaries ({cmd:ishere}){p_end}
+{phang2}{cmd:. ishere}{p_end}
 {phang2}{cmd:. sysuse auto, clear}{p_end}
 {phang2}{cmd:. summarize}{p_end}
 {phang2}{cmd:. ishere}{p_end}
