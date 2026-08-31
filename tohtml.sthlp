@@ -50,8 +50,8 @@ Basic usage
 {synopt:{opt cleancode}}keep Stata commands from the log (drop output); retain figure/table embeds{p_end}
 
 {syntab:Figure options}
-{synopt:{opt width(string)}}set default width for images and tables{p_end}
-{synopt:{opt height(string)}}set default height for images and tables{p_end}
+{synopt:{opt width(string)}}set default width for images{p_end}
+{synopt:{opt height(string)}}set default height for images{p_end}
 {synopt:{opt zoom(string)}}set default zoom level for images{p_end}
 {synoptline}
 {p2colreset}{...}
@@ -254,10 +254,10 @@ commands together with figures and tables, without lengthy output.
 {dlgtab:Figure options}
 
 {phang}
-{opt width(string)} sets the default width for all images and tables. Only effective when processing a directory.
+{opt width(string)} sets the default width for all images. Only effective when processing a directory.
 
 {phang}
-{opt height(string)} sets the default height for all images and tables. Only effective when processing a directory.
+{opt height(string)} sets the default height for all images. Only effective when processing a directory.
 
 {phang}
 {opt zoom(string)} sets the default zoom level for all images. Only effective when processing a directory.
