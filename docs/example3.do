@@ -68,10 +68,6 @@ this is a mathematical expression
 
 $$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \epsilon$$
 
-the picture is pretty
-
-![](https://tu.duoduocdn.com/uploads/day_260115/202601150909474420.jpg)
-
 **/
 
 
