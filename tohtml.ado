@@ -1,3 +1,4 @@
+*! version 1.46, 2026-09-01
 *! version 1.45, 2026-08-29
 *! version 1.44, 2026-08-29
 *! version 1.43, 2026-08-29
@@ -2535,16 +2536,55 @@ string colvector ensure_stata_fence_open(string colvector lines)
 
 string colvector insert_backtick_before_hash(string colvector fcon)
 {
+    // Auto-fence code around # / <iframe / <img and around /** **/ blocks.
+    // Inside /** **/ (markers _ishere_/* ... _ishere_*/), do not insert fences:
+    // a heading in narrative must stay markdown, not reopen a code bar.
     n = rows(fcon)
     if (n == 0) return(J(0, 1, ""))
     lens = strlen("_ishere_")
 
     out = J(0, 1, "")
     inside = 0
+    in_narrative = 0
 
     for (i = 1; i <= n; i++) {
         line = fcon[i]
         t = ustrltrim(line)
+
+        is_tc_start = 0
+        is_tc_end = 0
+        if (usubstr(t, 1, lens) == "_ishere_") {
+            rem = ustrltrim(usubstr(t, lens + 1, .))
+            if (usubstr(rem, 1, 2) == "/*") is_tc_start = 1
+            if (usubstr(rem, 1, 2) == "*/") is_tc_end = 1
+        }
+
+        if (is_tc_start) {
+            if (inside) {
+                out = out \ "```"
+                inside = 0
+            }
+            out = out \ ""
+            in_narrative = 1
+            continue
+        }
+
+        if (is_tc_end) {
+            out = out \ ""
+            in_narrative = 0
+            if (!inside) {
+                if (!next_nonempty_is_md_fence(fcon, i)) {
+                    out = out \ "```"
+                    inside = 1
+                }
+            }
+            continue
+        }
+
+        if (in_narrative) {
+            out = out \ line
+            continue
+        }
 
         if (line_is_md_fence(line)) {
             out = out \ line
@@ -2555,29 +2595,16 @@ string colvector insert_backtick_before_hash(string colvector fcon)
         is_heading = (usubstr(t, 1, 1) == "#")
         is_iframe = (usubstr(t, 1, 7) == "<iframe")
         is_img = (usubstr(t, 1, 4) == "<img")
-        is_tc_start = 0
-        is_tc_end = 0
-        if (usubstr(t, 1, lens) == "_ishere_") {
-            rem = ustrltrim(usubstr(t, lens + 1, .))
-            if (usubstr(rem, 1, 2) == "/*") is_tc_start = 1
-            if (usubstr(rem, 1, 2) == "*/") is_tc_end = 1
-        }
 
-        is_break = is_heading | is_iframe | is_img | is_tc_start
+        is_break = is_heading | is_iframe | is_img
         if (is_break & inside) {
             out = out \ "```"
             inside = 0
         }
 
-        if (is_tc_start | is_tc_end) {
-            out = out \ ""
-        }
-        else {
-            out = out \ line
-        }
+        out = out \ line
 
-        is_reopen = is_heading | is_iframe | is_img | is_tc_end
-        if (is_reopen & !inside) {
+        if (is_break & !inside) {
             if (!next_nonempty_is_md_fence(fcon, i)) {
                 out = out \ "```"
                 inside = 1
