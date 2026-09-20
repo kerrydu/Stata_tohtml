@@ -3459,8 +3459,11 @@ program define alltohtml,rclass
     if "`zoom'" == "" & "`height'" == "" & "`width'" == "" local zoom "100%"
     if "`zoom'" != "" {
         if strpos("`zoom'", "%") == 0 local zoom "`zoom'%"
+        local imgattrs
+        if "`width'" != "" local imgattrs `imgattrs' width="`width'"
+        if "`height'" != "" local imgattrs `imgattrs' height="`height'"
         local zoomstyle style="zoom:`zoom';"
-        mata: ifig = `"<img src="_filepath_" `zoomstyle' />"'
+        mata: ifig = `"<img src="_filepath_" `imgattrs' `zoomstyle' />"'
     }
     else {
         if "`height'" == "" local height "auto"
