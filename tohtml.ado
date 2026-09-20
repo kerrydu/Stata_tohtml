@@ -69,7 +69,8 @@ version 16
     // First honor the path exactly as written so spaces inside one path are preserved.
     capture confirm file `"`anything'"'
     local is_file = (_rc == 0)
-    mata: st_local("is_dir", strofreal(direxists("`anything'")))
+    local anything_dircheck `"`anything'"'
+    mata: st_local("is_dir", strofreal(direxists(st_local("anything_dircheck"))))
     if "`is_dir'" == "1" {
         alltohtml, singlefolder(`"`anything'"') width(`width') height(`height') zoom(`zoom')
         mclean2 `0'
