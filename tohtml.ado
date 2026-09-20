@@ -3485,6 +3485,10 @@ program define alltohtml,rclass
 
     // normalize path
     foreach folder in `folders' {
+        if substr(`"`folder'"', 1, 1) == `"""' ///
+            & substr(`"`folder'"', -1, 1) == `"""' {
+            local folder = substr(`"`folder'"', 2, strlen(`"`folder'"') - 2)
+        }
 
         local folder = subinstr(`"`folder'"', "\", "/", .)
         // if ends with / remove
