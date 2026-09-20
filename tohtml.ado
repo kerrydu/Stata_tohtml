@@ -3469,13 +3469,16 @@ program define alltohtml,rclass
     mata: tables = J(0,1,"")
     mata: tabletitles = J(0,1,"")
 
+    local ntokens : list sizeof anything
     local anything_single `anything'
-    if substr(`"`anything_single'"', 1, 1) == `"""' ///
-        & substr(`"`anything_single'"', -1, 1) == `"""' {
-        local anything_single = substr(`"`anything_single'"', 2, strlen(`"`anything_single'"') - 2)
+    scalar single_folder = 0
+    if `ntokens' == 1 {
+        if substr(`"`anything_single'"', 1, 1) == `"""' ///
+            & substr(`"`anything_single'"', -1, 1) == `"""' {
+            local anything_single = substr(`"`anything_single'"', 2, strlen(`"`anything_single'"') - 2)
+        }
+        mata: st_numscalar("single_folder", direxists(st_local("anything_single")))
     }
-
-    mata: st_numscalar("single_folder", direxists(st_local("anything_single")))
     if single_folder {
         local folders `"`"`anything_single'"'"'
     }
