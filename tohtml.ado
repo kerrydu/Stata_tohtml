@@ -3456,15 +3456,17 @@ program define alltohtml,rclass
     tohtml_require_fs
 
     // check directory exists
-    if "`zoom'"=="" local zoom "100%"
-    else{
+    if "`zoom'" == "" & "`height'" == "" & "`width'" == "" local zoom "100%"
+    if "`zoom'" != "" {
         if strpos("`zoom'", "%") == 0 local zoom "`zoom'%"
+        local zoomstyle style="zoom:`zoom';"
+        mata: ifig = `"<img src="_filepath_" `zoomstyle' />"'
     }
-    
-    if "`height'" == "" local height "400px"
-    if "`width'" == "" local width "100%"    
-    local zoomstyle  style="zoom:`zoom';"
-    mata: ifig = `"<img src="_filepath_" `zoomstyle' />"'
+    else {
+        if "`height'" == "" local height "auto"
+        if "`width'" == "" local width "auto"
+        mata: ifig = `"<img src="_filepath_" width="`width'" height="`height'" />"'
+    }
 
     mata: tables = J(0,1,"")
     mata: tabletitles = J(0,1,"")
