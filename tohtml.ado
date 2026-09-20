@@ -1,3 +1,4 @@
+*! version 1.47, 2026-09-20
 *! version 1.46, 2026-09-01
 *! version 1.45, 2026-08-29
 *! version 1.44, 2026-08-29
@@ -65,17 +66,20 @@ version 16
     local anything = subinstr(`"`anything'"', "\", "/", .)
 
 
-    // 判断anything is a file or a folder
-    local nf : word count `anything'
-    if `nf' > 1 { // multiple file path specified
-        alltohtml `anything', width(`width') height(`height') zoom(`zoom') 
+    // First honor the path exactly as written so spaces inside one path are preserved.
+    capture confirm file `"`anything'"'
+    local is_file = (_rc == 0)
+    mata: st_numscalar("flag", direxists("`anything'"))
+    local is_dir = flag
+    if `is_dir' {
+        alltohtml `"`anything'"', width(`width') height(`height') zoom(`zoom')
         mclean2 `0'
         exit
     }
-    else if `nf' == 1 { //single file path specified
-        mata: st_numscalar("flag",direxists("`anything'"))
-        if flag==1 { // anything is a path crteate a tempfile
-            alltohtml `anything', width(`width') height(`height') zoom(`zoom') 
+    if !`is_file' {
+        local nf : word count `anything'
+        if `nf' > 1 {
+            alltohtml `anything', width(`width') height(`height') zoom(`zoom')
             mclean2 `0'
             exit
         }
@@ -3465,8 +3469,16 @@ program define alltohtml,rclass
     mata: tables = J(0,1,"")
     mata: tabletitles = J(0,1,"")
 
+    mata: st_numscalar("single_folder", direxists(st_local("anything")))
+    if single_folder {
+        local folders `"`"`anything'"'"'
+    }
+    else {
+        local folders `anything'
+    }
+
     // normalize path
-    foreach folder in `anything' {
+    foreach folder in `folders' {
 
         local folder = subinstr(`"`folder'"', "\", "/", .)
         // if ends with / remove
