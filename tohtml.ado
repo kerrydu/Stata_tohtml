@@ -69,10 +69,9 @@ version 16
     // First honor the path exactly as written so spaces inside one path are preserved.
     capture confirm file `"`anything'"'
     local is_file = (_rc == 0)
-    mata: st_numscalar("flag", direxists("`anything'"))
-    local is_dir = flag
-    if `is_dir' {
-        alltohtml `"`anything'"', width(`width') height(`height') zoom(`zoom')
+    mata: st_local("is_dir", strofreal(direxists("`anything'")))
+    if "`is_dir'" == "1" {
+        alltohtml, singlefolder(`"`anything'"') width(`width') height(`height') zoom(`zoom')
         mclean2 `0'
         exit
     }
@@ -3452,7 +3451,7 @@ end
 capture program drop alltohtml
 program define alltohtml,rclass
     version 16
-    syntax anything, [width(string) height(string) zoom(string)]
+    syntax [anything], [SINGLEFOLDER(string) width(string) height(string) zoom(string)]
     tohtml_require_fs
 
     // check directory exists
@@ -3469,18 +3468,8 @@ program define alltohtml,rclass
     mata: tables = J(0,1,"")
     mata: tabletitles = J(0,1,"")
 
-    local ntokens : list sizeof anything
-    local anything_single `anything'
-    scalar single_folder = 0
-    if `ntokens' == 1 {
-        if substr(`"`anything_single'"', 1, 1) == `"""' ///
-            & substr(`"`anything_single'"', -1, 1) == `"""' {
-            local anything_single = substr(`"`anything_single'"', 2, strlen(`"`anything_single'"') - 2)
-        }
-        mata: st_numscalar("single_folder", direxists(st_local("anything_single")))
-    }
-    if single_folder {
-        local folders `"`"`anything_single'"'"'
+    if `"`singlefolder'"' != "" {
+        local folders `"`"`singlefolder'"'"'
     }
     else {
         local folders `anything'
