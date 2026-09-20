@@ -3466,9 +3466,10 @@ program define alltohtml,rclass
         mata: ifig = `"<img src="_filepath_" `imgattrs' `zoomstyle' />"'
     }
     else {
-        if "`height'" == "" local height "auto"
-        if "`width'" == "" local width "auto"
-        mata: ifig = `"<img src="_filepath_" width="`width'" height="`height'" />"'
+        local imgattrs
+        if "`width'" != "" local imgattrs `imgattrs' width="`width'"
+        if "`height'" != "" local imgattrs `imgattrs' height="`height'"
+        mata: ifig = `"<img src="_filepath_" `imgattrs' />"'
     }
 
     mata: tables = J(0,1,"")
