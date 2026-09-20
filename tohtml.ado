@@ -1,3 +1,4 @@
+*! version 1.47, 2026-09-20
 *! version 1.46, 2026-09-01
 *! version 1.45, 2026-08-29
 *! version 1.44, 2026-08-29
@@ -65,17 +66,20 @@ version 16
     local anything = subinstr(`"`anything'"', "\", "/", .)
 
 
-    // 判断anything is a file or a folder
-    local nf : word count `anything'
-    if `nf' > 1 { // multiple file path specified
-        alltohtml `anything', width(`width') height(`height') zoom(`zoom') 
+    // First honor the path exactly as written so spaces inside one path are preserved.
+    capture confirm file `"`anything'"'
+    local is_file = (_rc == 0)
+    local anything_dircheck `"`anything'"'
+    mata: st_local("is_dir", strofreal(direxists(st_local("anything_dircheck"))))
+    if "`is_dir'" == "1" {
+        alltohtml, singlefolder(`"`anything'"') width(`width') height(`height') zoom(`zoom')
         mclean2 `0'
         exit
     }
-    else if `nf' == 1 { //single file path specified
-        mata: st_numscalar("flag",direxists("`anything'"))
-        if flag==1 { // anything is a path crteate a tempfile
-            alltohtml `anything', width(`width') height(`height') zoom(`zoom') 
+    if !`is_file' {
+        local nf : word count `anything'
+        if `nf' > 1 {
+            alltohtml `anything', width(`width') height(`height') zoom(`zoom')
             mclean2 `0'
             exit
         }
@@ -3448,7 +3452,7 @@ end
 capture program drop alltohtml
 program define alltohtml,rclass
     version 16
-    syntax anything, [width(string) height(string) zoom(string)]
+    syntax [anything], [SINGLEFOLDER(string) width(string) height(string) zoom(string)]
     tohtml_require_fs
 
     // check directory exists
@@ -3465,8 +3469,19 @@ program define alltohtml,rclass
     mata: tables = J(0,1,"")
     mata: tabletitles = J(0,1,"")
 
+    if `"`singlefolder'"' != "" {
+        local folders `"`"`singlefolder'"'"'
+    }
+    else {
+        local folders `anything'
+    }
+
     // normalize path
-    foreach folder in `anything' {
+    foreach folder in `folders' {
+        if substr(`"`folder'"', 1, 1) == `"""' ///
+            & substr(`"`folder'"', -1, 1) == `"""' {
+            local folder = substr(`"`folder'"', 2, strlen(`"`folder'"') - 2)
+        }
 
         local folder = subinstr(`"`folder'"', "\", "/", .)
         // if ends with / remove
