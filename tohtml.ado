@@ -3469,9 +3469,15 @@ program define alltohtml,rclass
     mata: tables = J(0,1,"")
     mata: tabletitles = J(0,1,"")
 
-    mata: st_numscalar("single_folder", direxists(st_local("anything")))
+    local anything_single `anything'
+    if substr(`"`anything_single'"', 1, 1) == `"""' ///
+        & substr(`"`anything_single'"', -1, 1) == `"""' {
+        local anything_single = substr(`"`anything_single'"', 2, strlen(`"`anything_single'"') - 2)
+    }
+
+    mata: st_numscalar("single_folder", direxists(st_local("anything_single")))
     if single_folder {
-        local folders `"`"`anything'"'"'
+        local folders `"`"`anything_single'"'"'
     }
     else {
         local folders `anything'
