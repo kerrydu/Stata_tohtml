@@ -193,11 +193,17 @@ class RunnerTests(unittest.TestCase):
 
 
 class ExampleTests(unittest.TestCase):
-    def test_auto_price_uses_only_comment_markers(self):
+    def test_auto_price_exports_tables_and_figures(self):
         script = ROOT / "examples" / "auto_price.py"
         source = script.read_text(encoding="utf-8")
-        self.assertNotIn("python_tohtml", source)
-        self.assertNotIn("import ishere", source)
+        self.assertIn("from python_tohtml import", source)
+        self.assertIn("summarize(", source)
+        self.assertIn("scatter(", source)
+        self.assertIn("regress(", source)
+        self.assertIn("etable(", source)
+        self.assertNotIn("<table", source)
+        self.assertNotIn("<svg", source)
+        self.assertNotIn("pytohtml-table", source)
         html_path = ROOT / "examples" / "auto_price.html"
         log_path = ROOT / "examples" / "auto_price.log"
         md_path = ROOT / "examples" / "auto_price.md"
@@ -208,16 +214,28 @@ class ExampleTests(unittest.TestCase):
         self.assertNotIn("# ishere", body)
         self.assertNotIn("{ishere display", body)
         self.assertIn("共 24 个观测", body)
-        self.assertIn("价格均值", body)
+        self.assertIn("价格均值约为", body)
+        self.assertIn("标准差", body)
+        self.assertIn("描述统计", body)
+        self.assertIn("价格回归", body)
+        self.assertIn("因变量为价格。", body)
+        self.assertRegex(body, r"系数为 -\d+\.\d")
+        self.assertIn("***", body)
         self.assertIn('src="figures/price.svg"', body)
-        self.assertIn("相关系数为 ", body)
-        self.assertRegex(body, r"相关系数为 -0\.\d+")
         self.assertIn("MathJax", html)
-        clean, _ = render_log(log_path, ROOT / "examples" / "auto_price_clean.html", None, mode="clean")
+        self.assertNotIn("手写数字", body)
+        clean, clean_md = render_log(
+            log_path,
+            ROOT / "examples" / "auto_price_clean.html",
+            ROOT / "examples" / "auto_price_clean.md",
+            mode="clean",
+        )
         clean_body = clean.split("<body>", 1)[1]
         self.assertIn("共 24 个观测", clean_body)
+        self.assertIn("pytohtml-table", clean_body)
         self.assertNotIn("random.Random", clean_body)
         self.assertIn("# 价格与油耗", markdown)
+        self.assertIn("描述统计", clean_md)
 
 
 if __name__ == "__main__":

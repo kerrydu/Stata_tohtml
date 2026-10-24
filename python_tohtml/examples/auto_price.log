@@ -2,121 +2,60 @@
 {"version": 1, "script": "/workspace/python_tohtml/examples/auto_price.py", "cwd": "/workspace/python_tohtml/examples"}
 @@@pytohtml stmt 2
 {"start": 1, "end": 1, "hide": false}
-import math
-@@@pytohtml stmt 2
-{"start": 2, "end": 2, "hide": false}
 import random
 @@@pytohtml stmt 2
 {"start": 3, "end": 3, "hide": false}
-from pathlib import Path
-@@@pytohtml stmt 2
-{"start": 5, "end": 5, "hide": false}
-Path("results").mkdir(exist_ok=True)
-@@@pytohtml stmt 2
-{"start": 6, "end": 6, "hide": false}
-Path("figures").mkdir(exist_ok=True)
+from python_tohtml import etable, regress, scatter, summarize
 @@@pytohtml heading 1
 {"level": 1, "text": "价格与油耗"}
-@@@pytohtml stmt 2
-{"start": 9, "end": 9, "hide": false}
-rng = random.Random(1)
+@@@pytohtml md 1
+{"text": "这份报告汇总汽车价格和油耗。", "line": 6, "file": "/workspace/python_tohtml/examples/auto_price.py"}
 @@@pytohtml stmt 2
 {"start": 10, "end": 10, "hide": false}
-mpg = [rng.uniform(15, 40) for _ in range(24)]
+rng = random.Random(1)
 @@@pytohtml stmt 2
 {"start": 11, "end": 11, "hide": false}
-price = [12000 - 180 * x + rng.gauss(0, 300) for x in mpg]
+mpg = [rng.uniform(15, 40) for _ in range(24)]
 @@@pytohtml stmt 2
 {"start": 12, "end": 12, "hide": false}
-n = len(price)
+weight = [rng.uniform(1800, 4000) for _ in range(24)]
 @@@pytohtml stmt 2
 {"start": 13, "end": 13, "hide": false}
-mean_price = sum(price) / n
-@@@pytohtml stmt 2
-{"start": 14, "end": 14, "hide": false}
-print(f"N = {n}")
-@@@pytohtml output 1
-N = 24
-@@@pytohtml stmt 2
-{"start": 15, "end": 15, "hide": false}
-print(f"均价 = {mean_price:.0f}")
-@@@pytohtml output 1
-均价 = 7159
-@@@pytohtml show 1
-{"name": "f\"{n}\"", "value": "24"}
-@@@pytohtml show 1
-{"name": "f\"{mean_price:.0f}\"", "value": "7159"}
-@@@pytohtml md 1
-{"text": "共 {ishere display f\"{n}\"} 个观测，价格均值约为 {ishere display f\"{mean_price:.0f}\"}。", "line": 19, "file": "/workspace/python_tohtml/examples/auto_price.py"}
+price = [8000 - 180 * x + 1.5 * w + rng.gauss(0, 400) for x, w in zip(mpg, weight)]
 @@@pytohtml heading 1
-{"level": 2, "text": "表 1"}
-@@@pytohtml stmt 8
-{"start": 24, "end": 30, "hide": false}
-table = (
-    '<table class="pytohtml-table"><thead><tr>'
-    "<th>变量</th><th class=\"num\">N</th><th class=\"num\">均值</th>"
-    "</tr></thead><tbody><tr>"
-    f"<td>价格</td><td class=\"num\">{n}</td><td class=\"num\">{mean_price:.3f}</td>"
-    "</tr></tbody></table>"
-)
+{"level": 2, "text": "描述统计"}
 @@@pytohtml stmt 2
-{"start": 31, "end": 31, "hide": false}
-Path("results/summary.html").write_text(table, encoding="utf-8")
+{"start": 16, "end": 16, "hide": false}
+s = summarize("results/summary.html", {"价格": price, "每加仑英里数": mpg, "车重": weight})
 @@@pytohtml tab 1
-{"src": "results/summary.html", "title": "价格均值", "zoom": null, "width": null, "height": null, "cssfile": null}
+{"src": "results/summary.html", "title": "描述统计", "zoom": null, "width": null, "height": null, "cssfile": null}
+@@@pytohtml show 1
+{"name": "f\"{s['价格'].n}\"", "value": "24"}
+@@@pytohtml show 1
+{"name": "f\"{s['价格'].mean:.0f}\"", "value": "7194"}
+@@@pytohtml md 1
+{"text": "共 {ishere display f\"{s['价格'].n}\"} 个观测，价格均值约为 {ishere display f\"{s['价格'].mean:.0f}\"}。", "line": 20, "file": "/workspace/python_tohtml/examples/auto_price.py"}
 @@@pytohtml heading 1
-{"level": 2, "text": "图 1"}
+{"level": 2, "text": "价格与油耗"}
 @@@pytohtml stmt 2
-{"start": 35, "end": 35, "hide": false}
-xmin, xmax = min(mpg), max(mpg)
-@@@pytohtml stmt 2
-{"start": 36, "end": 36, "hide": false}
-ymin, ymax = min(price), max(price)
-@@@pytohtml stmt 2
-{"start": 37, "end": 37, "hide": false}
-dots = []
-@@@pytohtml stmt 5
-{"start": 38, "end": 41, "hide": false}
-for x, y in zip(mpg, price):
-    cx = 60 + (x - xmin) / (xmax - xmin) * 520
-    cy = 300 - (y - ymin) / (ymax - ymin) * 250
-    dots.append(f'<circle cx="{cx:.1f}" cy="{cy:.1f}" r="4" fill="#1a7f37"/>')
-@@@pytohtml stmt 7
-{"start": 42, "end": 47, "hide": false}
-svg = (
-    '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360">'
-    '<rect width="100%" height="100%" fill="white"/>'
-    + "".join(dots)
-    + "</svg>"
-)
-@@@pytohtml stmt 2
-{"start": 48, "end": 48, "hide": false}
-Path("figures/price.svg").write_text(svg, encoding="utf-8")
+{"start": 25, "end": 25, "hide": false}
+scatter("figures/price.svg", price, mpg, xlabel="每加仑英里数", ylabel="价格", fit=True)
 @@@pytohtml fig 1
 {"src": "figures/price.svg", "title": "价格与每加仑英里数", "zoom": null, "width": null, "height": null, "cssfile": null}
 @@@pytohtml heading 1
-{"level": 2, "text": "相关"}
+{"level": 2, "text": "回归"}
 @@@pytohtml stmt 2
-{"start": 52, "end": 52, "hide": false}
-mx = sum(mpg) / n
+{"start": 29, "end": 29, "hide": false}
+m1 = regress(price, {"每加仑英里数": mpg})
 @@@pytohtml stmt 2
-{"start": 53, "end": 53, "hide": false}
-cov = sum((x - mx) * (y - mean_price) for x, y in zip(mpg, price))
+{"start": 30, "end": 30, "hide": false}
+m2 = regress(price, {"每加仑英里数": mpg, "车重": weight})
 @@@pytohtml stmt 2
-{"start": 54, "end": 54, "hide": false}
-vx = math.sqrt(sum((x - mx) ** 2 for x in mpg))
-@@@pytohtml stmt 2
-{"start": 55, "end": 55, "hide": false}
-vy = math.sqrt(sum((y - mean_price) ** 2 for y in price))
-@@@pytohtml stmt 2
-{"start": 56, "end": 56, "hide": false}
-corr = cov / (vx * vy)
-@@@pytohtml stmt 2
-{"start": 57, "end": 57, "hide": false}
-print(f"corr = {corr:.2f}")
-@@@pytohtml output 1
-corr = -0.99
+{"start": 31, "end": 31, "hide": false}
+etable("results/regression.html", [m1, m2], titles=["(1)", "(2)"], note="因变量为价格。")
+@@@pytohtml tab 1
+{"src": "results/regression.html", "title": "价格回归", "zoom": null, "width": null, "height": null, "cssfile": null}
 @@@pytohtml show 1
-{"name": "f\"{corr:.2f}\"", "value": "-0.99"}
+{"name": "f\"{m1.params['每加仑英里数']:.1f}\"", "value": "-191.9"}
 @@@pytohtml md 1
-{"text": "相关系数为 {ishere display f\"{corr:.2f}\"}，油耗越高价格越低。\n\n$$\nprice = \\beta_0 + \\beta_1 mpg + \\varepsilon\n$$", "line": 59, "file": "/workspace/python_tohtml/examples/auto_price.py"}
+{"text": "只控制油耗时，每加仑英里数的系数为 {ishere display f\"{m1.params['每加仑英里数']:.1f}\"}。\n\n$$\nprice = \\beta_0 + \\beta_1 mpg + \\varepsilon\n$$", "line": 34, "file": "/workspace/python_tohtml/examples/auto_price.py"}
