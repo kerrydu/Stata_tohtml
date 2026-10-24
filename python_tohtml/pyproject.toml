@@ -1,0 +1,19 @@
+[project]
+name = "python-tohtml"
+version = "0.3.2"
+description = "Run a Python analysis script into an HTML report for applied work and AI agents."
+requires-python = ">=3.9"
+readme = "README.md"
+
+[project.scripts]
+pytohtml = "python_tohtml.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["python_tohtml*"]
+
+[tool.setuptools.package-data]
+python_tohtml = ["tohtml.css"]
