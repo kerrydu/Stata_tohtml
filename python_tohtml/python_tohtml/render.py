@@ -10,6 +10,7 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
+from python_tohtml.markers import marker_line_set, substitute_displays
 from python_tohtml.transcript import parse_transcript
 
 _NOTE_RE = re.compile(
@@ -18,9 +19,6 @@ _NOTE_RE = re.compile(
 )
 _STYLE_RE = re.compile(r"<style\b[^>]*>.*?</style>", re.IGNORECASE | re.DOTALL)
 _TABLE_RE = re.compile(r"<table\b[^>]*>.*?</table>", re.IGNORECASE | re.DOTALL)
-_FENCE_RE = re.compile(r"(```[\s\S]*?```)")
-_INLINE_CODE_RE = re.compile(r"(`[^`\n]*`)")
-_PLACEHOLDER_RE_CACHE: dict[tuple[str, ...], re.Pattern[str]] = {}
 
 _MIME = {
     ".png": "image/png",
@@ -135,14 +133,14 @@ def _blocks(
         if kind == "heading":
             blocks.append(("h", (int(record.get("level", 1)), str(record.get("text", "")))))
         elif kind == "md":
-            text = _substitute(str(record.get("text", "")), shows)
+            text = substitute_displays(str(record.get("text", "")), shows)
             blocks.append(("md", text))
             if mode != "clean" and record.get("hardcoded"):
                 numbers = "、".join(str(item) for item in record["hardcoded"])
                 where = f"（第 {record['line']} 行）" if record.get("line") else ""
                 blocks.append((
                     "warn",
-                    f"叙述里有手写数字 {numbers}{where}。正文数字请用 f-string 或 show() 填入，避免和本次估计对不上。",
+                    f"叙述里有手写数字 {numbers}{where}。请先写一行同样的 # ishere display，再在叙述里用 {{ishere display ...}}。",
                 ))
         elif kind == "stmt":
             blocks.append(("code", {
@@ -181,18 +179,19 @@ def _script_text(records: list[dict[str, Any]]) -> str | None:
 
 
 def _merge_code(blocks: list[tuple], script_text: str | None) -> list[tuple]:
-    """Join neighboring statements, keeping blank lines and comments between them."""
+    """Join neighboring statements. Marker comments stay out of the code."""
     lines = script_text.splitlines() if script_text is not None else None
+    skip = marker_line_set(script_text) if script_text is not None else set()
     merged: list[tuple] = []
     for kind, data in blocks:
-        if kind == "code" and merged and merged[-1][0] == "code" and _can_merge(merged[-1][1], data, lines):
+        if kind == "code" and merged and merged[-1][0] == "code" and _can_merge(merged[-1][1], data, lines, skip):
             merged[-1][1]["end"] = data.get("end") or merged[-1][1].get("end")
             continue
         if kind == "code":
             info = dict(data)
-            if lines and not merged:
+            if lines and not any(block[0] == "code" for block in merged):
                 start = info.get("start")
-                while isinstance(start, int) and start > 1:
+                while isinstance(start, int) and start > 1 and (start - 1) not in skip:
                     previous = lines[start - 2].strip()
                     if previous and not previous.startswith("#"):
                         break
@@ -209,17 +208,25 @@ def _merge_code(blocks: list[tuple], script_text: str | None) -> list[tuple]:
         source = str(data.get("source") or "")
         start, end = data.get("start"), data.get("end")
         if lines and isinstance(start, int) and isinstance(end, int) and 1 <= start <= end <= len(lines):
-            source = "\n".join(lines[start - 1:end])
-        result.append(("code", source))
+            kept = [lines[i - 1] for i in range(start, end + 1) if i not in skip]
+            while kept and not kept[0].strip():
+                kept.pop(0)
+            while kept and not kept[-1].strip():
+                kept.pop()
+            source = "\n".join(kept)
+        if source.strip():
+            result.append(("code", source))
     return result
 
 
-def _can_merge(prev: dict, cur: dict, lines: list[str] | None) -> bool:
+def _can_merge(prev: dict, cur: dict, lines: list[str] | None, skip: set[int]) -> bool:
     if not lines:
         return False
     prev_end = prev.get("end")
     cur_start = cur.get("start")
     if not isinstance(prev_end, int) or not isinstance(cur_start, int):
+        return False
+    if any(line in skip for line in range(prev_end + 1, cur_start)):
         return False
     if cur_start <= prev_end + 1:
         return True
@@ -390,31 +397,6 @@ def _inline(text: str) -> str:
         return escape(raw)
 
     return re.sub(r"\ue000(\d+)\ue001", restore, escaped)
-
-
-def _substitute(text: str, shows: dict[str, str]) -> str:
-    names = [name for name in shows if name]
-    if not names:
-        return text
-    key = tuple(sorted(names, key=len, reverse=True))
-    pattern = _PLACEHOLDER_RE_CACHE.get(key)
-    if pattern is None:
-        pattern = re.compile(r"\{(" + "|".join(re.escape(name) for name in key) + r")\}")
-        _PLACEHOLDER_RE_CACHE[key] = pattern
-
-    def apply(chunk: str) -> str:
-        return pattern.sub(lambda match: shows[match.group(1)], chunk)
-
-    fenced = _FENCE_RE.split(text)
-    out: list[str] = []
-    for index, piece in enumerate(fenced):
-        if index % 2 == 1:
-            out.append(piece)
-            continue
-        coded = _INLINE_CODE_RE.split(piece)
-        for cindex, bit in enumerate(coded):
-            out.append(bit if cindex % 2 == 1 else apply(bit))
-    return "".join(out)
 
 
 def _figure(record: dict[str, Any], base_dirs: list[str], embed: bool, html_path: Path | None) -> str:

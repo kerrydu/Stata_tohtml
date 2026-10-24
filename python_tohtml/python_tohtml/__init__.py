@@ -1,26 +1,14 @@
-"""Script-first reports for applied analysis.
+"""Run a Python script into an HTML report.
 
-Write ordinary Python. Mark headings, prose, figures and tables.
-``python -m python_tohtml run analysis.py`` executes the file from the top
-and writes an HTML report.
+The script stays ordinary Python. Markers are comments, as in Stata::
+
+    # ishere # 标题
+    # ishere fig using "fig.png", title("图题")
+    # ishere tab using "tab.html", title("表题")
+    # ishere display f"{n}"
+    # /**
+    # 样本量为 {ishere display f"{n}"}。
+    # **/
 """
 
-from python_tohtml.ishere import display, fig, finish, h1, h2, h3, heading, md, show, tab
-from python_tohtml.tables import etable, summ
-
-__version__ = "0.1.0"
-
-__all__ = [
-    "display",
-    "etable",
-    "fig",
-    "finish",
-    "h1",
-    "h2",
-    "h3",
-    "heading",
-    "md",
-    "show",
-    "summ",
-    "tab",
-]
+__version__ = "0.2.0"

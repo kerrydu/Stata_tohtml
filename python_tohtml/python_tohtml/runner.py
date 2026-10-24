@@ -1,8 +1,7 @@
 """Run a script from top to bottom and write a transcript.
 
-Each top-level statement is echoed, then executed in one shared namespace.
-Expression values are recorded the way a REPL would display them. Marker
-calls stay in the order they ran, interleaved with stdout.
+Statements run in one namespace. Comment markers are not code: they become
+headings, narrative, figures, tables, or display values.
 """
 
 from __future__ import annotations
@@ -15,11 +14,9 @@ import traceback
 from pathlib import Path
 from typing import Any
 
-from python_tohtml.ishere import MARKER_NAMES, numbers_in_prose
-from python_tohtml.session import set_sink
+from python_tohtml.markers import Marker, numbers_in_prose, parse_markers
 from python_tohtml.transcript import format_record
 
-_MISSING = object()
 _MAX_LINES = 200
 _MAX_CHARS = 20_000
 
@@ -29,7 +26,6 @@ def run_script(script: str | Path, log_path: str | Path) -> int:
     destination = Path(log_path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     source = path.read_text(encoding="utf-8-sig")
-    status = 0
     with destination.open("w", encoding="utf-8", newline="\n") as handle:
         handle.write(format_record("meta", json.dumps({
             "version": 1,
@@ -41,8 +37,7 @@ def run_script(script: str | Path, log_path: str | Path) -> int:
         except SyntaxError:
             handle.write(format_record("error", traceback.format_exc()))
             return 1
-        status = _execute(tree, source, path, handle)
-    return status
+        return _execute(tree, source, path, handle)
 
 
 def _execute(tree: ast.AST, source: str, path: Path, handle: Any) -> int:
@@ -57,34 +52,33 @@ def _execute(tree: ast.AST, source: str, path: Path, handle: Any) -> int:
     previous_out, previous_err = sys.stdout, sys.stderr
     capture = _Capture()
     status = 0
-    previous_sink = None
     os.chdir(path.parent)
     try:
         sys.path.insert(0, str(path.parent))
         sys.argv = [str(path)]
-        os.environ["PYTOHTML_RUNNER"] = "1"
-        previous_sink = set_sink(capture.mark)
         sys.stdout = _Stream(capture.write_out)
         sys.stderr = _Stream(capture.write_err)
-        for stmt in tree.body:
+        items: list[tuple[int, int, str, Any]] = [
+            (stmt.lineno, 1, "stmt", stmt) for stmt in tree.body
+        ]
+        items.extend((marker.start, 0, "mark", marker) for marker in parse_markers(source))
+        items.sort(key=lambda item: (item[0], item[1]))
+        for _line, _order, kind, obj in items:
+            if kind == "mark":
+                failed = _apply_marker(handle, obj, namespace, path)
+                handle.flush()
+                if failed:
+                    status = 1
+                    break
+                continue
+            stmt = obj
             src = _source_of(source, stmt)
             try:
-                if _string_statement(stmt):
-                    text = stmt.value.value
-                    assert isinstance(text, str)
-                    events = [("mark", "md", {
-                        "text": text,
-                        "hardcoded": numbers_in_prose(text),
-                        "file": str(path),
-                        "line": stmt.lineno,
-                    })]
-                    value: Any = None
-                else:
-                    value = _exec_stmt(stmt, namespace, path)
-                    events = capture.finish()
+                _exec_stmt(stmt, namespace, path)
+                events = capture.finish()
             except SystemExit as exc:
                 events = capture.finish()
-                _write_statement(handle, stmt, src, events, _MISSING, force_hide=False)
+                _write_statement(handle, stmt, src, events)
                 code = exc.code
                 if code not in (None, 0):
                     handle.write(format_record("error", f"SystemExit: {code!r}\n"))
@@ -92,36 +86,71 @@ def _execute(tree: ast.AST, source: str, path: Path, handle: Any) -> int:
                 break
             except Exception:
                 events = capture.finish()
-                _write_statement(handle, stmt, src, events, _MISSING, force_hide=False)
+                _write_statement(handle, stmt, src, events)
                 handle.write(format_record("error", traceback.format_exc()))
                 handle.flush()
                 status = 1
                 break
-            _write_statement(handle, stmt, src, events, value, force_hide=None)
+            _write_statement(handle, stmt, src, events)
             handle.flush()
     finally:
-        set_sink(previous_sink)
         sys.stdout = previous_out
         sys.stderr = previous_err
-        os.environ.pop("PYTOHTML_RUNNER", None)
         sys.argv = previous_argv
         sys.path[:] = previous_path
         os.chdir(previous_cwd)
     return status
 
 
-def _write_statement(handle, stmt, src, events, value, force_hide) -> None:
-    text_output = _has_text(events)
-    if force_hide is None:
-        hide = _marker_only(stmt) and not text_output
-        if _string_statement(stmt):
-            hide = True
-    else:
-        hide = force_hide
+def _apply_marker(handle, marker: Marker, namespace: dict[str, Any], path: Path) -> bool:
+    if marker.kind == "heading":
+        handle.write(format_record("heading", json.dumps({
+            "level": marker.level,
+            "text": marker.text,
+        }, ensure_ascii=False)))
+        return False
+    if marker.kind == "md":
+        payload: dict[str, Any] = {
+            "text": marker.text,
+            "line": marker.start,
+            "file": str(path),
+        }
+        hardcoded = numbers_in_prose(marker.text)
+        if hardcoded:
+            payload["hardcoded"] = hardcoded
+        handle.write(format_record("md", json.dumps(payload, ensure_ascii=False)))
+        return False
+    if marker.kind == "display":
+        try:
+            value = eval(marker.expr, namespace, namespace)
+        except Exception:
+            handle.write(format_record("error", traceback.format_exc()))
+            return True
+        text = value if isinstance(value, str) else str(value)
+        handle.write(format_record("show", json.dumps({
+            "name": marker.expr,
+            "value": text,
+        }, ensure_ascii=False)))
+        return False
+    if marker.kind in {"fig", "tab"}:
+        handle.write(format_record(marker.kind, json.dumps({
+            "src": marker.src,
+            "title": marker.title,
+            "zoom": marker.zoom,
+            "width": marker.width,
+            "height": marker.height,
+            "cssfile": marker.cssfile,
+        }, ensure_ascii=False)))
+        return False
+    handle.write(format_record("error", marker.text or "无法识别的标记"))
+    return True
+
+
+def _write_statement(handle, stmt, src, events) -> None:
     meta = {
         "start": getattr(stmt, "lineno", None),
         "end": getattr(stmt, "end_lineno", getattr(stmt, "lineno", None)),
-        "hide": hide,
+        "hide": False,
     }
     handle.write(format_record("stmt", src, meta=meta))
     for event in events:
@@ -132,26 +161,20 @@ def _write_statement(handle, stmt, src, events, value, force_hide) -> None:
         elif kind == "err":
             if str(event[1]).strip("\n"):
                 handle.write(format_record("error", _truncate(event[1])))
-        else:
-            handle.write(format_record(event[1], json.dumps(event[2], ensure_ascii=False)))
-    if not hide and value is not _MISSING and value is not None and not _quiet_call_result(stmt, value):
-        shown = format_value(value)
-        if shown:
-            handle.write(format_record("value", shown))
 
 
-def _exec_stmt(stmt: ast.stmt, namespace: dict[str, Any], path: Path) -> Any:
+def _exec_stmt(stmt: ast.stmt, namespace: dict[str, Any], path: Path) -> None:
     filename = str(path)
     if isinstance(stmt, ast.Expr):
         expression = ast.Expression(body=stmt.value)
         ast.fix_missing_locations(expression)
         code = compile(expression, filename, "eval")
-        return eval(code, namespace, namespace)
+        eval(code, namespace, namespace)
+        return
     module = ast.Module(body=[stmt], type_ignores=[])
     ast.fix_missing_locations(module)
     code = compile(module, filename, "exec")
     exec(code, namespace, namespace)
-    return _MISSING
 
 
 def _source_of(source: str, stmt: ast.stmt) -> str:
@@ -163,67 +186,6 @@ def _source_of(source: str, stmt: ast.stmt) -> str:
     if segment.endswith("\n"):
         segment = segment[:-1]
     return segment
-
-
-def _string_statement(stmt: ast.stmt) -> bool:
-    return (
-        isinstance(stmt, ast.Expr)
-        and isinstance(stmt.value, ast.Constant)
-        and isinstance(stmt.value.value, str)
-    )
-
-
-def _marker_only(stmt: ast.stmt) -> bool:
-    value = None
-    if isinstance(stmt, ast.Expr):
-        value = stmt.value
-    elif isinstance(stmt, (ast.Assign, ast.AnnAssign)):
-        value = stmt.value
-    if not isinstance(value, ast.Call):
-        return False
-    func = value.func
-    if isinstance(func, ast.Name):
-        return func.id in MARKER_NAMES
-    if isinstance(func, ast.Attribute):
-        return func.attr in MARKER_NAMES
-    return False
-
-
-def _quiet_call_result(stmt: ast.stmt, value: Any) -> bool:
-    """A bare call that only hands back a path should not echo that path."""
-    if not (isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call)):
-        return False
-    return isinstance(value, (str, Path))
-
-
-def _has_text(events: list[tuple]) -> bool:
-    for event in events:
-        if event[0] in {"out", "err"} and str(event[1]).strip("\n"):
-            return True
-    return False
-
-
-def format_value(value: Any) -> str | None:
-    module = type(value).__module__
-    name = type(value).__name__
-    if module.startswith("matplotlib") or name in {"Figure", "Axes", "AxesSubplot"}:
-        return None
-    if hasattr(value, "to_string") and hasattr(value, "shape"):
-        try:
-            text = value.to_string(max_rows=30, max_cols=12)
-        except TypeError:
-            try:
-                text = value.to_string()
-            except Exception:
-                text = repr(value)
-    else:
-        try:
-            text = repr(value)
-        except Exception as exc:
-            text = f"<repr 失败: {exc}>"
-    if text == "":
-        return None
-    return _truncate(text)
 
 
 def _truncate(text: str) -> str:
@@ -256,11 +218,6 @@ class _Capture:
         if self._out:
             self._flush_out()
         self._err.append(text)
-
-    def mark(self, kind: str, payload: dict) -> None:
-        self._flush_out()
-        self._flush_err()
-        self.events.append(("mark", kind, payload))
 
     def finish(self) -> list[tuple]:
         self._flush_out()

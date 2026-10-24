@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>汽车价格</title>
+<title>价格与油耗</title>
 <style id="tohtml-inline-css">
 :root {
     --side-bar-bg-color: #fafafa;
@@ -338,153 +338,60 @@ MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$'
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
-<pre><code class="language-python"># 一份脚本就是分析本身。运行：
-#   python -m python_tohtml run examples/auto_price.py --html examples/auto_price.html
-
-import math
-import os
+<pre><code class="language-python">import math
 import random
 from pathlib import Path
 
-from python_tohtml.ishere import fig, h1, h2, md, show, tab
-from python_tohtml.tables import etable, summ
-
-os.chdir(Path(__file__).resolve().parent)</code></pre>
-<h1>汽车价格</h1>
-<p>下面用一份合成数据走完应用计量里常见的几步：筛样本、描述统计、散点图，以及两列回归。正文里的数字都在运行时填入。</p>
-<h2>样本</h2>
+Path(&quot;results&quot;).mkdir(exist_ok=True)
+Path(&quot;figures&quot;).mkdir(exist_ok=True)</code></pre>
+<h1>价格与油耗</h1>
 <pre><code class="language-python">rng = random.Random(1)
-raw = []
-for i in range(48):
-    mpg = rng.uniform(12, 40)
-    weight = rng.uniform(1800, 4500)
-    noise = rng.gauss(0, 400)
-    price = None if i % 17 == 0 else 8000 - 180 * mpg + 1.8 * weight + noise
-    raw.append((price, mpg, weight))
-print(f&quot;原始观测 N = {len(raw)}&quot;)</code></pre>
-<pre class="pytohtml-output"><code>原始观测 N = 48</code></pre>
-<pre><code class="language-python">sample = [row for row in raw if row[0] is not None]
-print(f&quot;去掉价格缺失后 N = {len(sample)}&quot;)</code></pre>
-<pre class="pytohtml-output"><code>去掉价格缺失后 N = 45</code></pre>
-<p>去掉价格缺失后剩余 45 个观测。价格由油耗、车重和一个扰动项生成。</p>
-<pre><code class="language-python">price = [row[0] for row in sample]
-mpg = [row[1] for row in sample]
-weight = [row[2] for row in sample]</code></pre>
-<h2>描述统计</h2>
-<pre><code class="language-python">summ(&quot;results/summary.html&quot;, {&quot;价格&quot;: price, &quot;每加仑英里数&quot;: mpg, &quot;车重&quot;: weight})</code></pre>
-<figure class="tohtml-table-block"><figcaption class="tohtml-table-title">描述统计</figcaption><div class="tohtml-embedded-table"><table class="pytohtml-table"><thead><tr><th>变量</th><th class="num">N</th><th class="num">均值</th><th class="num">标准差</th><th class="num">最小值</th><th class="num">最大值</th></tr></thead><tbody><tr><td>价格</td><td class="num">45</td><td class="num">8751.398</td><td class="num">2112.379</td><td class="num">4439.482</td><td class="num">12866.873</td></tr><tr><td>每加仑英里数</td><td class="num">45</td><td class="num">26.145</td><td class="num">8.351</td><td class="num">12.467</td><td class="num">39.791</td></tr><tr><td>车重</td><td class="num">45</td><td class="num">3059.024</td><td class="num">768.508</td><td class="num">1805.686</td><td class="num">4451.607</td></tr></tbody></table></div></figure>
-<h2>价格与油耗</h2>
-<pre><code class="language-python">def scatter_svg(path, xs, ys, xlabel, ylabel):
-    width, height = 640, 420
-    pad_l, pad_r, pad_t, pad_b = 64, 24, 24, 48
-    xmin, xmax = min(xs), max(xs)
-    ymin, ymax = min(ys), max(ys)
-
-    def sx(x):
-        return pad_l + (x - xmin) / (xmax - xmin) * (width - pad_l - pad_r)
-
-    def sy(y):
-        return pad_t + (ymax - y) / (ymax - ymin) * (height - pad_t - pad_b)
-
-    dots = &quot;&quot;.join(
-        f&#x27;&lt;circle cx=&quot;{sx(x):.1f}&quot; cy=&quot;{sy(y):.1f}&quot; r=&quot;3.5&quot; fill=&quot;#1a7f37&quot; fill-opacity=&quot;0.85&quot;/&gt;&#x27;
-        for x, y in zip(xs, ys)
-    )
-    y_mid = (pad_t + sy(ymin)) / 2
-    svg = f&quot;&quot;&quot;&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;{width}&quot; height=&quot;{height}&quot; viewBox=&quot;0 0 {width} {height}&quot;&gt;
-&lt;rect width=&quot;100%&quot; height=&quot;100%&quot; fill=&quot;#ffffff&quot;/&gt;
-&lt;line x1=&quot;{pad_l}&quot; y1=&quot;{sy(ymin):.1f}&quot; x2=&quot;{width - pad_r}&quot; y2=&quot;{sy(ymin):.1f}&quot; stroke=&quot;#24292f&quot;/&gt;
-&lt;line x1=&quot;{pad_l}&quot; y1=&quot;{pad_t}&quot; x2=&quot;{pad_l}&quot; y2=&quot;{sy(ymin):.1f}&quot; stroke=&quot;#24292f&quot;/&gt;
-{dots}
-&lt;text x=&quot;{(pad_l + width - pad_r) / 2:.0f}&quot; y=&quot;{height - 14}&quot; text-anchor=&quot;middle&quot; font-family=&quot;sans-serif&quot; font-size=&quot;14&quot;&gt;{xlabel}&lt;/text&gt;
-&lt;text x=&quot;16&quot; y=&quot;{y_mid:.0f}&quot; text-anchor=&quot;middle&quot; font-family=&quot;sans-serif&quot; font-size=&quot;14&quot; transform=&quot;rotate(-90 16 {y_mid:.0f})&quot;&gt;{ylabel}&lt;/text&gt;
-&lt;/svg&gt;
-&quot;&quot;&quot;
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    Path(path).write_text(svg, encoding=&quot;utf-8&quot;)
-
-
-scatter_svg(&quot;figures/price.svg&quot;, mpg, price, &quot;每加仑英里数&quot;, &quot;价格&quot;)</code></pre>
+mpg = [rng.uniform(15, 40) for _ in range(24)]
+price = [12000 - 180 * x + rng.gauss(0, 300) for x in mpg]
+n = len(price)
+mean_price = sum(price) / n
+print(f&quot;N = {n}&quot;)</code></pre>
+<pre class="pytohtml-output"><code>N = 24</code></pre>
+<pre><code class="language-python">print(f&quot;均价 = {mean_price:.0f}&quot;)</code></pre>
+<pre class="pytohtml-output"><code>均价 = 7159</code></pre>
+<p>共 24 个观测，价格均值约为 7159。</p>
+<h2>表 1</h2>
+<pre><code class="language-python">table = (
+    &#x27;&lt;table class=&quot;pytohtml-table&quot;&gt;&lt;thead&gt;&lt;tr&gt;&#x27;
+    &quot;&lt;th&gt;变量&lt;/th&gt;&lt;th class=\&quot;num\&quot;&gt;N&lt;/th&gt;&lt;th class=\&quot;num\&quot;&gt;均值&lt;/th&gt;&quot;
+    &quot;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&lt;tr&gt;&quot;
+    f&quot;&lt;td&gt;价格&lt;/td&gt;&lt;td class=\&quot;num\&quot;&gt;{n}&lt;/td&gt;&lt;td class=\&quot;num\&quot;&gt;{mean_price:.3f}&lt;/td&gt;&quot;
+    &quot;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;&quot;
+)
+Path(&quot;results/summary.html&quot;).write_text(table, encoding=&quot;utf-8&quot;)</code></pre>
+<figure class="tohtml-table-block"><figcaption class="tohtml-table-title">价格均值</figcaption><div class="tohtml-embedded-table"><table class="pytohtml-table"><thead><tr><th>变量</th><th class="num">N</th><th class="num">均值</th></tr></thead><tbody><tr><td>价格</td><td class="num">24</td><td class="num">7159.097</td></tr></tbody></table></div></figure>
+<h2>图 1</h2>
+<pre><code class="language-python">xmin, xmax = min(mpg), max(mpg)
+ymin, ymax = min(price), max(price)
+dots = []
+for x, y in zip(mpg, price):
+    cx = 60 + (x - xmin) / (xmax - xmin) * 520
+    cy = 300 - (y - ymin) / (ymax - ymin) * 250
+    dots.append(f&#x27;&lt;circle cx=&quot;{cx:.1f}&quot; cy=&quot;{cy:.1f}&quot; r=&quot;4&quot; fill=&quot;#1a7f37&quot;/&gt;&#x27;)
+svg = (
+    &#x27;&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;640&quot; height=&quot;360&quot;&gt;&#x27;
+    &#x27;&lt;rect width=&quot;100%&quot; height=&quot;100%&quot; fill=&quot;white&quot;/&gt;&#x27;
+    + &quot;&quot;.join(dots)
+    + &quot;&lt;/svg&gt;&quot;
+)
+Path(&quot;figures/price.svg&quot;).write_text(svg, encoding=&quot;utf-8&quot;)</code></pre>
 <figure class="tohtml-figure"><img src="figures/price.svg" style="zoom:100%"><figcaption class="tohtml-fig-title">价格与每加仑英里数</figcaption></figure>
-<h2>回归</h2>
-<p>两个设定都用普通最小二乘。标准误是独立同分布下的普通标准误，p 值用正态近似。价格对油耗和车重的线性投影写成</p>
+<h2>相关</h2>
+<pre><code class="language-python">mx = sum(mpg) / n
+cov = sum((x - mx) * (y - mean_price) for x, y in zip(mpg, price))
+vx = math.sqrt(sum((x - mx) ** 2 for x in mpg))
+vy = math.sqrt(sum((y - mean_price) ** 2 for y in price))
+corr = cov / (vx * vy)
+print(f&quot;corr = {corr:.2f}&quot;)</code></pre>
+<pre class="pytohtml-output"><code>corr = -0.99</code></pre>
+<p>相关系数为 -0.99，油耗越高价格越低。</p>
 <div class="pytohtml-math">$$
-price = \beta_0 + \beta_1 mpg + \beta_2 weight + \varepsilon
+price = \beta_0 + \beta_1 mpg + \varepsilon
 $$</div>
-<pre><code class="language-python">def ols(y, columns):
-    n = len(y)
-    k = len(columns)
-    xtx = [[0.0] * k for _ in range(k)]
-    xty = [0.0] * k
-    for i in range(n):
-        row = [columns[j][1][i] for j in range(k)]
-        for a in range(k):
-            xty[a] += row[a] * y[i]
-            for b in range(k):
-                xtx[a][b] += row[a] * row[b]
-    beta = _solve(xtx, xty)
-    sse = 0.0
-    mean = sum(y) / n
-    sst = 0.0
-    for i in range(n):
-        fitted = sum(columns[j][1][i] * beta[j] for j in range(k))
-        sse += (y[i] - fitted) ** 2
-        sst += (y[i] - mean) ** 2
-    sigma2 = sse / (n - k)
-    inv = _invert(xtx)
-    se = [math.sqrt(sigma2 * inv[j][j]) for j in range(k)]
-    pvalues = [2 * _norm_sf(abs(beta[j] / se[j])) for j in range(k)]
-    return {
-        &quot;coef&quot;: {columns[j][0]: beta[j] for j in range(k)},
-        &quot;se&quot;: {columns[j][0]: se[j] for j in range(k)},
-        &quot;p&quot;: {columns[j][0]: pvalues[j] for j in range(k)},
-        &quot;stats&quot;: {&quot;N&quot;: n, &quot;R²&quot;: 0.0 if sst == 0 else 1 - sse / sst},
-    }
-
-
-def _solve(matrix, target):
-    size = len(target)
-    rows = [matrix[i][:] + [target[i]] for i in range(size)]
-    for col in range(size):
-        pivot = max(range(col, size), key=lambda r: abs(rows[r][col]))
-        if abs(rows[pivot][col]) &lt; 1e-12:
-            raise ZeroDivisionError(&quot;设计矩阵奇异&quot;)
-        rows[col], rows[pivot] = rows[pivot], rows[col]
-        scale = rows[col][col]
-        for j in range(col, size + 1):
-            rows[col][j] /= scale
-        for r in range(size):
-            if r == col:
-                continue
-            factor = rows[r][col]
-            for j in range(col, size + 1):
-                rows[r][j] -= factor * rows[col][j]
-    return [rows[i][size] for i in range(size)]
-
-
-def _invert(matrix):
-    size = len(matrix)
-    return [_solve(matrix, [1.0 if i == col else 0.0 for i in range(size)]) for col in range(size)]
-
-
-def _norm_sf(z):
-    return 0.5 * math.erfc(z / math.sqrt(2))
-
-
-const = [1.0] * len(price)
-model_mpg = ols(price, [(&quot;常数&quot;, const), (&quot;每加仑英里数&quot;, mpg)])
-model_both = ols(price, [(&quot;常数&quot;, const), (&quot;每加仑英里数&quot;, mpg), (&quot;车重&quot;, weight)])
-etable(
-    &quot;results/regression.html&quot;,
-    [model_mpg, model_both],
-    titles=[&quot;(1)&quot;, &quot;(2)&quot;],
-    note=&quot;因变量为价格。列 (2) 同时控制车重。&quot;,
-)</code></pre>
-<figure class="tohtml-table-block"><figcaption class="tohtml-table-title">价格回归</figcaption><div class="tohtml-embedded-table"><table class="pytohtml-table"><thead><tr><th></th><th class="num">(1)</th><th class="num">(2)</th></tr></thead><tbody><tr><td>常数</td><td class="num">13825.143***</td><td class="num">8491.288***</td></tr><tr><td></td><td class="num">(678.368)</td><td class="num">(250.391)</td></tr><tr><td>每加仑英里数</td><td class="num">-194.063***</td><td class="num">-190.847***</td></tr><tr><td></td><td class="num">(24.742)</td><td class="num">(5.756)</td></tr><tr><td>车重</td><td class="num"></td><td class="num">1.716***</td></tr><tr><td></td><td class="num"></td><td class="num">(0.063)</td></tr><tr class="stat stat-start"><td>N</td><td class="num">45</td><td class="num">45</td></tr><tr class="stat"><td>R²</td><td class="num">0.589</td><td class="num">0.978</td></tr></tbody></table></div><p class="pytohtml-note">* p&lt;0.1，** p&lt;0.05，*** p&lt;0.01</p>
-<p class="pytohtml-note">因变量为价格。列 (2) 同时控制车重。</p></figure>
-<pre><code class="language-python">b_mpg = model_both[&quot;coef&quot;][&quot;每加仑英里数&quot;]
-se_mpg = model_both[&quot;se&quot;][&quot;每加仑英里数&quot;]</code></pre>
-<p>在控制车重之后，每加仑英里数的系数为 -190.85（标准误 5.76）。油耗越高，价格越低，这和生成数据时用的负号一致。</p>
-<p>同一系数也可以写成 -190.85，标准误 5.76。两次出现的都是这一次运行的结果。</p>
 </body>
 </html>
