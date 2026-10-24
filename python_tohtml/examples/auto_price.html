@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>汽车价格</title>
+<style id="tohtml-inline-css">
+:root {
+    --side-bar-bg-color: #fafafa;
+    --control-text-color: #777;
+    --font-sans-serif: "Open Sans", "Clear Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-monospace: "Consolas", "Monaco", "Bitstream Vera Sans Mono", "Courier New", monospace;
+}
+
+body {
+    font-family: var(--font-sans-serif);
+    font-size: 16px;
+    line-height: 1.6;
+    color: #333;
+    background-color: white;
+    margin: 0 auto;
+    padding: 2rem;
+    max-width: 900px;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: #333;
+    line-height: 1.25;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    font-weight: bold;
+}
+
+h1 { font-size: 2.25em; padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }
+h2 { font-size: 1.75em; padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }
+h3 { font-size: 1.5em; }
+h4 { font-size: 1.25em; }
+h5 { font-size: 1em; }
+h6 { font-size: 0.875em; color: #777; }
+
+/* Links */
+a {
+    color: #4183C4;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* Paragraphs & Lists */
+p, blockquote, ul, ol, dl, table, pre {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+ul, ol {
+    padding-left: 2em;
+}
+
+/* Blockquotes */
+blockquote {
+    padding: 0 1em;
+    color: #777;
+    border-left: 0.25em solid #dfe2e5;
+    background: transparent;
+}
+
+/* Tables - GitHub Style (markdown tables only).
+   Stata collect (class Table*) and outreg2e (.texout-table) keep their
+   own three-line rules; do not restyle them. */
+table:not([class^="Table"]):not(.texout-table):not(.pytohtml-table) {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    margin-bottom: 16px;
+    display: block;
+    overflow: auto;
+}
+
+table:not([class^="Table"]):not(.texout-table):not(.pytohtml-table) tr {
+    background-color: #fff;
+    border-top: 1px solid #c6cbd1;
+}
+
+table:not([class^="Table"]):not(.texout-table):not(.pytohtml-table) tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+table:not([class^="Table"]):not(.texout-table):not(.pytohtml-table) th,
+table:not([class^="Table"]):not(.texout-table):not(.pytohtml-table) td {
+    border: 1px solid #dfe2e5;
+    padding: 6px 13px;
+    margin: 0;
+}
+
+table:not([class^="Table"]):not(.texout-table):not(.pytohtml-table) th {
+    font-weight: 600;
+    background-color: #f6f8fa;
+}
+
+.tohtml-embedded-table {
+    width: max-content;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tohtml-table-block {
+    margin: 1.5em 0;
+    display: block;
+}
+
+.tohtml-table-title,
+figcaption.tohtml-table-title {
+    display: block;
+    text-align: center;
+    font-weight: 600;
+    margin: 0 0 0.6em 0;
+    color: #333;
+}
+
+.tohtml-figure {
+    display: block;
+    text-align: center;
+    margin: 1.5em 0;
+}
+
+.tohtml-figure img {
+    display: inline-block;
+    max-width: 100%;
+}
+
+.tohtml-fig-title,
+figcaption.tohtml-fig-title {
+    display: block;
+    text-align: center;
+    font-weight: 600;
+    margin: 0.5em 0 0 0;
+    color: #333;
+}
+
+table[class^="Table"],
+table.texout-table,
+.tohtml-embedded-table table {
+    display: table;
+    width: auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    overflow: visible;
+}
+
+.tohtml-embedded-table table,
+.tohtml-embedded-table .texout-table {
+    max-width: none;
+    width: max-content;
+}
+
+.tohtml-embedded-table .texout-table-wrap {
+    overflow: visible;
+    width: max-content;
+    max-width: none;
+}
+
+table[class^="Table"] tr,
+table[class^="Table"] tr:nth-child(2n),
+table.texout-table tr,
+table.texout-table tr:nth-child(2n),
+.tohtml-embedded-table table tr,
+.tohtml-embedded-table table tr:nth-child(2n) {
+    background-color: transparent;
+    border: none;
+}
+
+/* Code Blocks & Inline Code */
+code, kbd, pre, samp {
+    font-family: var(--font-monospace);
+}
+
+/* Inline code */
+code {
+    background-color: #f3f4f4;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    margin: 0 2px;
+}
+
+/* Block code (pre) */
+pre {
+    background-color: #f8f8f8;
+    border: 1px solid #e7eaed;
+    border-radius: 3px;
+    padding: 16px;
+    overflow: auto;
+    line-height: 1.45;
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    border: none;
+    font-size: 100%; /* Reset from inline code size */
+}
+
+/* Stata fenced code: ```stata → <code class="language-stata"> */
+pre code.language-stata,
+code.language-stata {
+    color: #24292f;
+}
+
+pre:has(code.language-stata) {
+    background-color: #f6f8fa;
+    border-left: 4px solid #1a7f37;
+}
+
+/* Horizontal Rule */
+hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: #e7e7e7;
+    border: 0;
+}
+
+/* Images */
+img {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Tables inserted via iframe (collect / outreg HTML) */
+iframe {
+    border: 0;
+    width: 100%;
+    display: block;
+    margin: 0 0 16px 0;
+    overflow: auto;
+}
+
+/* MathJax */
+mjx-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+
+/* Python transcript (python_tohtml) */
+pre code.language-python,
+code.language-python {
+    color: #24292f;
+}
+
+pre:has(code.language-python) {
+    background-color: #f6f8fa;
+    border-left: 4px solid #1a7f37;
+}
+
+pre.pytohtml-output,
+pre.pytohtml-value {
+    background-color: #fff;
+    border: none;
+    border-left: 4px solid #d0d7de;
+    padding: 8px 16px;
+    margin-top: -8px;
+}
+
+pre.pytohtml-error {
+    background-color: #fff5f5;
+    border: none;
+    border-left: 4px solid #cf222e;
+    color: #82071e;
+}
+
+p.pytohtml-warn {
+    color: #9a6700;
+    background: #fff8c5;
+    border-left: 0.25em solid #d4a72c;
+    padding: 0.4em 1em;
+}
+
+p.pytohtml-note {
+    font-size: 0.9em;
+    color: #57606a;
+    margin: 0.5em 0 0;
+}
+
+.pytohtml-table {
+    border-collapse: collapse;
+    border-top: 2px solid #111;
+    border-bottom: 2px solid #111;
+    width: auto;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.pytohtml-table th,
+.pytohtml-table td {
+    padding: 4px 12px;
+    border: none;
+    background: transparent;
+    text-align: left;
+}
+
+.pytohtml-table thead th {
+    border-bottom: 1px solid #111;
+    font-weight: 600;
+    text-align: center;
+}
+
+.pytohtml-table td.num,
+.pytohtml-table th.num {
+    text-align: right;
+}
+
+.pytohtml-table tbody tr.stat-start td {
+    border-top: 1px solid #111;
+}
+
+.pytohtml-math {
+    margin: 0 0 16px;
+    overflow-x: auto;
+}
+
+.tohtml-table-block {
+    max-width: 100%;
+}
+
+.tohtml-embedded-table .pytohtml-table {
+    width: max-content;
+    max-width: none;
+}
+
+</style>
+<style id="tohtml-table-scroll">.tohtml-embedded-table{overflow:auto;-webkit-overflow-scrolling:touch;max-width:100%;max-height:80vh;}</style>
+<script>
+MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] } };
+</script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<pre><code class="language-python"># 一份脚本就是分析本身。运行：
+#   python -m python_tohtml run examples/auto_price.py --html examples/auto_price.html
+
+import math
+import os
+import random
+from pathlib import Path
+
+from python_tohtml.ishere import fig, h1, h2, md, show, tab
+from python_tohtml.tables import etable, summ
+
+os.chdir(Path(__file__).resolve().parent)</code></pre>
+<h1>汽车价格</h1>
+<p>下面用一份合成数据走完应用计量里常见的几步：筛样本、描述统计、散点图，以及两列回归。正文里的数字都在运行时填入。</p>
+<h2>样本</h2>
+<pre><code class="language-python">rng = random.Random(1)
+raw = []
+for i in range(48):
+    mpg = rng.uniform(12, 40)
+    weight = rng.uniform(1800, 4500)
+    noise = rng.gauss(0, 400)
+    price = None if i % 17 == 0 else 8000 - 180 * mpg + 1.8 * weight + noise
+    raw.append((price, mpg, weight))
+print(f&quot;原始观测 N = {len(raw)}&quot;)</code></pre>
+<pre class="pytohtml-output"><code>原始观测 N = 48</code></pre>
+<pre><code class="language-python">sample = [row for row in raw if row[0] is not None]
+print(f&quot;去掉价格缺失后 N = {len(sample)}&quot;)</code></pre>
+<pre class="pytohtml-output"><code>去掉价格缺失后 N = 45</code></pre>
+<p>去掉价格缺失后剩余 45 个观测。价格由油耗、车重和一个扰动项生成。</p>
+<pre><code class="language-python">price = [row[0] for row in sample]
+mpg = [row[1] for row in sample]
+weight = [row[2] for row in sample]</code></pre>
+<h2>描述统计</h2>
+<pre><code class="language-python">summ(&quot;results/summary.html&quot;, {&quot;价格&quot;: price, &quot;每加仑英里数&quot;: mpg, &quot;车重&quot;: weight})</code></pre>
+<figure class="tohtml-table-block"><figcaption class="tohtml-table-title">描述统计</figcaption><div class="tohtml-embedded-table"><table class="pytohtml-table"><thead><tr><th>变量</th><th class="num">N</th><th class="num">均值</th><th class="num">标准差</th><th class="num">最小值</th><th class="num">最大值</th></tr></thead><tbody><tr><td>价格</td><td class="num">45</td><td class="num">8751.398</td><td class="num">2112.379</td><td class="num">4439.482</td><td class="num">12866.873</td></tr><tr><td>每加仑英里数</td><td class="num">45</td><td class="num">26.145</td><td class="num">8.351</td><td class="num">12.467</td><td class="num">39.791</td></tr><tr><td>车重</td><td class="num">45</td><td class="num">3059.024</td><td class="num">768.508</td><td class="num">1805.686</td><td class="num">4451.607</td></tr></tbody></table></div></figure>
+<h2>价格与油耗</h2>
+<pre><code class="language-python">def scatter_svg(path, xs, ys, xlabel, ylabel):
+    width, height = 640, 420
+    pad_l, pad_r, pad_t, pad_b = 64, 24, 24, 48
+    xmin, xmax = min(xs), max(xs)
+    ymin, ymax = min(ys), max(ys)
+
+    def sx(x):
+        return pad_l + (x - xmin) / (xmax - xmin) * (width - pad_l - pad_r)
+
+    def sy(y):
+        return pad_t + (ymax - y) / (ymax - ymin) * (height - pad_t - pad_b)
+
+    dots = &quot;&quot;.join(
+        f&#x27;&lt;circle cx=&quot;{sx(x):.1f}&quot; cy=&quot;{sy(y):.1f}&quot; r=&quot;3.5&quot; fill=&quot;#1a7f37&quot; fill-opacity=&quot;0.85&quot;/&gt;&#x27;
+        for x, y in zip(xs, ys)
+    )
+    y_mid = (pad_t + sy(ymin)) / 2
+    svg = f&quot;&quot;&quot;&lt;svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;{width}&quot; height=&quot;{height}&quot; viewBox=&quot;0 0 {width} {height}&quot;&gt;
+&lt;rect width=&quot;100%&quot; height=&quot;100%&quot; fill=&quot;#ffffff&quot;/&gt;
+&lt;line x1=&quot;{pad_l}&quot; y1=&quot;{sy(ymin):.1f}&quot; x2=&quot;{width - pad_r}&quot; y2=&quot;{sy(ymin):.1f}&quot; stroke=&quot;#24292f&quot;/&gt;
+&lt;line x1=&quot;{pad_l}&quot; y1=&quot;{pad_t}&quot; x2=&quot;{pad_l}&quot; y2=&quot;{sy(ymin):.1f}&quot; stroke=&quot;#24292f&quot;/&gt;
+{dots}
+&lt;text x=&quot;{(pad_l + width - pad_r) / 2:.0f}&quot; y=&quot;{height - 14}&quot; text-anchor=&quot;middle&quot; font-family=&quot;sans-serif&quot; font-size=&quot;14&quot;&gt;{xlabel}&lt;/text&gt;
+&lt;text x=&quot;16&quot; y=&quot;{y_mid:.0f}&quot; text-anchor=&quot;middle&quot; font-family=&quot;sans-serif&quot; font-size=&quot;14&quot; transform=&quot;rotate(-90 16 {y_mid:.0f})&quot;&gt;{ylabel}&lt;/text&gt;
+&lt;/svg&gt;
+&quot;&quot;&quot;
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    Path(path).write_text(svg, encoding=&quot;utf-8&quot;)
+
+
+scatter_svg(&quot;figures/price.svg&quot;, mpg, price, &quot;每加仑英里数&quot;, &quot;价格&quot;)</code></pre>
+<figure class="tohtml-figure"><img src="figures/price.svg" style="zoom:100%"><figcaption class="tohtml-fig-title">价格与每加仑英里数</figcaption></figure>
+<h2>回归</h2>
+<p>两个设定都用普通最小二乘。标准误是独立同分布下的普通标准误，p 值用正态近似。价格对油耗和车重的线性投影写成</p>
+<div class="pytohtml-math">$$
+price = \beta_0 + \beta_1 mpg + \beta_2 weight + \varepsilon
+$$</div>
+<pre><code class="language-python">def ols(y, columns):
+    n = len(y)
+    k = len(columns)
+    xtx = [[0.0] * k for _ in range(k)]
+    xty = [0.0] * k
+    for i in range(n):
+        row = [columns[j][1][i] for j in range(k)]
+        for a in range(k):
+            xty[a] += row[a] * y[i]
+            for b in range(k):
+                xtx[a][b] += row[a] * row[b]
+    beta = _solve(xtx, xty)
+    sse = 0.0
+    mean = sum(y) / n
+    sst = 0.0
+    for i in range(n):
+        fitted = sum(columns[j][1][i] * beta[j] for j in range(k))
+        sse += (y[i] - fitted) ** 2
+        sst += (y[i] - mean) ** 2
+    sigma2 = sse / (n - k)
+    inv = _invert(xtx)
+    se = [math.sqrt(sigma2 * inv[j][j]) for j in range(k)]
+    pvalues = [2 * _norm_sf(abs(beta[j] / se[j])) for j in range(k)]
+    return {
+        &quot;coef&quot;: {columns[j][0]: beta[j] for j in range(k)},
+        &quot;se&quot;: {columns[j][0]: se[j] for j in range(k)},
+        &quot;p&quot;: {columns[j][0]: pvalues[j] for j in range(k)},
+        &quot;stats&quot;: {&quot;N&quot;: n, &quot;R²&quot;: 0.0 if sst == 0 else 1 - sse / sst},
+    }
+
+
+def _solve(matrix, target):
+    size = len(target)
+    rows = [matrix[i][:] + [target[i]] for i in range(size)]
+    for col in range(size):
+        pivot = max(range(col, size), key=lambda r: abs(rows[r][col]))
+        if abs(rows[pivot][col]) &lt; 1e-12:
+            raise ZeroDivisionError(&quot;设计矩阵奇异&quot;)
+        rows[col], rows[pivot] = rows[pivot], rows[col]
+        scale = rows[col][col]
+        for j in range(col, size + 1):
+            rows[col][j] /= scale
+        for r in range(size):
+            if r == col:
+                continue
+            factor = rows[r][col]
+            for j in range(col, size + 1):
+                rows[r][j] -= factor * rows[col][j]
+    return [rows[i][size] for i in range(size)]
+
+
+def _invert(matrix):
+    size = len(matrix)
+    return [_solve(matrix, [1.0 if i == col else 0.0 for i in range(size)]) for col in range(size)]
+
+
+def _norm_sf(z):
+    return 0.5 * math.erfc(z / math.sqrt(2))
+
+
+const = [1.0] * len(price)
+model_mpg = ols(price, [(&quot;常数&quot;, const), (&quot;每加仑英里数&quot;, mpg)])
+model_both = ols(price, [(&quot;常数&quot;, const), (&quot;每加仑英里数&quot;, mpg), (&quot;车重&quot;, weight)])
+etable(
+    &quot;results/regression.html&quot;,
+    [model_mpg, model_both],
+    titles=[&quot;(1)&quot;, &quot;(2)&quot;],
+    note=&quot;因变量为价格。列 (2) 同时控制车重。&quot;,
+)</code></pre>
+<figure class="tohtml-table-block"><figcaption class="tohtml-table-title">价格回归</figcaption><div class="tohtml-embedded-table"><table class="pytohtml-table"><thead><tr><th></th><th class="num">(1)</th><th class="num">(2)</th></tr></thead><tbody><tr><td>常数</td><td class="num">13825.143***</td><td class="num">8491.288***</td></tr><tr><td></td><td class="num">(678.368)</td><td class="num">(250.391)</td></tr><tr><td>每加仑英里数</td><td class="num">-194.063***</td><td class="num">-190.847***</td></tr><tr><td></td><td class="num">(24.742)</td><td class="num">(5.756)</td></tr><tr><td>车重</td><td class="num"></td><td class="num">1.716***</td></tr><tr><td></td><td class="num"></td><td class="num">(0.063)</td></tr><tr class="stat stat-start"><td>N</td><td class="num">45</td><td class="num">45</td></tr><tr class="stat"><td>R²</td><td class="num">0.589</td><td class="num">0.978</td></tr></tbody></table></div><p class="pytohtml-note">* p&lt;0.1，** p&lt;0.05，*** p&lt;0.01</p>
+<p class="pytohtml-note">因变量为价格。列 (2) 同时控制车重。</p></figure>
+<pre><code class="language-python">b_mpg = model_both[&quot;coef&quot;][&quot;每加仑英里数&quot;]
+se_mpg = model_both[&quot;se&quot;][&quot;每加仑英里数&quot;]</code></pre>
+<p>在控制车重之后，每加仑英里数的系数为 -190.85（标准误 5.76）。油耗越高，价格越低，这和生成数据时用的负号一致。</p>
+<p>同一系数也可以写成 -190.85，标准误 5.76。两次出现的都是这一次运行的结果。</p>
+</body>
+</html>
