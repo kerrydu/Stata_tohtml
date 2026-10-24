@@ -92,6 +92,69 @@ class RunnerTests(unittest.TestCase):
         shows = [r for r in parse_transcript(log) if r["kind"] == "show"]
         self.assertEqual(shows[0]["value"], "24")
 
+    def test_triple_quoted_string_is_narrative(self):
+        tmp, status, _log = _run(
+            'n = 24\n'
+            'f"""\n'
+            '样本量为 {n}。\n'
+            '"""\n'
+            'print(n)\n'
+        )
+        self.addCleanup(shutil.rmtree, tmp)
+        self.assertEqual(status, 0)
+        html, _md = render_log(tmp / "analysis.log", tmp / "report.html", None)
+        body = html.split("<body>", 1)[1]
+        self.assertIn("<p>样本量为 24。</p>", body)
+        self.assertNotIn("{n}", body)
+        self.assertNotIn('f"""', body)
+        self.assertIn("print(n)", body)
+        self.assertNotIn("手写数字", body)
+
+    def test_display_tag_inside_a_triple_quoted_string(self):
+        tmp, status, _log = _run(
+            'n = 24\n'
+            '"""\n'
+            '样本量为 {ishere display f"{n}"}。\n'
+            '"""\n'
+        )
+        self.addCleanup(shutil.rmtree, tmp)
+        self.assertEqual(status, 0)
+        html, _md = render_log(tmp / "analysis.log", tmp / "report.html", None)
+        body = html.split("<body>", 1)[1]
+        self.assertIn("样本量为 24。", body)
+        self.assertNotIn("{ishere display", body)
+
+    def test_raw_string_keeps_latex(self):
+        tmp, status, _log = _run(
+            'r"""\n'
+            '$$\n'
+            'price = \\beta_0\n'
+            '$$\n'
+            '"""\n'
+        )
+        self.addCleanup(shutil.rmtree, tmp)
+        self.assertEqual(status, 0)
+        html, _md = render_log(tmp / "analysis.log", tmp / "report.html", None)
+        self.assertIn("\\beta_0", html)
+        self.assertNotIn("\x08eta", html)
+
+    def test_number_typed_in_an_fstring_is_flagged(self):
+        tmp, status, _log = _run('f"""\n系数是 0.84。\n"""\n')
+        self.addCleanup(shutil.rmtree, tmp)
+        self.assertEqual(status, 0)
+        html, _md = render_log(tmp / "analysis.log", tmp / "report.html", None)
+        self.assertIn("手写数字", html)
+        self.assertIn("0.84", html)
+
+    def test_assigned_triple_quote_stays_code(self):
+        tmp, status, _log = _run('note = """\n不是叙述\n"""\n')
+        self.addCleanup(shutil.rmtree, tmp)
+        self.assertEqual(status, 0)
+        html, _md = render_log(tmp / "analysis.log", tmp / "report.html", None)
+        body = html.split("<body>", 1)[1]
+        self.assertIn("不是叙述", body)
+        self.assertNotIn("<p>不是叙述</p>", body)
+
     def test_a_string_statement_is_not_narrative(self):
         tmp, status, _log = _run('"这不是叙述"\n')
         self.addCleanup(shutil.rmtree, tmp)
@@ -197,6 +260,8 @@ class ExampleTests(unittest.TestCase):
         script = ROOT / "examples" / "auto_price.py"
         source = script.read_text(encoding="utf-8")
         self.assertIn("from python_tohtml import", source)
+        self.assertNotIn("# /**", source)
+        self.assertIn('f"""', source)
         self.assertIn("summarize(", source)
         self.assertIn("scatter(", source)
         self.assertIn("regress(", source)
@@ -213,6 +278,8 @@ class ExampleTests(unittest.TestCase):
         body = html.split("<body>", 1)[1]
         self.assertNotIn("# ishere", body)
         self.assertNotIn("{ishere display", body)
+        self.assertNotIn('f"""', body)
+        self.assertNotIn("s['价格'].n", body)
         self.assertIn("共 24 个观测", body)
         self.assertIn("价格均值约为", body)
         self.assertIn("标准差", body)

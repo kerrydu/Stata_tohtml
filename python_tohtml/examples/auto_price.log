@@ -9,7 +9,7 @@ from python_tohtml import etable, regress, scatter, summarize
 @@@pytohtml heading 1
 {"level": 1, "text": "价格与油耗"}
 @@@pytohtml md 1
-{"text": "这份报告汇总汽车价格和油耗。", "line": 6, "file": "/workspace/python_tohtml/examples/auto_price.py"}
+{"text": "\n这份报告汇总汽车价格和油耗。\n", "line": 6, "file": "/workspace/python_tohtml/examples/auto_price.py"}
 @@@pytohtml stmt 2
 {"start": 10, "end": 10, "hide": false}
 rng = random.Random(1)
@@ -29,33 +29,27 @@ price = [8000 - 180 * x + 1.5 * w + rng.gauss(0, 400) for x, w in zip(mpg, weigh
 s = summarize("results/summary.html", {"价格": price, "每加仑英里数": mpg, "车重": weight})
 @@@pytohtml tab 1
 {"src": "results/summary.html", "title": "描述统计", "zoom": null, "width": null, "height": null, "cssfile": null}
-@@@pytohtml show 1
-{"name": "f\"{s['价格'].n}\"", "value": "24"}
-@@@pytohtml show 1
-{"name": "f\"{s['价格'].mean:.0f}\"", "value": "7194"}
 @@@pytohtml md 1
-{"text": "共 {ishere display f\"{s['价格'].n}\"} 个观测，价格均值约为 {ishere display f\"{s['价格'].mean:.0f}\"}。", "line": 20, "file": "/workspace/python_tohtml/examples/auto_price.py"}
+{"text": "\n共 24 个观测，价格均值约为 7194。\n", "line": 18, "file": "/workspace/python_tohtml/examples/auto_price.py"}
 @@@pytohtml heading 1
 {"level": 2, "text": "价格与油耗"}
 @@@pytohtml stmt 2
-{"start": 25, "end": 25, "hide": false}
+{"start": 23, "end": 23, "hide": false}
 scatter("figures/price.svg", price, mpg, xlabel="每加仑英里数", ylabel="价格", fit=True)
 @@@pytohtml fig 1
 {"src": "figures/price.svg", "title": "价格与每加仑英里数", "zoom": null, "width": null, "height": null, "cssfile": null}
 @@@pytohtml heading 1
 {"level": 2, "text": "回归"}
 @@@pytohtml stmt 2
-{"start": 29, "end": 29, "hide": false}
+{"start": 27, "end": 27, "hide": false}
 m1 = regress(price, {"每加仑英里数": mpg})
 @@@pytohtml stmt 2
-{"start": 30, "end": 30, "hide": false}
+{"start": 28, "end": 28, "hide": false}
 m2 = regress(price, {"每加仑英里数": mpg, "车重": weight})
 @@@pytohtml stmt 2
-{"start": 31, "end": 31, "hide": false}
+{"start": 29, "end": 29, "hide": false}
 etable("results/regression.html", [m1, m2], titles=["(1)", "(2)"], note="因变量为价格。")
 @@@pytohtml tab 1
 {"src": "results/regression.html", "title": "价格回归", "zoom": null, "width": null, "height": null, "cssfile": null}
-@@@pytohtml show 1
-{"name": "f\"{m1.params['每加仑英里数']:.1f}\"", "value": "-191.9"}
 @@@pytohtml md 1
-{"text": "只控制油耗时，每加仑英里数的系数为 {ishere display f\"{m1.params['每加仑英里数']:.1f}\"}。\n\n$$\nprice = \\beta_0 + \\beta_1 mpg + \\varepsilon\n$$", "line": 34, "file": "/workspace/python_tohtml/examples/auto_price.py"}
+{"text": "\n只控制油耗时，每加仑英里数的系数为 -191.9。\n\n$$\nprice = \\beta_0 + \\beta_1 mpg + \\varepsilon\n$$\n", "line": 31, "file": "/workspace/python_tohtml/examples/auto_price.py"}

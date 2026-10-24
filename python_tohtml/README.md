@@ -1,6 +1,6 @@
 # python_tohtml
 
-脚本照常写。报告结构只用注释标记，和 Stata 的 `ishere` / `/** **/` 一样。表和图不在脚本里拼 HTML：先调用命令把文件写出来，再用标记收进报告。
+脚本照常写。叙述用三引号字符串，标题、图、表用注释标记。表和图不在脚本里拼 HTML：先调用命令把文件写出来，再用标记收进报告。
 
 ```bash
 python -m python_tohtml run examples/auto_price.py --html examples/auto_price.html
@@ -19,10 +19,9 @@ from python_tohtml import summarize, scatter, regress, etable
 s = summarize("results/summary.html", {"价格": price, "油耗": mpg})
 # ishere tab using "results/summary.html", title("描述统计")
 
-# ishere display f"{s['价格'].n}"
-# /**
-# 样本量为 {ishere display f"{s['价格'].n}"}。
-# **/
+f"""
+样本量为 {s['价格'].n}。
+"""
 
 scatter("figures/price.svg", price, mpg, xlabel="油耗", ylabel="价格", fit=True)
 # ishere fig using "figures/price.svg", title("价格与油耗")
@@ -32,7 +31,7 @@ etable("results/reg.html", [m1], note="因变量为价格。")
 # ishere tab using "results/reg.html", title("回归")
 ```
 
-`{ishere display ...}` 必须和前面那一行 `# ishere display ...` 字面一致。数字在运行时填进叙述。
+三引号字符串的结果进入报告，不进入代码块。数字直接写在 f 字符串的花括号里，和普通 Python 一样。公式用 `rf"""`，这样 `\beta` 不会被当成转义。`# /** ... # **/` 和 `{ishere display ...}` 仍然可用，那是 Stata 注释的写法：注释本身不会执行，所以才要先 display、再在注释里留标签。
 
 `summarize` 写描述统计（N、均值、标准差、最小值、最大值），并返回同一套未四舍五入的数，供叙述引用。`scatter` 的参数顺序是 `y` 再 `x`，和 Stata 一样；`fit=True` 加上同一套 OLS 拟合线。`regress` 做带常数项的最小二乘。`etable` 把一个或多个结果写成三线表：系数、括号里的标准误、星号、N 和 R²。标记只把已经写好的文件收进报告。
 
@@ -55,7 +54,7 @@ python -m python_tohtml build analysis.log --html report.html --embed
 | --- | --- |
 | `ishere # 标题` | `# ishere # 标题` |
 | `ishere ## 小节` | `# ishere ## 小节` |
-| `/** ... **/` | `# /**` … `# **/` |
+| `/** ... **/` | `f""" ... {x} ... """` |
 | `summarize` 再把表导出 | `summarize("a.html", {"价格": price})` |
 | `scatter` / `graph export` | `scatter("a.svg", y, x)` |
 | `regress` | `regress(y, {"油耗": x})` |

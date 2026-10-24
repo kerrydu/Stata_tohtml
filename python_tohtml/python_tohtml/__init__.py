@@ -1,14 +1,14 @@
 """Run a Python script into an HTML report.
 
-The script stays ordinary Python. Markers are comments, as in Stata::
+The script stays ordinary Python. Narrative is a triple-quoted string.
+Markers for headings, figures and tables are comments::
 
     # ishere # 标题
+    f'''
+    样本量为 {n}。
+    '''
     # ishere fig using "fig.svg", title("图题")
     # ishere tab using "tab.html", title("表题")
-    # ishere display f"{n}"
-    # /**
-    # 样本量为 {ishere display f"{n}"}。
-    # **/
 
 Tables and figures are written by commands, the way ``summarize`` /
 ``graph export`` / ``outreg2e`` write files before ``ishere tab`` and
@@ -23,4 +23,4 @@ from python_tohtml.tables import etable, summarize
 
 __all__ = ["etable", "regress", "scatter", "summarize"]
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"

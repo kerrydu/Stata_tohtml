@@ -14,7 +14,13 @@ import traceback
 from pathlib import Path
 from typing import Any
 
-from python_tohtml.markers import Marker, numbers_in_prose, parse_markers
+from python_tohtml.markers import (
+    Marker,
+    fill_display_tags,
+    is_narrative_stmt,
+    numbers_in_prose,
+    parse_markers,
+)
 from python_tohtml.transcript import format_record
 
 _MAX_LINES = 200
@@ -73,6 +79,13 @@ def _execute(tree: ast.AST, source: str, path: Path, handle: Any) -> int:
                 continue
             stmt = obj
             src = _source_of(source, stmt)
+            if is_narrative_stmt(stmt, source):
+                failed = _write_narrative(handle, stmt, src, namespace, path, capture)
+                handle.flush()
+                if failed:
+                    status = 1
+                    break
+                continue
             try:
                 _exec_stmt(stmt, namespace, path)
                 events = capture.finish()
@@ -146,13 +159,48 @@ def _apply_marker(handle, marker: Marker, namespace: dict[str, Any], path: Path)
     return True
 
 
-def _write_statement(handle, stmt, src, events) -> None:
-    meta = {
-        "start": getattr(stmt, "lineno", None),
-        "end": getattr(stmt, "end_lineno", getattr(stmt, "lineno", None)),
-        "hide": False,
+def _write_narrative(handle, stmt, src, namespace, path, capture) -> bool:
+    """A top-level triple-quoted string is prose, not a code block.
+
+    An f-string is evaluated. A plain string may still contain
+    ``{ishere display ...}``, which is filled from the live namespace.
+    """
+    try:
+        value = _eval_expr(stmt, namespace, path)
+        events = capture.finish()
+    except Exception:
+        events = capture.finish()
+        _write_output(handle, events)
+        handle.write(format_record("error", traceback.format_exc()))
+        return True
+    _write_output(handle, events)
+    if not isinstance(value, str):
+        value = str(value)
+    text = value
+    if not isinstance(stmt.value, ast.JoinedStr) and _DISPLAY_TAG in value:
+        try:
+            text = fill_display_tags(value, lambda expr: eval(expr, namespace, namespace))
+        except Exception:
+            handle.write(format_record("error", traceback.format_exc()))
+            return True
+    if not text.strip():
+        return False
+    payload: dict[str, Any] = {
+        "text": text,
+        "line": stmt.lineno,
+        "file": str(path),
     }
-    handle.write(format_record("stmt", src, meta=meta))
+    hardcoded = numbers_in_prose(src)
+    if hardcoded:
+        payload["hardcoded"] = hardcoded
+    handle.write(format_record("md", json.dumps(payload, ensure_ascii=False)))
+    return False
+
+
+_DISPLAY_TAG = "{ishere display "
+
+
+def _write_output(handle, events) -> None:
     for event in events:
         kind = event[0]
         if kind == "out":
@@ -163,13 +211,27 @@ def _write_statement(handle, stmt, src, events) -> None:
                 handle.write(format_record("error", _truncate(event[1])))
 
 
+def _write_statement(handle, stmt, src, events) -> None:
+    meta = {
+        "start": getattr(stmt, "lineno", None),
+        "end": getattr(stmt, "end_lineno", getattr(stmt, "lineno", None)),
+        "hide": False,
+    }
+    handle.write(format_record("stmt", src, meta=meta))
+    _write_output(handle, events)
+
+
+def _eval_expr(stmt: ast.Expr, namespace: dict[str, Any], path: Path) -> Any:
+    expression = ast.Expression(body=stmt.value)
+    ast.fix_missing_locations(expression)
+    code = compile(expression, str(path), "eval")
+    return eval(code, namespace, namespace)
+
+
 def _exec_stmt(stmt: ast.stmt, namespace: dict[str, Any], path: Path) -> None:
     filename = str(path)
     if isinstance(stmt, ast.Expr):
-        expression = ast.Expression(body=stmt.value)
-        ast.fix_missing_locations(expression)
-        code = compile(expression, filename, "eval")
-        eval(code, namespace, namespace)
+        _eval_expr(stmt, namespace, path)
         return
     module = ast.Module(body=[stmt], type_ignores=[])
     ast.fix_missing_locations(module)

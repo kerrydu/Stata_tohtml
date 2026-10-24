@@ -1,19 +1,26 @@
 """Comment markers, same role as Stata ``ishere`` and ``/** **/``.
 
-A script stays ordinary Python. The runner notices these comments:
+A script stays ordinary Python. Narrative is a triple-quoted string, because
+that string actually runs::
+
+    f'''
+    样本量为 {n}。
+    '''
+
+The runner also notices these comments:
 
     # ishere # 标题
     # ishere ## 小节
     # ishere fig using "fig.png", title("图题")
     # ishere tab using "tab.html", title("表题")
-    # ishere display f"{n}"
-    # /**
-    # 样本量为 {ishere display f"{n}"}。
-    # **/
+
+``# /** ... # **/`` and ``{ishere display ...}`` still work. They mirror a
+Stata comment, which cannot evaluate an expression.
 """
 
 from __future__ import annotations
 
+import ast
 import io
 import re
 import tokenize
@@ -36,6 +43,7 @@ class Marker:
     expr: str = ""
 
 
+_TRIPLE = re.compile(r"^(?:[rR][fF]|[fF][rR]|[rR]|[fF]|[uU])?('''|\"\"\")", re.DOTALL)
 _HEAD = re.compile(r"^ishere\s+(#{1,6})(?:\s+(.*?))?\s*$")
 _USING = re.compile(r"^ishere\s+(fig|figure|tab|table)\s+using\s+(.+)$", re.IGNORECASE)
 _DISPLAY = re.compile(r"^ishere\s+display\s+(.+)$", re.IGNORECASE)
@@ -72,7 +80,60 @@ def marker_line_set(source: str) -> set[int]:
     lines: set[int] = set()
     for marker in parse_markers(source):
         lines.update(range(marker.start, marker.end + 1))
+    lines.update(narrative_line_set(source))
     return lines
+
+
+def narrative_line_set(source: str) -> set[int]:
+    """Line numbers of a top-level triple-quoted string. Those lines are prose."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set()
+    lines: set[int] = set()
+    for stmt in tree.body:
+        if not is_narrative_stmt(stmt, source):
+            continue
+        end = getattr(stmt, "end_lineno", None) or stmt.lineno
+        lines.update(range(stmt.lineno, end + 1))
+    return lines
+
+
+def is_narrative_stmt(stmt: ast.stmt, source: str) -> bool:
+    if not isinstance(stmt, ast.Expr):
+        return False
+    node = stmt.value
+    if isinstance(node, ast.Constant):
+        if not isinstance(node.value, str):
+            return False
+    elif not isinstance(node, ast.JoinedStr):
+        return False
+    segment = ast.get_source_segment(source, stmt)
+    if segment is None:
+        return False
+    return _TRIPLE.match(segment.strip()) is not None
+
+
+def fill_display_tags(text: str, evaluate) -> str:
+    """Replace ``{ishere display EXPR}`` using ``evaluate(expr)``."""
+    parts: list[str] = []
+    cursor = 0
+    while True:
+        start = text.find(_DISPLAY_PREFIX, cursor)
+        if start < 0:
+            parts.append(text[cursor:])
+            break
+        end = _closing_brace(text, start)
+        if end is None:
+            parts.append(text[cursor:])
+            break
+        parts.append(text[cursor:start])
+        inner = text[start + 1:end]
+        expr = inner[len("ishere display"):].strip()
+        value = evaluate(expr)
+        parts.append(value if isinstance(value, str) else str(value))
+        cursor = end + 1
+    return "".join(parts)
 
 
 def numbers_in_prose(text: str) -> list[str]:

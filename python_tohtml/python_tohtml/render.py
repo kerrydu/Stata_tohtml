@@ -140,7 +140,7 @@ def _blocks(
                 where = f"（第 {record['line']} 行）" if record.get("line") else ""
                 blocks.append((
                     "warn",
-                    f"叙述里有手写数字 {numbers}{where}。请先写一行同样的 # ishere display，再在叙述里用 {{ishere display ...}}。",
+                    f"叙述里有手写数字 {numbers}{where}。请写进三引号 f 字符串的花括号，例如 f\"\"\"系数是 {{b:.2f}}。\"\"\"。",
                 ))
         elif kind == "stmt":
             blocks.append(("code", {
