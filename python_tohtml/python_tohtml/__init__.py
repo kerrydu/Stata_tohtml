@@ -23,4 +23,4 @@ from python_tohtml.tables import etable, summarize
 
 __all__ = ["etable", "regress", "scatter", "summarize"]
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"

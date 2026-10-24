@@ -1,6 +1,6 @@
 [project]
 name = "python-tohtml"
-version = "0.3.1"
+version = "0.3.2"
 description = "Run a Python analysis script into an HTML report for applied work and AI agents."
 requires-python = ">=3.9"
 readme = "README.md"

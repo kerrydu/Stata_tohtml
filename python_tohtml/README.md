@@ -48,6 +48,16 @@ python -m python_tohtml run analysis.py --html report.html --clean
 python -m python_tohtml build analysis.log --html report.html --embed
 ```
 
+## 从目录收集
+
+和 `tohtml "results" "figures"` 一样，输入可以是一个或多个目录。只看目录本身，不进入子目录。表必须叫 `table*.html` 或 `table*.md`，图必须叫 `figure*.png`、`jpg`、`jpeg`、`svg`、`gif`、`bmp`、`webp`。按文件名排序后合成一份报告。
+
+```bash
+python -m python_tohtml gather results figures --html report.html --zoom 80%
+```
+
+`--width`、`--height`、`--zoom` 只改这次收集进来的图。
+
 ## 和 Stata 的对应
 
 | Stata | Python |
@@ -63,3 +73,4 @@ python -m python_tohtml build analysis.log --html report.html --embed
 | `ishere tab using "a.html", title("表题")` | `# ishere tab using "a.html", title("表题")` |
 | `ishere display %5.3f e(r2)` | `# ishere display f"{m1.rsquared:.3f}"` |
 | `{ishere display %5.3f e(r2)}` | `{ishere display f"{m1.rsquared:.3f}"}` |
+| `tohtml "results" "figures"` | `python -m python_tohtml gather results figures` |
